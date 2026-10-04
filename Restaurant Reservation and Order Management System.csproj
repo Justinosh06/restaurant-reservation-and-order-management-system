@@ -1,10 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Restaurant_Reservation_and_Order_Management_System</RootNamespace>
+    <UserSecretsId>4bb94619-8734-49dc-bb4c-e5473c29da0d</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Stripe.net" Version="53.0.0" />
+  </ItemGroup>
 
 </Project>
