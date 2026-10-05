@@ -1,0 +1,11 @@
+@page "/Table/{tableId}"
+@model RestaurantReservation.Pages.Table.IndexModel
+@{
+    ViewData["Title"] = $"Table {Model.TableId}";
+}
+
+<div class="container py-4">
+    <div class="alert alert-info">
+        📍 Viewing Menu & Ordering for <strong>Table @Model.TableId</strong>
+    </div>
+</div>
