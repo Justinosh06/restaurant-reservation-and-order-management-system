@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using RestaurantReservation.Infrastructure.Navigation;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<SidebarNavService>();
 
 // 1. Register Razor Pages and the custom subdomain route provider
 builder.Services.AddRazorPages();
