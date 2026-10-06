@@ -1,0 +1,30 @@
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace RestaurantReservation.Models
+{
+    public class Session : IValidatableObject
+    {
+        [Key]
+        [Required(ErrorMessage = "Session ID is required.")]
+        public string Id { get; set; } = string.Empty;
+
+        [Required]
+        public DateTime StartingTime { get; set; }
+
+        public DateTime? EndingTime { get; set; }
+
+        public Order? Order { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (EndingTime.HasValue && EndingTime.Value < StartingTime)
+            {
+                yield return new ValidationResult(
+                    "EndingTime cannot be earlier than StartingTime.",
+                    new[] { nameof(EndingTime) }
+                );
+            }
+        }
+    }
+}

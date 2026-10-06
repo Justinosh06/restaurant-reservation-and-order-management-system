@@ -1,0 +1,49 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using RestaurantReservation.Models;
+
+namespace RestaurantReservation.Models
+{
+    public enum ReservationStatus
+    {
+        Pending,
+        Confirmed,
+        Cancelled,
+        Completed
+    }
+
+    public class Reservation
+    {
+        [Key]
+        [Required(ErrorMessage = "Reservation ID is required.")]
+        public string Id { get; set; } = string.Empty;
+
+        [Required]
+        public DateOnly Date { get; set; }
+
+        [Required]
+        public TimeOnly TimeSlot { get; set; }
+
+        [Required]
+        [Range(1, 20)]
+        public int Pax { get; set; }
+
+        public ReservationStatus Status { get; set; } = ReservationStatus.Pending;
+
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Foreign Keys
+        [Required]
+        public string TableId { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(TableId))]
+        public Table? Table { get; set; }
+
+        [Required]
+        public string CustomerId { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(CustomerId))]
+        public Customer? Customer { get; set; }
+    }
+}
