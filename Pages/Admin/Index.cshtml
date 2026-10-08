@@ -17,7 +17,7 @@
         <div class="col-sm-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="text-muted small"><i class="fa-solid fa-coins me-1"></i> Revenue today</div>
+                    <div class="text-muted small" title="From served and completed orders"><i class="fa-solid fa-coins me-1"></i> Revenue today</div>
                     <div class="fs-3 fw-semibold kpi-value" id="kpi-revenue">-</div>
                     <small class="text-muted" id="kpi-revenue-delta">&nbsp;</small>
                 </div>
@@ -44,7 +44,7 @@
         <div class="col-sm-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="text-muted small"><i class="fa-solid fa-chart-simple me-1"></i> Avg. order value</div>
+                    <div class="text-muted small" title="From served and completed orders"><i class="fa-solid fa-chart-simple me-1"></i> Avg. order value</div>
                     <div class="fs-3 fw-semibold kpi-value" id="kpi-aov">-</div>
                     <small class="text-muted" id="kpi-aov-delta">&nbsp;</small>
                 </div>
@@ -55,7 +55,7 @@
     <div class="row g-3 mb-3">
         <div class="col-lg-8">
             <div class="card h-100">
-                <div class="card-header">Revenue, last 7 days (RM)</div>
+                <div class="card-header">Revenue from served orders, last 7 days (RM)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-revenue" role="img" aria-label="Line chart of daily revenue over the last 7 days"></canvas></div>
                 </div>
@@ -79,7 +79,7 @@
         </div>
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header">Top menu items (units sold, last 7 days)</div>
+                <div class="card-header">Top menu items (units served, last 7 days)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-items" role="img" aria-label="Bar chart of top selling menu items in the last 7 days"></canvas></div>
                 </div>

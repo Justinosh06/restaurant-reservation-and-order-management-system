@@ -23,12 +23,14 @@ public class IndexModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly IWebHostEnvironment _env;
     private readonly RestaurantClock _clock;
+    private readonly ILogger<IndexModel> _logger;
 
-    public IndexModel(ApplicationDbContext db, IWebHostEnvironment env, RestaurantClock clock)
+    public IndexModel(ApplicationDbContext db, IWebHostEnvironment env, RestaurantClock clock, ILogger<IndexModel> logger)
     {
         _db = db;
         _env = env;
         _clock = clock;
+        _logger = logger;
     }
 
     public record PromotionIdRequest(string Id);
@@ -167,9 +169,13 @@ public class IndexModel : PageModel
         }
 
         var path = Path.Combine(_env.WebRootPath, UploadFolder, Path.GetFileName(imageUrl));
-        if (System.IO.File.Exists(path))
+        try
         {
             System.IO.File.Delete(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Could not delete promotion image {Path}", path);
         }
     }
 

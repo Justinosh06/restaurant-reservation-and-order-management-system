@@ -59,18 +59,15 @@
     const dayLabel = (isoDate) => new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-MY", { weekday: "short" });
 
     const render = (data) => {
-        const aovToday = data.ordersToday ? Math.round(data.revenueToday / data.ordersToday) : 0;
-        const aovYesterday = data.ordersYesterday ? Math.round(data.revenueYesterday / data.ordersYesterday) : 0;
-
         document.getElementById("kpi-revenue").textContent = AdminUI.formatCurrency(data.revenueToday);
         document.getElementById("kpi-orders").textContent = data.ordersToday;
         document.getElementById("kpi-reservations").textContent = data.reservationsToday;
-        document.getElementById("kpi-aov").textContent = AdminUI.formatCurrency(aovToday);
+        document.getElementById("kpi-aov").textContent = AdminUI.formatCurrency(data.averageOrderValueToday);
 
         setDelta("kpi-revenue-delta", data.revenueToday, data.revenueYesterday, AdminUI.formatCurrency);
         setDelta("kpi-orders-delta", data.ordersToday, data.ordersYesterday, String);
         setDelta("kpi-reservations-delta", data.reservationsToday, data.reservationsYesterday, String);
-        setDelta("kpi-aov-delta", aovToday, aovYesterday, AdminUI.formatCurrency);
+        setDelta("kpi-aov-delta", data.averageOrderValueToday, data.averageOrderValueYesterday, AdminUI.formatCurrency);
 
         charts.push(new Chart(document.getElementById("chart-revenue"), {
             type: "line",

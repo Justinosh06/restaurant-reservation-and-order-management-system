@@ -12,6 +12,8 @@ public class IndexModel : PageModel
     private const int DefaultFirstHour = 10;
     private const int DefaultLastHour = 22;
 
+    private static readonly OrderStatus[] RevenueStatuses = [OrderStatus.Served, OrderStatus.Completed];
+
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
 
@@ -45,6 +47,12 @@ public class IndexModel : PageModel
 
         var ordersToday = orders.Where(o => o.Day == today).ToList();
         var ordersYesterday = orders.Where(o => o.Day == yesterday).ToList();
+        var servedOrders = orders.Where(o => RevenueStatuses.Contains(o.Status)).ToList();
+        var servedToday = servedOrders.Where(o => o.Day == today).ToList();
+        var servedYesterday = servedOrders.Where(o => o.Day == yesterday).ToList();
+        var revenueByDay = servedOrders
+            .GroupBy(o => o.Day)
+            .ToDictionary(g => g.Key, g => g.Sum(o => o.TotalAmount));
 
         var reservationsToday = await CountReservationsAsync(today);
         var reservationsYesterday = await CountReservationsAsync(yesterday);
@@ -54,14 +62,14 @@ public class IndexModel : PageModel
             .Select(day => new
             {
                 date = day.ToString("yyyy-MM-dd"),
-                amount = orders.Where(o => o.Day == day).Sum(o => o.TotalAmount)
+                amount = revenueByDay.GetValueOrDefault(day)
             });
 
         var ordersByStatus = new[]
         {
             new { status = "Pending", count = ordersToday.Count(o => o.Status == OrderStatus.InQueue) },
             new { status = "Preparing", count = ordersToday.Count(o => o.Status == OrderStatus.Preparing) },
-            new { status = "Served", count = ordersToday.Count(o => o.Status is OrderStatus.Served or OrderStatus.Completed) }
+            new { status = "Served", count = servedToday.Count }
         };
 
         var (firstHour, lastHour) = await GetOpeningHoursAsync(today.DayOfWeek);
@@ -74,7 +82,7 @@ public class IndexModel : PageModel
             .Select(hour => new { hour, count = ordersToday.Count(o => o.Hour == hour) });
 
         var topItems = await _db.OrderItems.AsNoTracking()
-            .Where(oi => oi.Order!.CreatedAt >= weekStartUtc && oi.Order.Status != OrderStatus.Cancelled)
+            .Where(oi => oi.Order!.CreatedAt >= weekStartUtc && RevenueStatuses.Contains(oi.Order.Status))
             .GroupBy(oi => oi.MenuItem!.Name)
             .Select(g => new { name = g.Key, units = g.Sum(oi => oi.Quantity) })
             .OrderByDescending(x => x.units)
@@ -95,10 +103,15 @@ public class IndexModel : PageModel
                 status = AdminDisplay.OrderStatus(o.Status)
             });
 
+        var revenueToday = servedToday.Sum(o => o.TotalAmount);
+        var revenueYesterday = servedYesterday.Sum(o => o.TotalAmount);
+
         return new JsonResult(new
         {
-            revenueToday = ordersToday.Sum(o => o.TotalAmount),
-            revenueYesterday = ordersYesterday.Sum(o => o.TotalAmount),
+            revenueToday,
+            revenueYesterday,
+            averageOrderValueToday = AverageAmount(revenueToday, servedToday.Count),
+            averageOrderValueYesterday = AverageAmount(revenueYesterday, servedYesterday.Count),
             ordersToday = ordersToday.Count,
             ordersYesterday = ordersYesterday.Count,
             reservationsToday,
@@ -110,6 +123,9 @@ public class IndexModel : PageModel
             recentOrders
         });
     }
+
+    private static int AverageAmount(int total, int count) =>
+        count == 0 ? 0 : (int)Math.Round((double)total / count, MidpointRounding.AwayFromZero);
 
     private Task<int> CountReservationsAsync(DateOnly date) =>
         _db.Reservations.CountAsync(r => r.Date == date && r.Status != ReservationStatus.Cancelled);
