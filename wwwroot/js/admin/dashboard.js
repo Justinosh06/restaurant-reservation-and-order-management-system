@@ -35,10 +35,8 @@ const dashboardData = {
 };
 
 (() => {
-    const css = getComputedStyle(document.documentElement);
-    const token = (name) => css.getPropertyValue(name).trim();
-    const series1 = token("--series-1");
-    const gridColor = token("--grid-line");
+    // Chart colour comes from --admin-chart-color in admin_pages.css.
+    const chartColor = getComputedStyle(document.documentElement).getPropertyValue("--admin-chart-color").trim();
 
     document.getElementById("dashboard-date").textContent =
         new Date().toLocaleDateString("en-MY", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -49,98 +47,42 @@ const dashboardData = {
     document.getElementById("kpi-aov").textContent =
         AdminUI.formatCurrency(Math.round(dashboardData.revenueToday / dashboardData.ordersToday));
 
-    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
-    Chart.defaults.color = token("--admin-text-secondary");
+    // Single-series charts, so the legend is hidden; card headers name each chart.
     Chart.defaults.maintainAspectRatio = false;
     Chart.defaults.plugins.legend.display = false;
-    Chart.defaults.plugins.tooltip.backgroundColor = "#0b0b0b";
-    Chart.defaults.plugins.tooltip.padding = 10;
-    Chart.defaults.plugins.tooltip.cornerRadius = 8;
-    Chart.defaults.plugins.tooltip.displayColors = false;
 
-    const valueAxis = (ticks = {}) => ({
-        beginAtZero: true,
-        grid: { color: gridColor, drawTicks: false },
-        border: { display: false },
-        ticks: { padding: 8, ...ticks }
+    const barChart = (canvasId, labels, values, label, horizontal = false) => new Chart(document.getElementById(canvasId), {
+        type: "bar",
+        data: { labels, datasets: [{ label, data: values, backgroundColor: chartColor, borderRadius: 4, maxBarThickness: 32 }] },
+        options: {
+            indexAxis: horizontal ? "y" : "x",
+            scales: { [horizontal ? "x" : "y"]: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
     });
-    const categoryAxis = { grid: { display: false }, border: { color: gridColor } };
-
-    const verticalBar = {
-        backgroundColor: series1,
-        hoverBackgroundColor: token("--status-preparing"),
-        borderRadius: { topLeft: 4, topRight: 4 },
-        borderSkipped: "start",
-        maxBarThickness: 28
-    };
-    const horizontalBar = { ...verticalBar, borderRadius: { topRight: 4, bottomRight: 4 } };
 
     new Chart(document.getElementById("chart-revenue"), {
         type: "line",
         data: {
             labels: dashboardData.revenueLast7Days.map(d => d.label),
             datasets: [{
-                label: "Revenue",
+                label: "Revenue (RM)",
                 data: dashboardData.revenueLast7Days.map(d => d.amount),
-                borderColor: series1,
-                backgroundColor: series1 + "1a",
-                fill: true,
+                borderColor: chartColor,
+                backgroundColor: chartColor,
                 borderWidth: 2,
-                tension: 0.3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: series1,
-                pointBorderColor: "#ffffff",
-                pointBorderWidth: 2
+                tension: 0.3
             }]
         },
         options: {
             interaction: { mode: "index", intersect: false },
-            scales: { x: categoryAxis, y: valueAxis({ callback: v => "RM " + v.toLocaleString() }) },
-            plugins: {
-                tooltip: { callbacks: { label: ctx => "RM " + ctx.parsed.y.toLocaleString("en-MY", { minimumFractionDigits: 2 }) } }
-            }
+            scales: { y: { beginAtZero: true } }
         }
     });
 
     const statusLabels = Object.keys(dashboardData.ordersByStatus);
-    new Chart(document.getElementById("chart-status"), {
-        type: "bar",
-        data: {
-            labels: statusLabels,
-            datasets: [{ label: "Orders", data: statusLabels.map(s => dashboardData.ordersByStatus[s]), ...horizontalBar, maxBarThickness: 32 }]
-        },
-        options: {
-            indexAxis: "y",
-            scales: { x: valueAxis({ precision: 0 }), y: categoryAxis },
-            plugins: { tooltip: { callbacks: { label: ctx => ctx.parsed.x + " orders" } } }
-        }
-    });
-
-    new Chart(document.getElementById("chart-hourly"), {
-        type: "bar",
-        data: {
-            labels: dashboardData.ordersByHour.map(d => d.hour),
-            datasets: [{ label: "Orders", data: dashboardData.ordersByHour.map(d => d.count), ...verticalBar }]
-        },
-        options: {
-            scales: { x: categoryAxis, y: valueAxis({ precision: 0 }) },
-            plugins: { tooltip: { callbacks: { label: ctx => ctx.parsed.y + " orders" } } }
-        }
-    });
-
-    new Chart(document.getElementById("chart-items"), {
-        type: "bar",
-        data: {
-            labels: dashboardData.topItems.map(d => d.name),
-            datasets: [{ label: "Units sold", data: dashboardData.topItems.map(d => d.units), ...horizontalBar, maxBarThickness: 24 }]
-        },
-        options: {
-            indexAxis: "y",
-            scales: { x: valueAxis({ precision: 0 }), y: categoryAxis },
-            plugins: { tooltip: { callbacks: { label: ctx => ctx.parsed.x + " units" } } }
-        }
-    });
+    barChart("chart-status", statusLabels, statusLabels.map(s => dashboardData.ordersByStatus[s]), "Orders", true);
+    barChart("chart-hourly", dashboardData.ordersByHour.map(d => d.hour), dashboardData.ordersByHour.map(d => d.count), "Orders");
+    barChart("chart-items", dashboardData.topItems.map(d => d.name), dashboardData.topItems.map(d => d.units), "Units sold", true);
 
     document.getElementById("recent-orders").innerHTML = dashboardData.recentOrders.map(o => `
         <tr>
@@ -148,6 +90,6 @@ const dashboardData = {
             <td>${AdminUI.escapeHtml(o.table)}</td>
             <td>${AdminUI.escapeHtml(o.time)}</td>
             <td>${AdminUI.formatCurrency(o.total)}</td>
-            <td><span class="status-pill ${o.status.toLowerCase()}">${AdminUI.escapeHtml(o.status)}</span></td>
+            <td>${AdminUI.statusBadge(o.status)}</td>
         </tr>`).join("");
 })();

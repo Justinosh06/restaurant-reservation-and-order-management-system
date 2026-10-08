@@ -4,54 +4,61 @@
 }
 
 <div class="admin-page">
-    <div class="admin-page-header">
-        <div>
-            <h2>Announcement</h2>
-            <p>Post notices for customers, with an icon that fits the situation</p>
-        </div>
+    <div class="mb-4">
+        <h2 class="mb-0">Announcement</h2>
+        <p class="text-muted mb-0">Post notices for customers, with an icon that fits the situation</p>
     </div>
 
-    <div class="admin-grid">
-        <form class="admin-card span-5" id="announcement-form" novalidate>
-            <div class="admin-card-title">New announcement</div>
-            <div class="admin-card-subtitle">Customers see active announcements on the main site</div>
+    <div class="row g-3">
+        <!-- Create form -->
+        <div class="col-lg-5">
+            <form class="card" id="announcement-form" novalidate>
+                <div class="card-header bg-white fw-semibold">New announcement</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="ann-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="ann-title" maxlength="100" required placeholder="e.g. Closed for Deepavali" />
+                        <div class="invalid-feedback">Title is required.</div>
+                    </div>
 
-            <div class="mb-3">
-                <label for="ann-title" class="form-label">Title</label>
-                <input type="text" class="form-control" id="ann-title" maxlength="100" required placeholder="e.g. Closed for Deepavali" />
-                <div class="invalid-feedback">Title is required.</div>
+                    <div class="mb-3">
+                        <label for="ann-description" class="form-label">Message</label>
+                        <textarea class="form-control" id="ann-description" rows="4" maxlength="1000" required placeholder="Write the announcement..."></textarea>
+                        <div class="invalid-feedback">Message is required.</div>
+                        <div class="form-text text-end" id="ann-char-count">0 / 1000</div>
+                    </div>
+
+                    <fieldset class="mb-3">
+                        <legend class="form-label fs-6">Icon</legend>
+                        <!-- Icon options rendered by announcements.js -->
+                        <div class="d-flex flex-wrap gap-2" id="icon-picker"></div>
+                    </fieldset>
+
+                    <div class="mb-3">
+                        <label for="ann-expires" class="form-label">Expires on <span class="text-muted">(optional)</span></label>
+                        <input type="date" class="form-control" id="ann-expires" />
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="ann-active" checked />
+                        <label class="form-check-label" for="ann-active">Publish immediately</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark w-100"><i class="fa-solid fa-paper-plane me-1"></i> Post announcement</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Existing announcements -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <span class="fw-semibold">All announcements</span>
+                    <small class="text-muted ms-2" id="ann-count"></small>
+                </div>
+                <ul class="list-group list-group-flush" id="announcement-list"></ul>
+                <p class="text-center text-muted py-4 mb-0 d-none" id="ann-empty">No announcements yet.</p>
             </div>
-
-            <div class="mb-3">
-                <label for="ann-description" class="form-label">Message</label>
-                <textarea class="form-control" id="ann-description" rows="4" maxlength="1000" required placeholder="Write the announcement..."></textarea>
-                <div class="invalid-feedback">Message is required.</div>
-                <small class="text-muted d-block text-end" id="ann-char-count">0 / 1000</small>
-            </div>
-
-            <fieldset class="mb-3">
-                <legend class="form-label">Icon</legend>
-                <div class="icon-picker" id="icon-picker"></div>
-            </fieldset>
-
-            <div class="mb-3">
-                <label for="ann-expires" class="form-label">Expires on <span class="text-muted fw-normal">(optional)</span></label>
-                <input type="date" class="form-control" id="ann-expires" />
-            </div>
-
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" role="switch" id="ann-active" checked />
-                <label class="form-check-label" for="ann-active">Publish immediately</label>
-            </div>
-
-            <button type="submit" class="btn btn-admin w-100"><i class="fa-solid fa-paper-plane me-1"></i> Post announcement</button>
-        </form>
-
-        <div class="admin-card span-7">
-            <div class="admin-card-title">All announcements</div>
-            <div class="admin-card-subtitle" id="ann-count"></div>
-            <div id="announcement-list"></div>
-            <div class="empty-state d-none" id="ann-empty">No announcements yet.</div>
         </div>
     </div>
 </div>

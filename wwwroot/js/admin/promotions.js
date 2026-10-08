@@ -39,9 +39,9 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
     const promoStatus = (p) => {
         const today = todayIso();
-        if (p.endDate < today) return { label: "Ended", css: "inactive" };
-        if (p.startDate > today) return { label: "Scheduled", css: "pending" };
-        return { label: "Active", css: "served" };
+        if (p.endDate < today) return "Ended";
+        if (p.startDate > today) return "Scheduled";
+        return "Active";
     };
 
     const render = () => {
@@ -51,21 +51,23 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
         listEl.innerHTML = promotions.map(p => {
             const status = promoStatus(p);
             const image = p.imageUrl
-                ? `<img src="${p.imageUrl}" alt="${AdminUI.escapeHtml(p.title)}" />`
-                : `<i class="fa-regular fa-image" aria-hidden="true"></i>`;
+                ? `<img src="${p.imageUrl}" class="card-img-top promo-image" alt="${AdminUI.escapeHtml(p.title)}" />`
+                : `<div class="card-img-top promo-image bg-light d-flex align-items-center justify-content-center text-muted"><i class="fa-regular fa-image fs-2" aria-hidden="true"></i></div>`;
 
             return `
-                <div class="promo-card">
-                    <div class="promo-image">${image}</div>
-                    <div class="promo-body">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <h6>${AdminUI.escapeHtml(p.title)}</h6>
-                            <span class="status-pill ${status.css}">${status.label}</span>
+                <div class="col">
+                    <div class="card h-100">
+                        ${image}
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <h6 class="card-title mb-1">${AdminUI.escapeHtml(p.title)}</h6>
+                                ${AdminUI.statusBadge(status)}
+                            </div>
+                            <p class="card-text text-muted small">${AdminUI.escapeHtml(p.description)}</p>
                         </div>
-                        <p>${AdminUI.escapeHtml(p.description)}</p>
-                        <div class="promo-footer">
+                        <div class="card-footer bg-white d-flex justify-content-between align-items-center small text-muted">
                             <span><i class="fa-regular fa-calendar me-1"></i>${AdminUI.formatDate(p.startDate)} - ${AdminUI.formatDate(p.endDate)}</span>
-                            <button type="button" class="btn-icon danger" data-delete="${p.id}" aria-label="Delete ${AdminUI.escapeHtml(p.title)}"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-delete="${p.id}" aria-label="Delete ${AdminUI.escapeHtml(p.title)}"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 </div>`;
@@ -94,7 +96,7 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
         const reader = new FileReader();
         reader.onload = () => {
             imageDataUrl = reader.result;
-            dropEl.innerHTML = `<img src="${imageDataUrl}" alt="Selected promotion image preview" />`;
+            dropEl.innerHTML = `<img src="${imageDataUrl}" class="w-100 h-100 object-fit-cover" alt="Selected promotion image preview" />`;
             removeImageBtn.classList.remove("d-none");
         };
         reader.readAsDataURL(file);
@@ -109,11 +111,11 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
     ["dragenter", "dragover"].forEach(evt => dropEl.addEventListener(evt, (e) => {
         e.preventDefault();
-        dropEl.classList.add("dragover");
+        dropEl.classList.add("border-dark");
     }));
     ["dragleave", "drop"].forEach(evt => dropEl.addEventListener(evt, (e) => {
         e.preventDefault();
-        dropEl.classList.remove("dragover");
+        dropEl.classList.remove("border-dark");
     }));
     dropEl.addEventListener("drop", (e) => loadImage(e.dataTransfer.files[0]));
 

@@ -1,30 +1,6 @@
-/* KPI tiles */
-.stat-tile {
-    .stat-label {
-        font-size: 0.85rem;
-        color: var(--admin-text-secondary);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+/* Dashboard page styles. Layout uses Bootstrap cards and grid; add custom styles below. */
 
-    .stat-value {
-        font-size: 1.9rem;
-        font-weight: 600;
-        letter-spacing: -1px;
-        margin: 6px 0 2px;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .stat-delta {
-        font-size: 0.8rem;
-        color: var(--admin-text-muted);
-
-        .up { color: var(--status-served); font-weight: 500; }
-        .down { color: var(--status-danger); font-weight: 500; }
-    }
-}
-
+/* Chart.js needs a sized container. Change the height to make charts taller or shorter. */
 .chart-box {
     position: relative;
     height: 260px;

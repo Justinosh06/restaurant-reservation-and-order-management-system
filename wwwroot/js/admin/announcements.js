@@ -39,9 +39,10 @@ const announcements = [
     const listEl = document.getElementById("announcement-list");
     const emptyEl = document.getElementById("ann-empty");
 
+    // Bootstrap "btn-check" radio buttons, one per icon.
     document.getElementById("icon-picker").innerHTML = ANNOUNCEMENT_ICONS.map((icon, i) => `
-        <input type="radio" name="ann-icon" id="ann-icon-${i}" value="${icon.value}" ${i === 0 ? "checked" : ""} />
-        <label for="ann-icon-${i}"><i class="${icon.value}"></i>${icon.label}</label>`).join("");
+        <input type="radio" class="btn-check" name="ann-icon" id="ann-icon-${i}" value="${icon.value}" ${i === 0 ? "checked" : ""} />
+        <label class="btn btn-outline-dark btn-sm" for="ann-icon-${i}"><i class="${icon.value} me-1"></i>${icon.label}</label>`).join("");
 
     const render = () => {
         const activeCount = announcements.filter(a => a.isActive).length;
@@ -49,25 +50,25 @@ const announcements = [
         emptyEl.classList.toggle("d-none", announcements.length > 0);
 
         listEl.innerHTML = announcements.map(a => `
-            <div class="announcement-item">
-                <div class="announcement-icon"><i class="${AdminUI.escapeHtml(a.icon)}"></i></div>
-                <div class="announcement-body">
+            <li class="list-group-item d-flex gap-3 py-3">
+                <i class="${AdminUI.escapeHtml(a.icon)} fs-4 text-secondary announcement-icon" aria-hidden="true"></i>
+                <div class="flex-grow-1">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <h6 class="mb-0">${AdminUI.escapeHtml(a.title)}</h6>
-                        <span class="status-pill ${a.isActive ? "served" : "inactive"}">${a.isActive ? "Active" : "Hidden"}</span>
+                        ${AdminUI.statusBadge(a.isActive ? "Active" : "Hidden")}
                     </div>
-                    <p class="mt-1">${AdminUI.escapeHtml(a.description)}</p>
-                    <small>Posted ${AdminUI.formatDate(a.createdAt)}${a.expiresAt ? ` &middot; Expires ${AdminUI.formatDate(a.expiresAt)}` : ""}</small>
+                    <p class="mb-1 text-muted announcement-text">${AdminUI.escapeHtml(a.description)}</p>
+                    <small class="text-muted">Posted ${AdminUI.formatDate(a.createdAt)}${a.expiresAt ? ` &middot; Expires ${AdminUI.formatDate(a.expiresAt)}` : ""}</small>
                 </div>
                 <div class="d-flex flex-column gap-1">
-                    <button type="button" class="btn-icon" data-toggle="${a.id}" aria-label="${a.isActive ? "Hide" : "Publish"} ${AdminUI.escapeHtml(a.title)}" title="${a.isActive ? "Hide" : "Publish"}">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="${a.id}" title="${a.isActive ? "Hide" : "Publish"}" aria-label="${a.isActive ? "Hide" : "Publish"} ${AdminUI.escapeHtml(a.title)}">
                         <i class="fa-regular ${a.isActive ? "fa-eye-slash" : "fa-eye"}"></i>
                     </button>
-                    <button type="button" class="btn-icon danger" data-delete="${a.id}" aria-label="Delete ${AdminUI.escapeHtml(a.title)}" title="Delete">
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-delete="${a.id}" title="Delete" aria-label="Delete ${AdminUI.escapeHtml(a.title)}">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
-            </div>`).join("");
+            </li>`).join("");
     };
 
     descInput.addEventListener("input", () => {

@@ -29,16 +29,17 @@ const orders = [
         ORDER_STATUSES.forEach(s => counts[s] = orders.filter(o => o.status === s).length);
 
         filterEl.innerHTML = ["All", ...ORDER_STATUSES].map(s => `
-            <button type="button" role="tab" class="chip ${s === activeFilter ? "active" : ""}" data-filter="${s}" aria-selected="${s === activeFilter}">
-                ${s}<span class="chip-count">${counts[s]}</span>
+            <button type="button" class="btn ${s === activeFilter ? "btn-dark" : "btn-outline-dark"}" data-filter="${s}" aria-pressed="${s === activeFilter}">
+                ${s} <span class="badge text-bg-light">${counts[s]}</span>
             </button>`).join("");
     };
 
+    // Bootstrap progress bar: Pending = 1/3, Preparing = 2/3, Served = full.
     const renderProgress = (status) => {
-        const reached = ORDER_STATUSES.indexOf(status);
-        return `<div class="order-progress" title="${status}">` +
-            ORDER_STATUSES.map((_, i) => `<span class="step ${i <= reached ? "done" : ""}"></span>`).join("") +
-            `</div>`;
+        const percent = Math.round((ORDER_STATUSES.indexOf(status) + 1) / ORDER_STATUSES.length * 100);
+        return `<div class="progress order-progress" role="progressbar" aria-label="${status}" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar bg-dark" style="width: ${percent}%"></div>
+                </div>`;
     };
 
     const renderOrders = () => {
@@ -52,7 +53,7 @@ const orders = [
         bodyEl.innerHTML = visible.map(o => {
             const next = NEXT_ACTION[o.status];
             const action = next
-                ? `<button type="button" class="btn btn-sm btn-admin" data-advance="${o.id}"><i class="${next.icon} me-1"></i>${next.label}</button>`
+                ? `<button type="button" class="btn btn-sm btn-dark" data-advance="${o.id}"><i class="${next.icon} me-1"></i>${next.label}</button>`
                 : `<span class="text-muted small"><i class="fa-solid fa-check me-1"></i>Done</span>`;
 
             return `
@@ -64,7 +65,7 @@ const orders = [
                     <td>${AdminUI.escapeHtml(o.time)}</td>
                     <td class="text-nowrap">${AdminUI.formatCurrency(o.total)}</td>
                     <td>${renderProgress(o.status)}</td>
-                    <td><span class="status-pill ${o.status.toLowerCase()}">${o.status}</span></td>
+                    <td>${AdminUI.statusBadge(o.status)}</td>
                     <td class="text-end text-nowrap">${action}</td>
                 </tr>`;
         }).join("");

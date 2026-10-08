@@ -5,57 +5,72 @@
 
 <div class="admin-page">
     <form id="settings-form" novalidate>
-        <div class="admin-page-header">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-4">
             <div>
-                <h2>Restaurant Settings</h2>
-                <p>Adjust operating hours and basic restaurant details</p>
+                <h2 class="mb-0">Restaurant Settings</h2>
+                <p class="text-muted mb-0">Adjust operating hours and basic restaurant details</p>
             </div>
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-admin-light" id="reset-settings">Discard changes</button>
-                <button type="submit" class="btn btn-admin"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
+                <button type="button" class="btn btn-outline-secondary" id="reset-settings">Discard changes</button>
+                <button type="submit" class="btn btn-dark"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
             </div>
         </div>
 
-        <div class="admin-grid">
-            <div class="admin-card span-7">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                    <div>
-                        <div class="admin-card-title">Operating hours</div>
-                        <div class="admin-card-subtitle">Customers can only reserve within these hours</div>
+        <div class="row g-3">
+            <!-- Operating hours -->
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span class="fw-semibold">Operating hours</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="copy-monday">
+                            <i class="fa-regular fa-copy me-1"></i> Apply Monday to all days
+                        </button>
                     </div>
-                    <button type="button" class="btn btn-sm btn-admin-light" id="copy-monday">
-                        <i class="fa-regular fa-copy me-1"></i> Apply Monday to all days
-                    </button>
+                    <div class="card-body">
+                        <div class="row g-2 small text-muted fw-semibold d-none d-sm-flex mb-1">
+                            <div class="col-sm-3">Day</div>
+                            <div class="col-sm-3">Opens</div>
+                            <div class="col-sm-3">Closes</div>
+                            <div class="col-sm-3">Open?</div>
+                        </div>
+                        <!-- One row per day, rendered by settings.js -->
+                        <div id="hours-list"></div>
+                        <small class="text-danger d-block mt-2" id="hours-error"></small>
+                    </div>
                 </div>
-                <div id="hours-list"></div>
-                <small class="text-danger d-block mt-2" id="hours-error"></small>
             </div>
 
-            <div class="admin-card span-5 align-self-start">
-                <div class="admin-card-title">Restaurant details</div>
-                <div class="admin-card-subtitle" id="settings-updated"></div>
-
-                <div class="mb-3">
-                    <label for="set-name" class="form-label">Restaurant name</label>
-                    <input type="text" class="form-control" id="set-name" maxlength="100" required />
-                    <div class="invalid-feedback">Name is required.</div>
-                </div>
-                <div class="mb-3">
-                    <label for="set-address" class="form-label">Address</label>
-                    <textarea class="form-control" id="set-address" rows="2" maxlength="250" required></textarea>
-                    <div class="invalid-feedback">Address is required.</div>
-                </div>
-                <div class="mb-3">
-                    <label for="set-phone" class="form-label">Phone number <span class="text-muted fw-normal">(optional)</span></label>
-                    <input type="tel" class="form-control" id="set-phone" maxlength="20" />
-                </div>
-                <div class="mb-1">
-                    <label for="set-currency" class="form-label">Default currency</label>
-                    <select class="form-select" id="set-currency">
-                        <option value="MYR">RM (MYR)</option>
-                        <option value="USD">$ (USD)</option>
-                        <option value="EUR">&euro; (EUR)</option>
-                    </select>
+            <!-- Restaurant details -->
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <span class="fw-semibold">Restaurant details</span>
+                        <small class="text-muted d-block" id="settings-updated"></small>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="set-name" class="form-label">Restaurant name</label>
+                            <input type="text" class="form-control" id="set-name" maxlength="100" required />
+                            <div class="invalid-feedback">Name is required.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="set-address" class="form-label">Address</label>
+                            <textarea class="form-control" id="set-address" rows="2" maxlength="250" required></textarea>
+                            <div class="invalid-feedback">Address is required.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="set-phone" class="form-label">Phone number <span class="text-muted">(optional)</span></label>
+                            <input type="tel" class="form-control" id="set-phone" maxlength="20" />
+                        </div>
+                        <div>
+                            <label for="set-currency" class="form-label">Default currency</label>
+                            <select class="form-select" id="set-currency">
+                                <option value="MYR">RM (MYR)</option>
+                                <option value="USD">$ (USD)</option>
+                                <option value="EUR">&euro; (EUR)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

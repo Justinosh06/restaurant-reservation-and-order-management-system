@@ -34,13 +34,19 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 
     const renderHours = () => {
         hoursList.innerHTML = hours.map((h, i) => `
-            <div class="hours-row ${h.isClosed ? "closed" : ""}">
-                <span class="day-name">${DAY_NAMES[h.dayOfWeek]}</span>
-                <input type="time" class="form-control" data-index="${i}" data-field="openTime" value="${h.openTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${DAY_NAMES[h.dayOfWeek]} opening time" />
-                <input type="time" class="form-control" data-index="${i}" data-field="closeTime" value="${h.closeTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${DAY_NAMES[h.dayOfWeek]} closing time" />
-                <div class="form-check form-switch mb-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="open-${i}" data-index="${i}" data-field="isOpen" ${h.isClosed ? "" : "checked"} />
-                    <label class="form-check-label small" for="open-${i}">${h.isClosed ? "Closed" : "Open"}</label>
+            <div class="row g-2 align-items-center py-2 border-bottom">
+                <div class="col-12 col-sm-3 fw-medium">${DAY_NAMES[h.dayOfWeek]}</div>
+                <div class="col-5 col-sm-3">
+                    <input type="time" class="form-control form-control-sm" data-index="${i}" data-field="openTime" value="${h.openTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${DAY_NAMES[h.dayOfWeek]} opening time" />
+                </div>
+                <div class="col-5 col-sm-3">
+                    <input type="time" class="form-control form-control-sm" data-index="${i}" data-field="closeTime" value="${h.closeTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${DAY_NAMES[h.dayOfWeek]} closing time" />
+                </div>
+                <div class="col-2 col-sm-3">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="open-${i}" data-index="${i}" data-field="isOpen" ${h.isClosed ? "" : "checked"} />
+                        <label class="form-check-label small d-none d-sm-inline" for="open-${i}">${h.isClosed ? "Closed" : "Open"}</label>
+                    </div>
                 </div>
             </div>`).join("");
     };

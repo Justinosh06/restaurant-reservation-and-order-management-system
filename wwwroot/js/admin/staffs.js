@@ -32,10 +32,10 @@ const staffs = [
             <tr>
                 <td class="fw-medium">${AdminUI.escapeHtml(s.id)}</td>
                 <td>${AdminUI.escapeHtml(s.email)}</td>
-                <td><span class="status-pill ${s.role === "Administrator" ? "preparing" : "inactive"}">${AdminUI.escapeHtml(s.role)}</span></td>
+                <td>${AdminUI.statusBadge(s.role)}</td>
                 <td class="text-end text-nowrap">
-                    <button type="button" class="btn-icon" data-edit="${s.id}" aria-label="Edit ${AdminUI.escapeHtml(s.email)}"><i class="fa-solid fa-pen"></i></button>
-                    <button type="button" class="btn-icon danger" data-delete="${s.id}" aria-label="Delete ${AdminUI.escapeHtml(s.email)}"><i class="fa-solid fa-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-edit="${s.id}" aria-label="Edit ${AdminUI.escapeHtml(s.email)}"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-delete="${s.id}" aria-label="Delete ${AdminUI.escapeHtml(s.email)}"><i class="fa-solid fa-trash"></i></button>
                 </td>
             </tr>`).join("");
     };

@@ -1,50 +1,7 @@
-#order-search {
-    max-width: 260px;
-}
+/* Orders page styles. Layout uses Bootstrap tables, badges and progress bars; add custom styles below. */
 
-/* Filter chips */
-.chip-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.chip {
-    border: 1px solid var(--admin-border);
-    background: var(--admin-surface);
-    color: var(--admin-text-secondary);
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-size: 0.875rem;
-    font-weight: 500;
-
-    .chip-count {
-        margin-left: 4px;
-        color: var(--admin-text-muted);
-        font-variant-numeric: tabular-nums;
-    }
-
-    &.active {
-        background: var(--admin-accent);
-        border-color: var(--admin-accent);
-        color: white;
-
-        .chip-count { color: #bbb; }
-    }
-}
-
-/* Order progress stepper */
+/* Width of the progress bar in the Progress column. */
 .order-progress {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-
-    .step {
-        width: 28px;
-        height: 6px;
-        border-radius: 3px;
-        background: var(--admin-border);
-
-        &.done { background: var(--admin-accent); }
-    }
+    width: 90px;
+    height: 8px;
 }

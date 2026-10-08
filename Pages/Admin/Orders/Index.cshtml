@@ -4,20 +4,21 @@
 }
 
 <div class="admin-page">
-    <div class="admin-page-header">
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-4">
         <div>
-            <h2>Orders</h2>
-            <p>Track each order from Pending to Served</p>
+            <h2 class="mb-0">Orders</h2>
+            <p class="text-muted mb-0">Track each order from Pending to Served</p>
         </div>
-        <input type="search" id="order-search" class="form-control" placeholder="Search order, table or customer" aria-label="Search orders" />
+        <input type="search" id="order-search" class="form-control w-auto" placeholder="Search order, table or customer" aria-label="Search orders" />
     </div>
 
-    <div class="chip-group mb-3" id="status-filter" role="tablist" aria-label="Filter orders by status"></div>
+    <!-- Status filter (buttons rendered by orders.js) -->
+    <div class="btn-group mb-3" id="status-filter" role="group" aria-label="Filter orders by status"></div>
 
-    <div class="admin-card">
-        <div class="table-scroll">
-            <table class="admin-table">
-                <thead>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
                     <tr>
                         <th>Order</th>
                         <th>Table</th>
@@ -33,7 +34,7 @@
                 <tbody id="orders-body"></tbody>
             </table>
         </div>
-        <div class="empty-state d-none" id="orders-empty">No orders match this filter.</div>
+        <p class="text-center text-muted py-4 mb-0 d-none" id="orders-empty">No orders match this filter.</p>
     </div>
 </div>
 
