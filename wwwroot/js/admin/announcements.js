@@ -61,10 +61,10 @@ const announcements = [
                     <small class="text-muted">Posted ${AdminUI.formatDate(a.createdAt)}${a.expiresAt ? ` &middot; Expires ${AdminUI.formatDate(a.expiresAt)}` : ""}</small>
                 </div>
                 <div class="d-flex flex-column gap-1">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="${a.id}" title="${a.isActive ? "Hide" : "Publish"}" aria-label="${a.isActive ? "Hide" : "Publish"} ${AdminUI.escapeHtml(a.title)}">
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" data-toggle="${a.id}" title="${a.isActive ? "Hide" : "Publish"}" aria-label="${a.isActive ? "Hide" : "Publish"} ${AdminUI.escapeHtml(a.title)}">
                         <i class="fa-regular ${a.isActive ? "fa-eye-slash" : "fa-eye"}"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-delete="${a.id}" title="Delete" aria-label="Delete ${AdminUI.escapeHtml(a.title)}">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" data-delete="${a.id}" title="Delete" aria-label="Delete ${AdminUI.escapeHtml(a.title)}">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>

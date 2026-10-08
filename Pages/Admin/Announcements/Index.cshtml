@@ -4,16 +4,18 @@
 }
 
 <div class="admin-page">
-    <div class="mb-4">
-        <h2 class="mb-0">Announcement</h2>
-        <p class="text-muted mb-0">Post notices for customers, with an icon that fits the situation</p>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Announcement</h1>
+            <p class="page-subtitle">Post notices for customers, with an icon that fits the situation</p>
+        </div>
     </div>
 
     <div class="row g-3">
         <!-- Create form -->
         <div class="col-lg-5">
             <form class="card" id="announcement-form" novalidate>
-                <div class="card-header fw-semibold">New announcement</div>
+                <div class="card-header">New announcement</div>
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="ann-title" class="form-label">Title</label>
@@ -53,8 +55,8 @@
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header">
-                    <span class="fw-semibold">All announcements</span>
-                    <small class="text-muted ms-2" id="ann-count"></small>
+                    <span>All announcements</span>
+                    <small class="text-muted fw-normal" id="ann-count"></small>
                 </div>
                 <ul class="list-group list-group-flush" id="announcement-list"></ul>
                 <p class="text-center text-muted py-4 mb-0 d-none" id="ann-empty">No announcements yet.</p>

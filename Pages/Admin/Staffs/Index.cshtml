@@ -4,31 +4,37 @@
 }
 
 <div class="admin-page">
-    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-4">
+    <div class="page-header">
         <div>
-            <h2 class="mb-0">Staffs</h2>
-            <p class="text-muted mb-0">Create and manage staff accounts. Staff can sign in right away, so they don't need to register.</p>
+            <h1 class="page-title">Staffs</h1>
+            <p class="page-subtitle">Create and manage staff accounts. Staff can sign in right away, so they don't need to register.</p>
         </div>
         <button type="button" class="btn btn-dark" id="btn-add-staff"><i class="fa-solid fa-plus me-1"></i> Add staff</button>
     </div>
 
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="card-header justify-content-between">
             <div>
-                <span class="fw-semibold">Staff accounts</span>
-                <small class="text-muted ms-2" id="staff-count"></small>
+                <span>Staff accounts</span>
+                <small class="text-muted fw-normal" id="staff-count"></small>
             </div>
-            <input type="search" id="staff-search" class="form-control form-control-sm w-auto" placeholder="Search by email" aria-label="Search staff" />
+            <input type="search" id="staff-search" class="form-control form-control-sm page-search" placeholder="Search by email" aria-label="Search staff" />
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover table-fixed align-middle mb-0" style="--table-min-width: 560px">
+                <colgroup>
+                    <col style="width: 140px" />  @* Staff ID *@
+                    <col />                       @* Email *@
+                    <col style="width: 160px" />  @* Role *@
+                    <col style="width: 110px" />  @* Actions *@
+                </colgroup>
                 <thead>
                     <tr><th>Staff ID</th><th>Email</th><th>Role</th><th class="text-end">Actions</th></tr>
                 </thead>
                 <tbody id="staff-body"></tbody>
             </table>
         </div>
-        <p class="text-center text-muted py-4 mb-0 d-none" id="staff-empty">No staff accounts found.</p>
+        <p class="text-center text-muted py-4 mb-0 d-none" id="staff-empty">No staff accounts match this search.</p>
     </div>
 </div>
 

@@ -5,3 +5,9 @@
     width: 90px;
     height: 8px;
 }
+
+/* On narrow screens the status filter scrolls sideways instead of overflowing the page. */
+#status-filter {
+    max-width: 100%;
+    overflow-x: auto;
+}

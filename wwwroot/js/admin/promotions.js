@@ -67,7 +67,7 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
                         </div>
                         <div class="card-footer d-flex justify-content-between align-items-center small text-muted">
                             <span><i class="fa-regular fa-calendar me-1"></i>${AdminUI.formatDate(p.startDate)} - ${AdminUI.formatDate(p.endDate)}</span>
-                            <button type="button" class="btn btn-sm btn-outline-danger" data-delete="${p.id}" aria-label="Delete ${AdminUI.escapeHtml(p.title)}"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon" data-delete="${p.id}" aria-label="Delete ${AdminUI.escapeHtml(p.title)}"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 </div>`;

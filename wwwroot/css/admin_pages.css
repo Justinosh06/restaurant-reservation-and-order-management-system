@@ -4,9 +4,14 @@
  * project-wide tweaks. Page-specific styles live in wwwroot/css/admin/<page>.css.
  */
 
+/* ---------- Theme values (change these to restyle every admin page) ---------- */
+
 :root,
 [data-bs-theme="light"] {
-    /* Chart colour used by dashboard.js - change it here to restyle the charts. */
+    /* One font family for the whole admin UI (loaded in _AdminLayout.cshtml). */
+    --bs-body-font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* Chart colour used by dashboard.js. */
     --admin-chart-color: #2a78d6;
 }
 
@@ -14,8 +19,100 @@
     --admin-chart-color: #3987e5;
 }
 
+/* ---------- Page structure ---------- */
+
 .admin-page {
     padding: 0 24px 32px;
+}
+
+/* Title + subtitle on the left, page actions on the right. */
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+    color: var(--bs-secondary-color);
+    margin-bottom: 0;
+}
+
+/* Fixed-width search box so the header doesn't resize with the placeholder. */
+.page-search {
+    width: 18rem;
+    max-width: 100%;
+}
+
+/* Every card header has the same height, whether it holds text or a button. */
+.card-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 3.25rem;
+    font-weight: 600;
+}
+
+/* ---------- Tables ---------- */
+
+/*
+ * Fixed layout: column widths come from <colgroup>, not from the rows currently shown,
+ * so filtering, searching or changing a status never makes the columns jump.
+ * On small screens the table scrolls sideways (inside .table-responsive) instead of squashing.
+ */
+.table-fixed {
+    table-layout: fixed;
+    min-width: var(--table-min-width, 640px);
+}
+
+.table {
+    font-variant-numeric: tabular-nums;
+
+    th {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+    }
+}
+
+/* ---------- Buttons ---------- */
+
+/* Square icon-only button; stays the same size when its icon changes. */
+.btn-icon {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Numbers that update (KPIs, counts) keep a steady width. */
+.badge,
+.kpi-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Browser details ---------- */
+
+::selection {
+    background-color: color-mix(in srgb, var(--admin-chart-color) 30%, transparent);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--admin-chart-color);
 }
 
 /*

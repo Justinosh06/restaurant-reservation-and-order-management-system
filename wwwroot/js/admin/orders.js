@@ -53,20 +53,20 @@ const orders = [
         bodyEl.innerHTML = visible.map(o => {
             const next = NEXT_ACTION[o.status];
             const action = next
-                ? `<button type="button" class="btn btn-sm btn-dark" data-advance="${o.id}"><i class="${next.icon} me-1"></i>${next.label}</button>`
-                : `<span class="text-muted small"><i class="fa-solid fa-check me-1"></i>Done</span>`;
+                ? `<button type="button" class="btn btn-sm btn-dark w-100" data-advance="${o.id}"><i class="${next.icon} me-1"></i>${next.label}</button>`
+                : `<span class="d-block text-center text-muted small"><i class="fa-solid fa-check me-1"></i>Done</span>`;
 
             return `
                 <tr>
-                    <td class="fw-medium">${AdminUI.escapeHtml(o.id)}</td>
+                    <td class="fw-medium text-truncate">${AdminUI.escapeHtml(o.id)}</td>
                     <td>${AdminUI.escapeHtml(o.table)}</td>
-                    <td>${AdminUI.escapeHtml(o.customer)}</td>
+                    <td class="text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</td>
                     <td class="small text-muted">${o.items.map(AdminUI.escapeHtml).join("<br>")}</td>
                     <td>${AdminUI.escapeHtml(o.time)}</td>
                     <td class="text-nowrap">${AdminUI.formatCurrency(o.total)}</td>
                     <td>${renderProgress(o.status)}</td>
                     <td>${AdminUI.statusBadge(o.status)}</td>
-                    <td class="text-end text-nowrap">${action}</td>
+                    <td>${action}</td>
                 </tr>`;
         }).join("");
     };

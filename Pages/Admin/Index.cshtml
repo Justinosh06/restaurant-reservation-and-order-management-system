@@ -4,10 +4,10 @@
 }
 
 <div class="admin-page">
-    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-4">
+    <div class="page-header">
         <div>
-            <h2 class="mb-0">Dashboard</h2>
-            <p class="text-muted mb-0">Overview of today's restaurant activity</p>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Overview of today's restaurant activity</p>
         </div>
         <small class="text-muted" id="dashboard-date"></small>
     </div>
@@ -18,7 +18,7 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small"><i class="fa-solid fa-coins me-1"></i> Revenue today</div>
-                    <div class="fs-3 fw-semibold" id="kpi-revenue">-</div>
+                    <div class="fs-3 fw-semibold kpi-value" id="kpi-revenue">-</div>
                     <small class="text-success">+12.4% vs yesterday</small>
                 </div>
             </div>
@@ -27,7 +27,7 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small"><i class="fa-solid fa-receipt me-1"></i> Orders today</div>
-                    <div class="fs-3 fw-semibold" id="kpi-orders">-</div>
+                    <div class="fs-3 fw-semibold kpi-value" id="kpi-orders">-</div>
                     <small class="text-success">+8 vs yesterday</small>
                 </div>
             </div>
@@ -36,7 +36,7 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small"><i class="fa-solid fa-calendar-check me-1"></i> Reservations today</div>
-                    <div class="fs-3 fw-semibold" id="kpi-reservations">-</div>
+                    <div class="fs-3 fw-semibold kpi-value" id="kpi-reservations">-</div>
                     <small class="text-danger">-3 vs yesterday</small>
                 </div>
             </div>
@@ -45,7 +45,7 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="text-muted small"><i class="fa-solid fa-chart-simple me-1"></i> Avg. order value</div>
-                    <div class="fs-3 fw-semibold" id="kpi-aov">-</div>
+                    <div class="fs-3 fw-semibold kpi-value" id="kpi-aov">-</div>
                     <small class="text-success">+2.1% vs yesterday</small>
                 </div>
             </div>
@@ -56,7 +56,7 @@
     <div class="row g-3 mb-3">
         <div class="col-lg-8">
             <div class="card h-100">
-                <div class="card-header fw-semibold">Revenue, last 7 days (RM)</div>
+                <div class="card-header">Revenue, last 7 days (RM)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-revenue" role="img" aria-label="Line chart of daily revenue over the last 7 days"></canvas></div>
                 </div>
@@ -64,7 +64,7 @@
         </div>
         <div class="col-lg-4">
             <div class="card h-100">
-                <div class="card-header fw-semibold">Today's orders by status</div>
+                <div class="card-header">Today's orders by status</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-status" role="img" aria-label="Bar chart of today's orders by status"></canvas></div>
                 </div>
@@ -72,7 +72,7 @@
         </div>
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header fw-semibold">Orders by hour (today)</div>
+                <div class="card-header">Orders by hour (today)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-hourly" role="img" aria-label="Bar chart of orders placed per hour today"></canvas></div>
                 </div>
@@ -80,7 +80,7 @@
         </div>
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header fw-semibold">Top menu items (units sold this week)</div>
+                <div class="card-header">Top menu items (units sold this week)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-items" role="img" aria-label="Bar chart of top selling menu items this week"></canvas></div>
                 </div>
@@ -90,12 +90,19 @@
 
     <!-- Recent orders -->
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span class="fw-semibold">Recent orders</span>
+        <div class="card-header justify-content-between">
+            <span>Recent orders</span>
             <a asp-page="/Admin/Orders/Index" class="btn btn-sm btn-outline-dark">View all</a>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover table-fixed align-middle mb-0" style="--table-min-width: 560px">
+                <colgroup>
+                    <col style="width: 22%" />
+                    <col style="width: 16%" />
+                    <col style="width: 16%" />
+                    <col style="width: 22%" />
+                    <col style="width: 24%" />
+                </colgroup>
                 <thead>
                     <tr><th>Order</th><th>Table</th><th>Time</th><th>Total</th><th>Status</th></tr>
                 </thead>

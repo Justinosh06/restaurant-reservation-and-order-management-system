@@ -4,12 +4,12 @@
 }
 
 <div class="admin-page">
-    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-4">
+    <div class="page-header">
         <div>
-            <h2 class="mb-0">Orders</h2>
-            <p class="text-muted mb-0">Track each order from Pending to Served</p>
+            <h1 class="page-title">Orders</h1>
+            <p class="page-subtitle">Track each order from Pending to Served</p>
         </div>
-        <input type="search" id="order-search" class="form-control w-auto" placeholder="Search order, table or customer" aria-label="Search orders" />
+        <input type="search" id="order-search" class="form-control page-search" placeholder="Search order, table or customer" aria-label="Search orders" />
     </div>
 
     <!-- Status filter (buttons rendered by orders.js) -->
@@ -17,7 +17,18 @@
 
     <div class="card">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover table-fixed align-middle mb-0" style="--table-min-width: 1040px">
+                <colgroup>
+                    <col style="width: 110px" />  @* Order *@
+                    <col style="width: 72px" />   @* Table *@
+                    <col style="width: 150px" />  @* Customer *@
+                    <col />                       @* Items (takes the remaining space) *@
+                    <col style="width: 72px" />   @* Time *@
+                    <col style="width: 110px" />  @* Total *@
+                    <col style="width: 120px" />  @* Progress *@
+                    <col style="width: 110px" />  @* Status *@
+                    <col style="width: 170px" />  @* Action *@
+                </colgroup>
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -28,13 +39,13 @@
                         <th>Total</th>
                         <th>Progress</th>
                         <th>Status</th>
-                        <th class="text-end">Action</th>
+                        <th class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody id="orders-body"></tbody>
             </table>
         </div>
-        <p class="text-center text-muted py-4 mb-0 d-none" id="orders-empty">No orders match this filter.</p>
+        <p class="text-center text-muted py-4 mb-0 d-none" id="orders-empty">No orders match this status or search. Try another status or clear the search box.</p>
     </div>
 </div>
 
