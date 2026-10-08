@@ -52,7 +52,7 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
             const status = promoStatus(p);
             const image = p.imageUrl
                 ? `<img src="${p.imageUrl}" class="card-img-top promo-image" alt="${AdminUI.escapeHtml(p.title)}" />`
-                : `<div class="card-img-top promo-image bg-light d-flex align-items-center justify-content-center text-muted"><i class="fa-regular fa-image fs-2" aria-hidden="true"></i></div>`;
+                : `<div class="card-img-top promo-image bg-body-tertiary d-flex align-items-center justify-content-center text-muted"><i class="fa-regular fa-image fs-2" aria-hidden="true"></i></div>`;
 
             return `
                 <div class="col">
@@ -65,7 +65,7 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
                             </div>
                             <p class="card-text text-muted small">${AdminUI.escapeHtml(p.description)}</p>
                         </div>
-                        <div class="card-footer bg-white d-flex justify-content-between align-items-center small text-muted">
+                        <div class="card-footer d-flex justify-content-between align-items-center small text-muted">
                             <span><i class="fa-regular fa-calendar me-1"></i>${AdminUI.formatDate(p.startDate)} - ${AdminUI.formatDate(p.endDate)}</span>
                             <button type="button" class="btn btn-sm btn-outline-danger" data-delete="${p.id}" aria-label="Delete ${AdminUI.escapeHtml(p.title)}"><i class="fa-solid fa-trash"></i></button>
                         </div>

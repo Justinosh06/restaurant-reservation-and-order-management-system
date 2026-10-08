@@ -30,7 +30,7 @@ const orders = [
 
         filterEl.innerHTML = ["All", ...ORDER_STATUSES].map(s => `
             <button type="button" class="btn ${s === activeFilter ? "btn-dark" : "btn-outline-dark"}" data-filter="${s}" aria-pressed="${s === activeFilter}">
-                ${s} <span class="badge text-bg-light">${counts[s]}</span>
+                ${s} <span class="badge text-bg-secondary">${counts[s]}</span>
             </button>`).join("");
     };
 

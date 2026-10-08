@@ -13,7 +13,7 @@
     </div>
 
     <div class="card">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <span class="fw-semibold">Staff accounts</span>
                 <small class="text-muted ms-2" id="staff-count"></small>
@@ -22,7 +22,7 @@
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr><th>Staff ID</th><th>Email</th><th>Role</th><th class="text-end">Actions</th></tr>
                 </thead>
                 <tbody id="staff-body"></tbody>
@@ -78,7 +78,7 @@
         <div class="modal-content">
             <div class="modal-body">
                 <h5 id="delete-modal-title">Delete staff account?</h5>
-                <p class="text-muted mb-0"><span id="delete-email" class="fw-medium text-dark"></span> will no longer be able to sign in.</p>
+                <p class="text-muted mb-0"><span id="delete-email" class="fw-medium text-body"></span> will no longer be able to sign in.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

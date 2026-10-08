@@ -35,8 +35,10 @@ const dashboardData = {
 };
 
 (() => {
-    // Chart colour comes from --admin-chart-color in admin_pages.css.
-    const chartColor = getComputedStyle(document.documentElement).getPropertyValue("--admin-chart-color").trim();
+    // Colours come from CSS variables, so they follow the light/dark theme.
+    // --admin-chart-color is set in admin_pages.css; the others are Bootstrap's.
+    const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const chartColor = cssVar("--admin-chart-color");
 
     document.getElementById("dashboard-date").textContent =
         new Date().toLocaleDateString("en-MY", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -51,6 +53,8 @@ const dashboardData = {
     Chart.defaults.maintainAspectRatio = false;
     Chart.defaults.plugins.legend.display = false;
 
+    const charts = [];
+
     const barChart = (canvasId, labels, values, label, horizontal = false) => new Chart(document.getElementById(canvasId), {
         type: "bar",
         data: { labels, datasets: [{ label, data: values, backgroundColor: chartColor, borderRadius: 4, maxBarThickness: 32 }] },
@@ -60,7 +64,7 @@ const dashboardData = {
         }
     });
 
-    new Chart(document.getElementById("chart-revenue"), {
+    charts.push(new Chart(document.getElementById("chart-revenue"), {
         type: "line",
         data: {
             labels: dashboardData.revenueLast7Days.map(d => d.label),
@@ -77,12 +81,32 @@ const dashboardData = {
             interaction: { mode: "index", intersect: false },
             scales: { y: { beginAtZero: true } }
         }
-    });
+    }));
 
     const statusLabels = Object.keys(dashboardData.ordersByStatus);
-    barChart("chart-status", statusLabels, statusLabels.map(s => dashboardData.ordersByStatus[s]), "Orders", true);
-    barChart("chart-hourly", dashboardData.ordersByHour.map(d => d.hour), dashboardData.ordersByHour.map(d => d.count), "Orders");
-    barChart("chart-items", dashboardData.topItems.map(d => d.name), dashboardData.topItems.map(d => d.units), "Units sold", true);
+    charts.push(barChart("chart-status", statusLabels, statusLabels.map(s => dashboardData.ordersByStatus[s]), "Orders", true));
+    charts.push(barChart("chart-hourly", dashboardData.ordersByHour.map(d => d.hour), dashboardData.ordersByHour.map(d => d.count), "Orders"));
+    charts.push(barChart("chart-items", dashboardData.topItems.map(d => d.name), dashboardData.topItems.map(d => d.units), "Units sold", true));
+
+    // Re-colour every chart when the theme toggle in the navbar is used.
+    const applyChartTheme = () => {
+        const color = cssVar("--admin-chart-color");
+        const textColor = cssVar("--bs-secondary-color");
+        const gridColor = cssVar("--bs-border-color-translucent");
+
+        charts.forEach(chart => {
+            chart.data.datasets.forEach(ds => { ds.backgroundColor = color; ds.borderColor = color; });
+            Object.values(chart.options.scales).forEach(scale => {
+                scale.ticks.color = textColor;
+                scale.grid.color = gridColor;
+                scale.border.color = gridColor;
+            });
+            chart.update("none");
+        });
+    };
+
+    applyChartTheme();
+    document.addEventListener("admin-theme-change", applyChartTheme);
 
     document.getElementById("recent-orders").innerHTML = dashboardData.recentOrders.map(o => `
         <tr>

@@ -4,11 +4,53 @@
  * project-wide tweaks. Page-specific styles live in wwwroot/css/admin/<page>.css.
  */
 
-:root {
+:root,
+[data-bs-theme="light"] {
     /* Chart colour used by dashboard.js - change it here to restyle the charts. */
     --admin-chart-color: #2a78d6;
 }
 
+[data-bs-theme="dark"] {
+    --admin-chart-color: #3987e5;
+}
+
 .admin-page {
     padding: 0 24px 32px;
+}
+
+/*
+ * Dark mode: Bootstrap's "dark" button/badge colours disappear on a dark background,
+ * so flip them to light. Remove these if you switch the pages to a different button colour.
+ */
+[data-bs-theme="dark"] {
+    .btn-dark {
+        --bs-btn-bg: #f8f9fa;
+        --bs-btn-border-color: #f8f9fa;
+        --bs-btn-color: #212529;
+        --bs-btn-hover-bg: #dee2e6;
+        --bs-btn-hover-border-color: #dee2e6;
+        --bs-btn-hover-color: #212529;
+        --bs-btn-active-bg: #dee2e6;
+        --bs-btn-active-color: #212529;
+    }
+
+    .btn-outline-dark {
+        --bs-btn-color: #f8f9fa;
+        --bs-btn-border-color: #f8f9fa;
+        --bs-btn-hover-bg: #f8f9fa;
+        --bs-btn-hover-color: #212529;
+        --bs-btn-active-bg: #f8f9fa;
+        --bs-btn-active-color: #212529;
+    }
+
+    .btn-check:checked + .btn-outline-dark {
+        background-color: #f8f9fa;
+        color: #212529;
+    }
+
+    .text-bg-dark,
+    .progress-bar.bg-dark {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+    }
 }

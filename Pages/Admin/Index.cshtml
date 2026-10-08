@@ -56,7 +56,7 @@
     <div class="row g-3 mb-3">
         <div class="col-lg-8">
             <div class="card h-100">
-                <div class="card-header bg-white fw-semibold">Revenue, last 7 days (RM)</div>
+                <div class="card-header fw-semibold">Revenue, last 7 days (RM)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-revenue" role="img" aria-label="Line chart of daily revenue over the last 7 days"></canvas></div>
                 </div>
@@ -64,7 +64,7 @@
         </div>
         <div class="col-lg-4">
             <div class="card h-100">
-                <div class="card-header bg-white fw-semibold">Today's orders by status</div>
+                <div class="card-header fw-semibold">Today's orders by status</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-status" role="img" aria-label="Bar chart of today's orders by status"></canvas></div>
                 </div>
@@ -72,7 +72,7 @@
         </div>
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header bg-white fw-semibold">Orders by hour (today)</div>
+                <div class="card-header fw-semibold">Orders by hour (today)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-hourly" role="img" aria-label="Bar chart of orders placed per hour today"></canvas></div>
                 </div>
@@ -80,7 +80,7 @@
         </div>
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header bg-white fw-semibold">Top menu items (units sold this week)</div>
+                <div class="card-header fw-semibold">Top menu items (units sold this week)</div>
                 <div class="card-body">
                     <div class="chart-box"><canvas id="chart-items" role="img" aria-label="Bar chart of top selling menu items this week"></canvas></div>
                 </div>
@@ -90,13 +90,13 @@
 
     <!-- Recent orders -->
     <div class="card">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <span class="fw-semibold">Recent orders</span>
             <a asp-page="/Admin/Orders/Index" class="btn btn-sm btn-outline-dark">View all</a>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr><th>Order</th><th>Table</th><th>Time</th><th>Total</th><th>Status</th></tr>
                 </thead>
                 <tbody id="recent-orders"></tbody>

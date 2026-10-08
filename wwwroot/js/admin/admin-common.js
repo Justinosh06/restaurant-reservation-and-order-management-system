@@ -28,7 +28,7 @@ const AdminUI = (() => {
         Ended: "text-bg-secondary",
         Hidden: "text-bg-secondary",
         Administrator: "text-bg-dark",
-        Staff: "text-bg-light border"
+        Staff: "bg-body-secondary text-body border"
     };
 
     const statusBadge = (status) =>

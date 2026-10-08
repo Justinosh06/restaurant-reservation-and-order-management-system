@@ -17,6 +17,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Restaurant Admin Portal</title>
     <script type="importmap"></script>
+    @* Loaded first so the saved light/dark theme applies before the page paints. *@
+    <script src="~/js/admin/theme.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin_layout.css" asp-append-version="true" />
@@ -25,29 +27,40 @@
 </head>
 <body>
     <div class="page-content">
-        <header class="header">
-            <div class="menu-dropdown" id="header-menu-dropdown">
-                <h1 class="logo">Resto</h1>
+        <nav class="navbar navbar-expand-lg bg-body border-bottom sticky-top admin-navbar">
+            <div class="container-fluid">
+                <a class="navbar-brand logo" asp-page="/Admin/Index">Resto</a>
 
-                <div class="menu-dropdown-content">
-                    <ul class="d-flex flex-column nav-item-container">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#admin-nav"
+                        aria-controls="admin-nav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="admin-nav">
+                    <ul class="navbar-nav me-auto">
                         @foreach (var item in navItems)
                         {
                             var isActive = string.Equals(currentPage, item.Page, StringComparison.OrdinalIgnoreCase);
-                            <li class="nav-item mb-2">
-                                <a asp-page="@item.Page" 
-                                class="nav-button @(isActive ? "active" : "")">
-                                    <i class="@item.Icon"></i>
+                            <li class="nav-item">
+                                <a asp-page="@item.Page"
+                                   class="nav-link @(isActive ? "active" : "")"
+                                   aria-current="@(isActive ? "page" : null)">
+                                    <i class="@item.Icon me-1"></i>
                                     @item.Title
                                 </a>
                             </li>
                         }
                     </ul>
+
+                    <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="theme-toggle" aria-label="Switch to dark mode">
+                            <i class="fa-solid fa-moon"></i>
+                        </button>
+                        <div class="profile-avatar"></div>
+                    </div>
                 </div>
             </div>
-
-            <div class="profile-avatar"></div>
-        </header>
+        </nav>
 
         <main role="main" class="content-container">
             @RenderBody()
@@ -57,9 +70,8 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/stateTriggerer.js" asp-append-version="true"></script>
     <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
-    
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
