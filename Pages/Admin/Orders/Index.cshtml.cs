@@ -87,6 +87,10 @@ public class IndexModel : PageModel
         }
 
         order.Status = next.Value;
+        if (order.Status == OrderStatus.Served)
+        {
+            order.ServedAt = DateTime.UtcNow;
+        }
         await _db.SaveChangesAsync();
 
         return new JsonResult(new { id = order.Id, status = AdminDisplay.OrderStatus(order.Status) });

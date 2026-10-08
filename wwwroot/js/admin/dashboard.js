@@ -3,6 +3,8 @@
     const charts = [];
     const recentOrdersEl = document.getElementById("recent-orders");
 
+    document.getElementById("revenue-currency").textContent = AdminUI.currencyCode;
+
     document.getElementById("dashboard-date").textContent =
         new Date().toLocaleDateString("en-MY", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
@@ -73,7 +75,7 @@
             type: "line",
             data: {
                 labels: data.revenueLast7Days.map(d => dayLabel(d.date)),
-                datasets: [{ label: "Revenue (RM)", data: data.revenueLast7Days.map(d => d.amount / 100), borderWidth: 2, tension: 0.3 }]
+                datasets: [{ label: `Revenue (${AdminUI.currencyCode})`, data: data.revenueLast7Days.map(d => d.amount / 100), borderWidth: 2, tension: 0.3 }]
             },
             options: {
                 interaction: { mode: "index", intersect: false },

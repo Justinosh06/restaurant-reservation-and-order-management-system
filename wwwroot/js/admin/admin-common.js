@@ -6,7 +6,7 @@
  *   <script src="~/js/admin/orders.js"></script>
  *
  * It exposes one global object, AdminUI, with:
- *   - Formatting: escapeHtml, formatCurrency, formatDate, formatTime
+ *   - Formatting: escapeHtml, formatCurrency, formatDate, formatTime, currencyCode
  *   - Rendering:  statusBadge, tableMessageRow
  *   - Feedback:   showToast, showError, setBusy
  *   - Server:     get, post, postForm (call the current page's Razor Page handlers)
@@ -25,9 +25,16 @@ const AdminUI = (() => {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
-    // Amounts are stored in cents in the database (e.g. 6800 -> "RM 68.00").
-    const formatCurrency = (amountInCents) =>
-        "RM " + (amountInCents / 100).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // The restaurant's currency comes from Restaurant Settings; _AdminLayout.cshtml puts it on <body>.
+    const currencySymbol = document.body.dataset.currencySymbol || "RM";
+    const currencyCode = document.body.dataset.currencyCode || "MYR";
+
+    // Amounts are stored in cents in the database (e.g. 6800 -> "RM 68.00" or "$68.00").
+    const formatCurrency = (amountInCents) => {
+        const amount = (amountInCents / 100).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const separator = /^[A-Za-z]+$/.test(currencySymbol) ? " " : "";
+        return `${currencySymbol}${separator}${amount}`;
+    };
 
     const formatDate = (date) =>
         new Date(date).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" });
@@ -125,7 +132,7 @@ const AdminUI = (() => {
     };
 
     return {
-        escapeHtml, formatCurrency, formatDate, formatTime, statusBadge, tableMessageRow,
+        escapeHtml, formatCurrency, formatDate, formatTime, currencyCode, statusBadge, tableMessageRow,
         showToast, showError, get, post, postForm, setBusy
     };
 })();

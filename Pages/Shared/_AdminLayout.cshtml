@@ -1,9 +1,13 @@
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Admin
 @using RestaurantReservation.Infrastructure.Navigation
 @inject SidebarNavService NavService
+@inject RestaurantCurrency Currency
 
 @{
     var navItems = await NavService.GetNavItemsForUserAsync(User);
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+    var currency = await Currency.GetAsync();
 }
 
 <!DOCTYPE html>
@@ -23,7 +27,7 @@
     <link rel="stylesheet" href="~/css/admin_pages.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body>
+<body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()">
     @Html.AntiForgeryToken()
     <div class="page-content">
         <nav class="navbar navbar-expand-lg bg-body border-bottom sticky-top admin-navbar">

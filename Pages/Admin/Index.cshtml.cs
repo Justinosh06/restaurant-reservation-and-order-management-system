@@ -34,20 +34,28 @@ public class IndexModel : PageModel
         var weekStart = today.AddDays(-6);
         var weekStartUtc = _clock.StartOfDayUtc(weekStart);
 
-        var orders = (await _db.Orders.AsNoTracking()
-                .Where(o => o.CreatedAt >= weekStartUtc && o.Status != OrderStatus.Cancelled)
-                .Select(o => new { o.TotalAmount, o.Status, o.CreatedAt })
+        var yesterdayStartUtc = _clock.StartOfDayUtc(yesterday);
+
+        var placedOrders = (await _db.Orders.AsNoTracking()
+                .Where(o => o.CreatedAt >= yesterdayStartUtc && o.Status != OrderStatus.Cancelled)
+                .Select(o => new { o.Status, o.CreatedAt })
                 .ToListAsync())
             .Select(o =>
             {
                 var local = _clock.ToLocal(o.CreatedAt);
-                return new { o.TotalAmount, o.Status, Day = DateOnly.FromDateTime(local), local.Hour };
+                return new { o.Status, Day = DateOnly.FromDateTime(local), local.Hour };
             })
             .ToList();
 
-        var ordersToday = orders.Where(o => o.Day == today).ToList();
-        var ordersYesterday = orders.Where(o => o.Day == yesterday).ToList();
-        var servedOrders = orders.Where(o => RevenueStatuses.Contains(o.Status)).ToList();
+        var servedOrders = (await _db.Orders.AsNoTracking()
+                .Where(o => RevenueStatuses.Contains(o.Status) && (o.ServedAt ?? o.CreatedAt) >= weekStartUtc)
+                .Select(o => new { o.TotalAmount, ServedAt = o.ServedAt ?? o.CreatedAt })
+                .ToListAsync())
+            .Select(o => new { o.TotalAmount, Day = DateOnly.FromDateTime(_clock.ToLocal(o.ServedAt)) })
+            .ToList();
+
+        var ordersToday = placedOrders.Where(o => o.Day == today).ToList();
+        var ordersYesterday = placedOrders.Where(o => o.Day == yesterday).ToList();
         var servedToday = servedOrders.Where(o => o.Day == today).ToList();
         var servedYesterday = servedOrders.Where(o => o.Day == yesterday).ToList();
         var revenueByDay = servedOrders
@@ -69,7 +77,7 @@ public class IndexModel : PageModel
         {
             new { status = "Pending", count = ordersToday.Count(o => o.Status == OrderStatus.InQueue) },
             new { status = "Preparing", count = ordersToday.Count(o => o.Status == OrderStatus.Preparing) },
-            new { status = "Served", count = servedToday.Count }
+            new { status = "Served", count = ordersToday.Count(o => RevenueStatuses.Contains(o.Status)) }
         };
 
         var (firstHour, lastHour) = await GetOpeningHoursAsync(today.DayOfWeek);
@@ -82,7 +90,7 @@ public class IndexModel : PageModel
             .Select(hour => new { hour, count = ordersToday.Count(o => o.Hour == hour) });
 
         var topItems = await _db.OrderItems.AsNoTracking()
-            .Where(oi => oi.Order!.CreatedAt >= weekStartUtc && RevenueStatuses.Contains(oi.Order.Status))
+            .Where(oi => RevenueStatuses.Contains(oi.Order!.Status) && (oi.Order.ServedAt ?? oi.Order.CreatedAt) >= weekStartUtc)
             .GroupBy(oi => oi.MenuItem!.Name)
             .Select(g => new { name = g.Key, units = g.Sum(oi => oi.Quantity) })
             .OrderByDescending(x => x.units)
