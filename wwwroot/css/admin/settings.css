@@ -1,0 +1,23 @@
+/* Business hours */
+.hours-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--admin-muted-surface);
+
+    &:last-child { border-bottom: none; }
+
+    .day-name { font-weight: 500; }
+
+    &.closed input[type="time"] { opacity: 0.4; }
+}
+
+@media (max-width: 575.98px) {
+    .hours-row {
+        grid-template-columns: 1fr 1fr;
+
+        .day-name { grid-column: span 2; }
+    }
+}

@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin_layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin_pages.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <div class="page-content">

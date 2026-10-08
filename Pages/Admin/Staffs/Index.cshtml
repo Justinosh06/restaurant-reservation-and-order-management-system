@@ -18,7 +18,7 @@
                 <div class="admin-card-title">Staff accounts</div>
                 <div class="admin-card-subtitle mb-0" id="staff-count"></div>
             </div>
-            <input type="search" id="staff-search" class="form-control" style="max-width: 240px" placeholder="Search by email" aria-label="Search staff" />
+            <input type="search" id="staff-search" class="form-control" placeholder="Search by email" aria-label="Search staff" />
         </div>
         <div class="table-scroll">
             <table class="admin-table">
@@ -80,11 +80,15 @@
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-admin-light" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" style="border-radius: 10px" id="confirm-delete">Delete</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Delete</button>
             </div>
         </div>
     </div>
 </div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/staffs.css" asp-append-version="true" />
+}
 
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>

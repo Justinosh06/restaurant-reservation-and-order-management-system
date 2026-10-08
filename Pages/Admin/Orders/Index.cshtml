@@ -9,7 +9,7 @@
             <h2>Orders</h2>
             <p>Track each order from Pending to Served</p>
         </div>
-        <input type="search" id="order-search" class="form-control" style="max-width: 260px" placeholder="Search order, table or customer" aria-label="Search orders" />
+        <input type="search" id="order-search" class="form-control" placeholder="Search order, table or customer" aria-label="Search orders" />
     </div>
 
     <div class="chip-group mb-3" id="status-filter" role="tablist" aria-label="Filter orders by status"></div>
@@ -36,6 +36,10 @@
         <div class="empty-state d-none" id="orders-empty">No orders match this filter.</div>
     </div>
 </div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/orders.css" asp-append-version="true" />
+}
 
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
