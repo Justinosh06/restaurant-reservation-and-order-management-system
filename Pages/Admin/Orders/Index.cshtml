@@ -1,0 +1,43 @@
+@page
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<div class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h2>Orders</h2>
+            <p>Track each order from Pending to Served</p>
+        </div>
+        <input type="search" id="order-search" class="form-control" style="max-width: 260px" placeholder="Search order, table or customer" aria-label="Search orders" />
+    </div>
+
+    <div class="chip-group mb-3" id="status-filter" role="tablist" aria-label="Filter orders by status"></div>
+
+    <div class="admin-card">
+        <div class="table-scroll">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Table</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Time</th>
+                        <th>Total</th>
+                        <th>Progress</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-body"></tbody>
+            </table>
+        </div>
+        <div class="empty-state d-none" id="orders-empty">No orders match this filter.</div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
+    <script src="~/js/admin/orders.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,74 @@
+@page
+@{
+    ViewData["Title"] = "Promotion";
+}
+
+<div class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h2>Promotion</h2>
+            <p>Create promotions with an image to show customers</p>
+        </div>
+    </div>
+
+    <div class="admin-grid">
+        <form class="admin-card span-5" id="promo-form" novalidate>
+            <div class="admin-card-title">New promotion</div>
+            <div class="admin-card-subtitle">JPG, PNG or WebP, up to 5 MB</div>
+
+            <div class="mb-3">
+                <label class="form-label" for="promo-image">Image</label>
+                <div class="image-drop" id="image-drop" tabindex="0" role="button" aria-label="Upload promotion image">
+                    <i class="fa-regular fa-image"></i>
+                    <span>Click or drop an image here</span>
+                </div>
+                <input type="file" id="promo-image" accept="image/png, image/jpeg, image/webp" class="d-none" />
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <small class="text-danger" id="image-error"></small>
+                    <button type="button" class="btn btn-link btn-sm text-muted p-0 d-none" id="remove-image">Remove image</button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="promo-title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="promo-title" maxlength="100" required placeholder="e.g. Pasta Tuesday 20% off" />
+                <div class="invalid-feedback">Title is required.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="promo-description" class="form-label">Description</label>
+                <textarea class="form-control" id="promo-description" rows="3" maxlength="1000" required placeholder="Describe the promotion and its terms..."></textarea>
+                <div class="invalid-feedback">Description is required.</div>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label for="promo-start" class="form-label">Start date</label>
+                    <input type="date" class="form-control" id="promo-start" required />
+                    <div class="invalid-feedback">Start date is required.</div>
+                </div>
+                <div class="col-6">
+                    <label for="promo-end" class="form-label">End date</label>
+                    <input type="date" class="form-control" id="promo-end" required />
+                    <div class="invalid-feedback">End date must be on or after the start date.</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-admin w-100"><i class="fa-solid fa-plus me-1"></i> Create promotion</button>
+        </form>
+
+        <div class="span-7">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="admin-card-title fw-semibold">All promotions</div>
+                <small class="text-muted" id="promo-count"></small>
+            </div>
+            <div class="promo-grid" id="promo-list"></div>
+            <div class="admin-card empty-state d-none" id="promo-empty">No promotions yet.</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
+    <script src="~/js/admin/promotions.js" asp-append-version="true"></script>
+}

@@ -72,7 +72,7 @@ body {
 
     .menu-dropdown.active {
         .menu-dropdown-content {
-            max-height: 30dvh;
+            max-height: 60dvh;
             padding-top: 18px;
         }
     }
