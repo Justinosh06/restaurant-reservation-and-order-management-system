@@ -1,36 +1,24 @@
-// Mock data - mirrors RestaurantSettings + BusinessHours (DayOfWeek: Sunday = 0). Replace with API calls later.
-const savedSettings = {
-    name: "Resto",
-    address: "1 Jalan BBN 12/1, Putra Nilai, 71800 Nilai, Negeri Sembilan",
-    phoneNumber: "+60 6-798 2000",
-    defaultCurrency: "MYR",
-    updatedAt: "2026-10-01T09:00:00",
-    businessHours: [
-        { dayOfWeek: 1, openTime: "11:00", closeTime: "22:00", isClosed: false },
-        { dayOfWeek: 2, openTime: "11:00", closeTime: "22:00", isClosed: false },
-        { dayOfWeek: 3, openTime: "11:00", closeTime: "22:00", isClosed: false },
-        { dayOfWeek: 4, openTime: "11:00", closeTime: "22:00", isClosed: false },
-        { dayOfWeek: 5, openTime: "11:00", closeTime: "23:00", isClosed: false },
-        { dayOfWeek: 6, openTime: "10:00", closeTime: "23:00", isClosed: false },
-        { dayOfWeek: 0, openTime: null, closeTime: null, isClosed: true }
-    ]
-};
-
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
 (() => {
+    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const DEFAULT_OPEN = "11:00";
+    const DEFAULT_CLOSE = "22:00";
+
+    let saved = null;
+    let hours = [];
+
     const form = document.getElementById("settings-form");
+    const saveBtn = document.getElementById("save-settings");
+    const errorEl = document.getElementById("settings-error");
+    const firstTimeEl = document.getElementById("settings-first-time");
     const hoursList = document.getElementById("hours-list");
     const hoursError = document.getElementById("hours-error");
+    const updatedEl = document.getElementById("settings-updated");
     const fields = {
         name: document.getElementById("set-name"),
         address: document.getElementById("set-address"),
         phoneNumber: document.getElementById("set-phone"),
         defaultCurrency: document.getElementById("set-currency")
     };
-
-    // Working copy so "Discard changes" can restore the saved state.
-    let hours = [];
 
     const renderHours = () => {
         hoursList.innerHTML = hours.map((h, i) => `
@@ -51,17 +39,31 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
             </div>`).join("");
     };
 
-    const load = () => {
-        fields.name.value = savedSettings.name;
-        fields.address.value = savedSettings.address;
-        fields.phoneNumber.value = savedSettings.phoneNumber ?? "";
-        fields.defaultCurrency.value = savedSettings.defaultCurrency;
-        document.getElementById("settings-updated").textContent =
-            `Last updated ${AdminUI.formatDate(savedSettings.updatedAt)}, ${AdminUI.formatTime(savedSettings.updatedAt)}`;
-        hours = savedSettings.businessHours.map(h => ({ ...h }));
+    const fillForm = () => {
+        fields.name.value = saved.name;
+        fields.address.value = saved.address;
+        fields.phoneNumber.value = saved.phoneNumber ?? "";
+        fields.defaultCurrency.value = saved.defaultCurrency;
+        updatedEl.textContent = saved.updatedAt
+            ? `Last updated ${AdminUI.formatDate(saved.updatedAt)}, ${AdminUI.formatTime(saved.updatedAt)}`
+            : "Not saved yet";
+        firstTimeEl.classList.toggle("d-none", saved.exists);
+        hours = saved.businessHours.map(h => ({ ...h }));
         hoursError.textContent = "";
+        errorEl.classList.add("d-none");
         form.classList.remove("was-validated");
         renderHours();
+    };
+
+    const load = () => {
+        updatedEl.textContent = "Loading...";
+        AdminUI.get("Settings")
+            .then(data => { saved = data; fillForm(); })
+            .catch(error => {
+                updatedEl.textContent = "";
+                errorEl.textContent = error.message;
+                errorEl.classList.remove("d-none");
+            });
     };
 
     hoursList.addEventListener("input", (e) => {
@@ -72,8 +74,8 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
         if (field === "isOpen") {
             day.isClosed = !e.target.checked;
             if (!day.isClosed && !day.openTime) {
-                day.openTime = "11:00";
-                day.closeTime = "22:00";
+                day.openTime = DEFAULT_OPEN;
+                day.closeTime = DEFAULT_CLOSE;
             }
             renderHours();
         } else {
@@ -92,12 +94,14 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
     });
 
     document.getElementById("reset-settings").addEventListener("click", () => {
-        load();
+        if (!saved) return;
+        fillForm();
         AdminUI.showToast("Changes discarded");
     });
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        errorEl.classList.add("d-none");
         form.classList.add("was-validated");
 
         const invalidDays = hours.filter(h => !h.isClosed && (!h.openTime || !h.closeTime || h.closeTime <= h.openTime));
@@ -107,17 +111,23 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 
         if (!form.checkValidity() || invalidDays.length) return;
 
-        savedSettings.name = fields.name.value.trim();
-        savedSettings.address = fields.address.value.trim();
-        savedSettings.phoneNumber = fields.phoneNumber.value.trim() || null;
-        savedSettings.defaultCurrency = fields.defaultCurrency.value;
-        savedSettings.businessHours = hours.map(h => h.isClosed
-            ? { ...h, openTime: null, closeTime: null }
-            : { ...h });
-        savedSettings.updatedAt = new Date().toISOString();
-
-        load();
-        AdminUI.showToast("Settings saved");
+        AdminUI.setBusy(saveBtn, true);
+        try {
+            saved = await AdminUI.post("Save", {
+                name: fields.name.value.trim(),
+                address: fields.address.value.trim(),
+                phoneNumber: fields.phoneNumber.value.trim() || null,
+                defaultCurrency: fields.defaultCurrency.value,
+                businessHours: hours
+            });
+            fillForm();
+            AdminUI.showToast("Settings saved");
+        } catch (error) {
+            errorEl.textContent = error.message;
+            errorEl.classList.remove("d-none");
+        } finally {
+            AdminUI.setBusy(saveBtn, false);
+        }
     });
 
     load();

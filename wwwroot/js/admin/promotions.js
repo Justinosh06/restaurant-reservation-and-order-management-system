@@ -1,23 +1,11 @@
-// Mock data - mirrors the Promotion model (Title, Description, ImageUrl, StartDate, EndDate).
-// Images are kept as in-browser data URLs for now; the backend will upload them and store ImageUrl.
-const promotions = [
-    {
-        id: "PRM-0002", title: "Pasta Tuesday 20% off", imageUrl: null,
-        description: "Every Tuesday, enjoy 20% off all pasta dishes. Dine-in only.",
-        startDate: "2026-10-01", endDate: "2026-12-31"
-    },
-    {
-        id: "PRM-0001", title: "Free drink with any set meal", imageUrl: null,
-        description: "Get a free iced lemon tea with any set meal ordered before 3pm.",
-        startDate: "2026-09-01", endDate: "2026-09-30"
-    }
-];
-
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
-
 (() => {
+    let promotions = [];
+    let selectedImage = null;
+    let previewUrl = null;
+
     const form = document.getElementById("promo-form");
+    const formError = document.getElementById("promo-form-error");
+    const submitBtn = document.getElementById("promo-submit");
     const titleInput = document.getElementById("promo-title");
     const descInput = document.getElementById("promo-description");
     const startInput = document.getElementById("promo-start");
@@ -27,31 +15,30 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
     const imageError = document.getElementById("image-error");
     const removeImageBtn = document.getElementById("remove-image");
     const listEl = document.getElementById("promo-list");
-    const emptyEl = document.getElementById("promo-empty");
+    const messageEl = document.getElementById("promo-message");
 
     const dropPlaceholder = dropEl.innerHTML;
-    let imageDataUrl = null;
+    const maxImageBytes = Number(fileInput.dataset.maxBytes);
+    const allowedTypes = fileInput.accept.split(",").map(type => type.trim());
 
-    const todayIso = () => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    };
-
-    const promoStatus = (p) => {
-        const today = todayIso();
-        if (p.endDate < today) return "Ended";
-        if (p.startDate > today) return "Scheduled";
-        return "Active";
+    const showMessage = (text, tone = "text-muted") => {
+        messageEl.className = `text-center ${tone} py-4`;
+        messageEl.textContent = text;
     };
 
     const render = () => {
         document.getElementById("promo-count").textContent = `${promotions.length} promotion${promotions.length === 1 ? "" : "s"}`;
-        emptyEl.classList.toggle("d-none", promotions.length > 0);
+
+        if (promotions.length === 0) {
+            listEl.innerHTML = "";
+            showMessage("No promotions yet. Create one using the form.");
+            return;
+        }
+        messageEl.classList.add("d-none");
 
         listEl.innerHTML = promotions.map(p => {
-            const status = promoStatus(p);
             const image = p.imageUrl
-                ? `<img src="${p.imageUrl}" class="card-img-top promo-image" alt="${AdminUI.escapeHtml(p.title)}" />`
+                ? `<img src="${AdminUI.escapeHtml(p.imageUrl)}" class="card-img-top promo-image" alt="${AdminUI.escapeHtml(p.title)}" />`
                 : `<div class="card-img-top promo-image bg-body-tertiary d-flex align-items-center justify-content-center text-muted"><i class="fa-regular fa-image fs-2" aria-hidden="true"></i></div>`;
 
             return `
@@ -61,12 +48,12 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <h6 class="card-title mb-1">${AdminUI.escapeHtml(p.title)}</h6>
-                                ${AdminUI.statusBadge(status)}
+                                ${AdminUI.statusBadge(p.status)}
                             </div>
                             <p class="card-text text-muted small">${AdminUI.escapeHtml(p.description)}</p>
                         </div>
                         <div class="card-footer d-flex justify-content-between align-items-center small text-muted">
-                            <span><i class="fa-regular fa-calendar me-1"></i>${AdminUI.formatDate(p.startDate)} - ${AdminUI.formatDate(p.endDate)}</span>
+                            <span><i class="fa-regular fa-calendar me-1"></i>${AdminUI.formatDate(`${p.startDate}T00:00:00`)} - ${AdminUI.formatDate(`${p.endDate}T00:00:00`)}</span>
                             <button type="button" class="btn btn-sm btn-outline-danger btn-icon" data-delete="${p.id}" aria-label="Delete ${AdminUI.escapeHtml(p.title)}"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
@@ -74,8 +61,17 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
         }).join("");
     };
 
+    const load = () => {
+        showMessage("Loading...");
+        AdminUI.get("List")
+            .then(data => { promotions = data; render(); })
+            .catch(error => { showMessage(error.message, "text-danger"); AdminUI.showError(error); });
+    };
+
     const clearImage = () => {
-        imageDataUrl = null;
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        selectedImage = null;
+        previewUrl = null;
         fileInput.value = "";
         dropEl.innerHTML = dropPlaceholder;
         removeImageBtn.classList.add("d-none");
@@ -84,22 +80,20 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
     const loadImage = (file) => {
         imageError.textContent = "";
         if (!file) return;
-        if (!ALLOWED_TYPES.includes(file.type)) {
+        if (!allowedTypes.includes(file.type)) {
             imageError.textContent = "Please choose a JPG, PNG or WebP image.";
             return;
         }
-        if (file.size > MAX_IMAGE_BYTES) {
-            imageError.textContent = "Image must be 5 MB or smaller.";
+        if (file.size > maxImageBytes) {
+            imageError.textContent = `Image must be ${maxImageBytes / (1024 * 1024)} MB or smaller.`;
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            imageDataUrl = reader.result;
-            dropEl.innerHTML = `<img src="${imageDataUrl}" class="w-100 h-100 object-fit-cover" alt="Selected promotion image preview" />`;
-            removeImageBtn.classList.remove("d-none");
-        };
-        reader.readAsDataURL(file);
+        clearImage();
+        selectedImage = file;
+        previewUrl = URL.createObjectURL(file);
+        dropEl.innerHTML = `<img src="${previewUrl}" class="w-100 h-100 object-fit-cover" alt="Selected promotion image preview" />`;
+        removeImageBtn.classList.remove("d-none");
     };
 
     dropEl.addEventListener("click", () => fileInput.click());
@@ -121,38 +115,54 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
     startInput.addEventListener("change", () => { endInput.min = startInput.value; });
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        formError.classList.add("d-none");
         const endBeforeStart = startInput.value && endInput.value && endInput.value < startInput.value;
         endInput.setCustomValidity(endBeforeStart ? "End date must be on or after the start date." : "");
 
         form.classList.add("was-validated");
         if (!form.checkValidity()) return;
 
-        promotions.unshift({
-            id: AdminUI.generateId("PRM"),
-            title: titleInput.value.trim(),
-            description: descInput.value.trim(),
-            imageUrl: imageDataUrl,
-            startDate: startInput.value,
-            endDate: endInput.value
-        });
+        const data = new FormData();
+        data.append("title", titleInput.value.trim());
+        data.append("description", descInput.value.trim());
+        data.append("startDate", startInput.value);
+        data.append("endDate", endInput.value);
+        if (selectedImage) data.append("image", selectedImage);
 
-        form.reset();
-        form.classList.remove("was-validated");
-        clearImage();
-        AdminUI.showToast("Promotion created");
-        render();
-    });
-
-    listEl.addEventListener("click", (e) => {
-        const deleteBtn = e.target.closest("[data-delete]");
-        if (deleteBtn && confirm("Delete this promotion?")) {
-            promotions.splice(promotions.findIndex(p => p.id === deleteBtn.dataset.delete), 1);
-            AdminUI.showToast("Promotion deleted");
+        AdminUI.setBusy(submitBtn, true);
+        try {
+            const created = await AdminUI.postForm("Create", data);
+            promotions.unshift(created);
+            form.reset();
+            form.classList.remove("was-validated");
+            clearImage();
+            AdminUI.showToast("Promotion created");
             render();
+        } catch (error) {
+            formError.textContent = error.message;
+            formError.classList.remove("d-none");
+        } finally {
+            AdminUI.setBusy(submitBtn, false);
         }
     });
 
-    render();
+    listEl.addEventListener("click", async (e) => {
+        const deleteBtn = e.target.closest("[data-delete]");
+        if (!deleteBtn || !confirm("Delete this promotion?")) return;
+
+        AdminUI.setBusy(deleteBtn, true);
+        try {
+            await AdminUI.post("Delete", { id: deleteBtn.dataset.delete });
+            promotions = promotions.filter(p => p.id !== deleteBtn.dataset.delete);
+            AdminUI.showToast("Promotion deleted");
+            render();
+        } catch (error) {
+            AdminUI.setBusy(deleteBtn, false);
+            AdminUI.showError(error);
+        }
+    });
+
+    load();
 })();

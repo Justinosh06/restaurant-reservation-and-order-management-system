@@ -1,18 +1,20 @@
 @page
+@model RestaurantReservation.Pages.Admin.Promotions.IndexModel
+@using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Models
 @{
     ViewData["Title"] = "Promotion";
+    var maxImageMb = RestaurantReservation.Pages.Admin.Promotions.IndexModel.MaxImageBytes / (1024 * 1024);
 }
 
 <div class="admin-page">
     <div class="page-header">
         <div>
             <h1 class="page-title">Promotion</h1>
-            <p class="page-subtitle">Create promotions with an image to show customers</p>
         </div>
     </div>
 
     <div class="row g-3">
-        <!-- Create form -->
         <div class="col-lg-5">
             <form class="card" id="promo-form" novalidate>
                 <div class="card-header">New promotion</div>
@@ -24,9 +26,11 @@
                             <i class="fa-regular fa-image fs-3"></i>
                             <span>Click or drop an image here</span>
                         </div>
-                        <input type="file" id="promo-image" accept="image/png, image/jpeg, image/webp" class="d-none" />
+                        <input type="file" id="promo-image" class="d-none"
+                               accept="@string.Join(", ", RestaurantReservation.Pages.Admin.Promotions.IndexModel.AllowedImageTypes.Keys)"
+                               data-max-bytes="@RestaurantReservation.Pages.Admin.Promotions.IndexModel.MaxImageBytes" />
                         <div class="d-flex justify-content-between align-items-center mt-1">
-                            <small class="form-text">JPG, PNG or WebP, up to 5 MB</small>
+                            <small class="form-text">JPG, PNG or WebP, up to @maxImageMb MB</small>
                             <button type="button" class="btn btn-link btn-sm p-0 d-none" id="remove-image">Remove image</button>
                         </div>
                         <small class="text-danger" id="image-error"></small>
@@ -34,13 +38,13 @@
 
                     <div class="mb-3">
                         <label for="promo-title" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="promo-title" maxlength="100" required placeholder="e.g. Pasta Tuesday 20% off" />
+                        <input type="text" class="form-control" id="promo-title" maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Title)))" required placeholder="e.g. Pasta Tuesday 20% off" />
                         <div class="invalid-feedback">Title is required.</div>
                     </div>
 
                     <div class="mb-3">
                         <label for="promo-description" class="form-label">Description</label>
-                        <textarea class="form-control" id="promo-description" rows="3" maxlength="1000" required placeholder="Describe the promotion and its terms..."></textarea>
+                        <textarea class="form-control" id="promo-description" rows="3" maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Description)))" required placeholder="Describe the promotion and its terms..."></textarea>
                         <div class="invalid-feedback">Description is required.</div>
                     </div>
 
@@ -57,19 +61,19 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-dark w-100"><i class="fa-solid fa-plus me-1"></i> Create promotion</button>
+                    <div class="alert alert-danger d-none" id="promo-form-error" role="alert"></div>
+                    <button type="submit" class="btn btn-dark w-100" id="promo-submit"><i class="fa-solid fa-plus me-1"></i> Create promotion</button>
                 </div>
             </form>
         </div>
 
-        <!-- Existing promotions -->
         <div class="col-lg-7">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span>All promotions</span>
                 <small class="text-muted" id="promo-count"></small>
             </div>
             <div class="row row-cols-1 row-cols-md-2 g-3" id="promo-list"></div>
-            <p class="text-center text-muted py-4 d-none" id="promo-empty">No promotions yet.</p>
+            <p class="text-center text-muted py-4 d-none" id="promo-message"></p>
         </div>
     </div>
 </div>

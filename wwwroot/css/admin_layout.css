@@ -1,8 +1,5 @@
-/* Admin layout: framed page with a static Bootstrap navbar on top. */
-
 :root,
 [data-bs-theme="light"] {
-    /* Background behind the cards. */
     --admin-page-bg: #ececec;
 }
 
@@ -34,7 +31,6 @@ body {
         user-select: none;
     }
 
-    /* Same weight for every link (active one is shown by colour), so the row never shifts. */
     .nav-link {
         font-weight: 500;
     }

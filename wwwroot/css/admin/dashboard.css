@@ -1,7 +1,14 @@
-/* Dashboard page styles. Layout uses Bootstrap cards and grid; add custom styles below. */
-
-/* Chart.js needs a sized container. Change the height to make charts taller or shorter. */
 .chart-box {
     position: relative;
     height: 260px;
+}
+
+.chart-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    background: color-mix(in srgb, var(--bs-body-bg) 70%, transparent);
 }

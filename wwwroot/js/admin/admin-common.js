@@ -1,4 +1,3 @@
-// Shared helpers for admin pages (frontend-only mock UI; no backend calls yet).
 const AdminUI = (() => {
     const escapeHtml = (value) => String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -16,9 +15,6 @@ const AdminUI = (() => {
     const formatTime = (date) =>
         new Date(date).toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" });
 
-    const generateId = (prefix) => prefix + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-
-    // Bootstrap badge class for each status shown in the admin pages.
     const STATUS_BADGES = {
         Pending: "text-bg-warning",
         Preparing: "text-bg-primary",
@@ -26,6 +22,7 @@ const AdminUI = (() => {
         Active: "text-bg-success",
         Scheduled: "text-bg-warning",
         Ended: "text-bg-secondary",
+        Expired: "text-bg-secondary",
         Hidden: "text-bg-secondary",
         Administrator: "text-bg-dark",
         Staff: "bg-body-secondary text-body border"
@@ -34,23 +31,72 @@ const AdminUI = (() => {
     const statusBadge = (status) =>
         `<span class="badge ${STATUS_BADGES[status] ?? "text-bg-secondary"}">${escapeHtml(status)}</span>`;
 
-    // Small popup message using a Bootstrap alert.
+    const tableMessageRow = (colspan, message, tone = "text-muted") =>
+        `<tr><td colspan="${colspan}" class="text-center ${tone} py-4">${escapeHtml(message)}</td></tr>`;
+
     let toastTimer;
-    const showToast = (message) => {
+    const showToast = (message, tone = "dark") => {
         let toast = document.getElementById("admin-toast");
         if (!toast) {
             toast = document.createElement("div");
             toast.id = "admin-toast";
-            toast.className = "alert alert-dark position-fixed bottom-0 end-0 m-3 shadow";
             toast.style.zIndex = 2000;
             toast.setAttribute("role", "status");
             document.body.appendChild(toast);
         }
+        toast.className = `alert alert-${tone} position-fixed bottom-0 end-0 m-3 shadow`;
         toast.textContent = message;
-        toast.classList.remove("d-none");
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toast.classList.add("d-none"), 2400);
+        toastTimer = setTimeout(() => toast.classList.add("d-none"), 3000);
     };
 
-    return { escapeHtml, formatCurrency, formatDate, formatTime, generateId, statusBadge, showToast };
+    const showError = (error) => showToast(error.message, "danger");
+
+    const antiForgeryToken = () =>
+        document.querySelector("input[name='__RequestVerificationToken']")?.value ?? "";
+
+    const request = async (handler, { method = "GET", json, formData } = {}) => {
+        const url = new URL(window.location.pathname, window.location.origin);
+        url.searchParams.set("handler", handler);
+
+        const headers = { "Accept": "application/json" };
+        let body;
+        if (json !== undefined) {
+            headers["Content-Type"] = "application/json";
+            body = JSON.stringify(json);
+        } else if (formData) {
+            body = formData;
+        }
+        if (method !== "GET") headers["RequestVerificationToken"] = antiForgeryToken();
+
+        let response;
+        try {
+            response = await fetch(url, { method, headers, body });
+        } catch {
+            throw new Error("Can't reach the server. Check your connection and try again.");
+        }
+
+        const data = response.status === 204 ? null : await response.json().catch(() => null);
+        if (!response.ok) {
+            const error = new Error(data?.error ?? "Something went wrong. Please try again.");
+            error.status = response.status;
+            error.data = data;
+            throw error;
+        }
+        return data;
+    };
+
+    const get = (handler) => request(handler);
+    const post = (handler, json = {}) => request(handler, { method: "POST", json });
+    const postForm = (handler, formData) => request(handler, { method: "POST", formData });
+
+    const setBusy = (button, busy) => {
+        button.disabled = busy;
+        button.setAttribute("aria-busy", String(busy));
+    };
+
+    return {
+        escapeHtml, formatCurrency, formatDate, formatTime, statusBadge, tableMessageRow,
+        showToast, showError, get, post, postForm, setBusy
+    };
 })();

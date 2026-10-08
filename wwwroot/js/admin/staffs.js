@@ -1,36 +1,42 @@
-// Mock data - mirrors the Admin model (Id, Email, Password, Role). Replace with API calls later.
-const staffs = [
-    { id: "ADM-0001", email: "manager@resto.com", role: "Administrator" },
-    { id: "STF-0002", email: "aisyah.kitchen@resto.com", role: "Staff" },
-    { id: "STF-0003", email: "jason.floor@resto.com", role: "Staff" },
-    { id: "STF-0004", email: "priya.cashier@resto.com", role: "Staff" }
-];
-
 (() => {
+    const COLUMN_COUNT = 4;
+
+    let staffs = [];
+    let pendingDeleteId = null;
+
     const bodyEl = document.getElementById("staff-body");
-    const emptyEl = document.getElementById("staff-empty");
     const countEl = document.getElementById("staff-count");
     const searchEl = document.getElementById("staff-search");
 
     const form = document.getElementById("staff-form");
+    const formError = document.getElementById("staff-form-error");
+    const submitBtn = document.getElementById("staff-submit");
     const idInput = document.getElementById("staff-id");
     const emailInput = document.getElementById("staff-email");
     const passwordInput = document.getElementById("staff-password");
     const roleInput = document.getElementById("staff-role");
+    const confirmDeleteBtn = document.getElementById("confirm-delete");
     const staffModal = new bootstrap.Modal(document.getElementById("staff-modal"));
     const deleteModal = new bootstrap.Modal(document.getElementById("delete-modal"));
-    let pendingDeleteId = null;
 
     const render = () => {
-        const term = searchEl.value.trim().toLowerCase();
-        const visible = staffs.filter(s => !term || s.email.toLowerCase().includes(term));
-
         countEl.textContent = `${staffs.length} account${staffs.length === 1 ? "" : "s"}`;
-        emptyEl.classList.toggle("d-none", visible.length > 0);
+
+        if (staffs.length === 0) {
+            bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "No staff accounts yet. Use \"Add staff\" to create the first one.");
+            return;
+        }
+
+        const term = searchEl.value.trim().toLowerCase();
+        const visible = staffs.filter(s => !term || s.email.includes(term));
+        if (visible.length === 0) {
+            bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "No staff accounts match this search.");
+            return;
+        }
 
         bodyEl.innerHTML = visible.map(s => `
             <tr>
-                <td class="fw-medium">${AdminUI.escapeHtml(s.id)}</td>
+                <td class="fw-medium">${AdminUI.escapeHtml(s.displayId)}</td>
                 <td class="text-truncate" title="${AdminUI.escapeHtml(s.email)}">${AdminUI.escapeHtml(s.email)}</td>
                 <td>${AdminUI.statusBadge(s.role)}</td>
                 <td class="text-end text-nowrap">
@@ -40,9 +46,19 @@ const staffs = [
             </tr>`).join("");
     };
 
+    const load = () => {
+        bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "Loading...");
+        AdminUI.get("List")
+            .then(data => { staffs = data; render(); })
+            .catch(error => {
+                bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, error.message, "text-danger");
+                AdminUI.showError(error);
+            });
+    };
+
     const openForm = (staff) => {
         form.classList.remove("was-validated");
-        [emailInput, passwordInput].forEach(i => i.setCustomValidity(""));
+        formError.classList.add("d-none");
         idInput.value = staff?.id ?? "";
         emailInput.value = staff?.email ?? "";
         passwordInput.value = "";
@@ -50,10 +66,10 @@ const staffs = [
         roleInput.value = staff?.role ?? "Staff";
 
         document.getElementById("staff-modal-title").textContent = staff ? "Edit staff" : "Add staff";
-        document.getElementById("staff-submit").textContent = staff ? "Save changes" : "Create account";
+        submitBtn.textContent = staff ? "Save changes" : "Create account";
         document.getElementById("password-help").textContent = staff
             ? "Leave blank to keep the current password."
-            : "At least 8 characters. Share it with the staff member so they can sign in.";
+            : `At least ${passwordInput.minLength} characters. Share it with the staff member so they can sign in.`;
         staffModal.show();
     };
 
@@ -65,32 +81,34 @@ const staffs = [
         e.currentTarget.innerHTML = `<i class="fa-regular ${show ? "fa-eye-slash" : "fa-eye"}"></i>`;
     });
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const editingId = idInput.value;
-        const email = emailInput.value.trim().toLowerCase();
-
-        const duplicate = staffs.some(s => s.email === email && s.id !== editingId);
-        emailInput.setCustomValidity(duplicate ? "duplicate" : "");
-        const passwordTooShort = passwordInput.value.length > 0 && passwordInput.value.length < 8;
-        passwordInput.setCustomValidity(passwordTooShort ? "too short" : "");
-
+        formError.classList.add("d-none");
         form.classList.add("was-validated");
         if (!form.checkValidity()) return;
 
-        if (editingId) {
-            const staff = staffs.find(s => s.id === editingId);
-            staff.email = email;
-            staff.role = roleInput.value;
-            AdminUI.showToast("Staff account updated");
-        } else {
-            const prefix = roleInput.value === "Administrator" ? "ADM" : "STF";
-            staffs.push({ id: AdminUI.generateId(prefix), email, role: roleInput.value });
-            AdminUI.showToast("Staff account created");
-        }
+        const editingId = idInput.value;
+        const payload = {
+            id: editingId || null,
+            email: emailInput.value.trim(),
+            password: passwordInput.value || null,
+            role: roleInput.value
+        };
 
-        staffModal.hide();
-        render();
+        AdminUI.setBusy(submitBtn, true);
+        try {
+            const saved = await AdminUI.post(editingId ? "Update" : "Create", payload);
+            const index = staffs.findIndex(s => s.id === saved.id);
+            if (index >= 0) staffs[index] = saved; else staffs.push(saved);
+            staffModal.hide();
+            AdminUI.showToast(editingId ? "Staff account updated" : "Staff account created");
+            render();
+        } catch (error) {
+            formError.textContent = error.message;
+            formError.classList.remove("d-none");
+        } finally {
+            AdminUI.setBusy(submitBtn, false);
+        }
     });
 
     bodyEl.addEventListener("click", (e) => {
@@ -108,16 +126,23 @@ const staffs = [
         }
     });
 
-    document.getElementById("confirm-delete").addEventListener("click", () => {
-        const index = staffs.findIndex(s => s.id === pendingDeleteId);
-        if (index >= 0) staffs.splice(index, 1);
-        pendingDeleteId = null;
-        deleteModal.hide();
-        AdminUI.showToast("Staff account deleted");
-        render();
+    confirmDeleteBtn.addEventListener("click", async () => {
+        AdminUI.setBusy(confirmDeleteBtn, true);
+        try {
+            await AdminUI.post("Delete", { id: pendingDeleteId });
+            staffs = staffs.filter(s => s.id !== pendingDeleteId);
+            AdminUI.showToast("Staff account deleted");
+            render();
+        } catch (error) {
+            AdminUI.showError(error);
+        } finally {
+            pendingDeleteId = null;
+            deleteModal.hide();
+            AdminUI.setBusy(confirmDeleteBtn, false);
+        }
     });
 
     searchEl.addEventListener("input", render);
 
-    render();
+    load();
 })();

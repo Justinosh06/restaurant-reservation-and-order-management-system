@@ -1,53 +1,32 @@
-// Icon choices map to Announcement.Icon (a Font Awesome class string).
-const ANNOUNCEMENT_ICONS = [
-    { value: "fa-solid fa-circle-info", label: "General" },
-    { value: "fa-solid fa-door-closed", label: "Closure" },
-    { value: "fa-solid fa-clock", label: "Hours change" },
-    { value: "fa-solid fa-screwdriver-wrench", label: "Maintenance" },
-    { value: "fa-solid fa-utensils", label: "New menu" },
-    { value: "fa-solid fa-champagne-glasses", label: "Event" },
-    { value: "fa-solid fa-gift", label: "Festive" },
-    { value: "fa-solid fa-triangle-exclamation", label: "Urgent" }
-];
-
-// Mock data - mirrors the Announcement model. Replace with API calls later.
-const announcements = [
-    {
-        id: "ANN-0003", title: "Closed for Deepavali", icon: "fa-solid fa-door-closed", isActive: true,
-        description: "We will be closed on 1 November to celebrate Deepavali with our families. See you on the 2nd!",
-        createdAt: "2026-10-05T09:00:00", expiresAt: "2026-11-02"
-    },
-    {
-        id: "ANN-0002", title: "New autumn pasta menu", icon: "fa-solid fa-utensils", isActive: true,
-        description: "Try our new pumpkin ravioli and mushroom truffle tagliatelle, available from this week.",
-        createdAt: "2026-10-01T10:30:00", expiresAt: null
-    },
-    {
-        id: "ANN-0001", title: "Kitchen maintenance", icon: "fa-solid fa-screwdriver-wrench", isActive: false,
-        description: "Some dishes were unavailable on 20 September due to scheduled kitchen maintenance.",
-        createdAt: "2026-09-18T08:15:00", expiresAt: "2026-09-21"
-    }
-];
-
 (() => {
+    let announcements = [];
+
     const form = document.getElementById("announcement-form");
+    const formError = document.getElementById("ann-form-error");
+    const submitBtn = document.getElementById("ann-submit");
     const titleInput = document.getElementById("ann-title");
     const descInput = document.getElementById("ann-description");
     const expiresInput = document.getElementById("ann-expires");
     const activeInput = document.getElementById("ann-active");
     const charCount = document.getElementById("ann-char-count");
     const listEl = document.getElementById("announcement-list");
-    const emptyEl = document.getElementById("ann-empty");
+    const messageEl = document.getElementById("ann-message");
 
-    // Bootstrap "btn-check" radio buttons, one per icon.
-    document.getElementById("icon-picker").innerHTML = ANNOUNCEMENT_ICONS.map((icon, i) => `
-        <input type="radio" class="btn-check" name="ann-icon" id="ann-icon-${i}" value="${icon.value}" ${i === 0 ? "checked" : ""} />
-        <label class="btn btn-outline-dark btn-sm" for="ann-icon-${i}"><i class="${icon.value} me-1"></i>${icon.label}</label>`).join("");
+    const showMessage = (text, tone = "text-muted") => {
+        messageEl.className = `text-center ${tone} py-4 mb-0`;
+        messageEl.textContent = text;
+    };
 
     const render = () => {
-        const activeCount = announcements.filter(a => a.isActive).length;
+        const activeCount = announcements.filter(a => a.isActive && !a.isExpired).length;
         document.getElementById("ann-count").textContent = `${announcements.length} total, ${activeCount} active`;
-        emptyEl.classList.toggle("d-none", announcements.length > 0);
+
+        if (announcements.length === 0) {
+            listEl.innerHTML = "";
+            showMessage("No announcements yet. Post one using the form.");
+            return;
+        }
+        messageEl.classList.add("d-none");
 
         listEl.innerHTML = announcements.map(a => `
             <li class="list-group-item d-flex gap-3 py-3">
@@ -55,10 +34,10 @@ const announcements = [
                 <div class="flex-grow-1">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <h6 class="mb-0">${AdminUI.escapeHtml(a.title)}</h6>
-                        ${AdminUI.statusBadge(a.isActive ? "Active" : "Hidden")}
+                        ${AdminUI.statusBadge(!a.isActive ? "Hidden" : a.isExpired ? "Expired" : "Active")}
                     </div>
                     <p class="mb-1 text-muted announcement-text">${AdminUI.escapeHtml(a.description)}</p>
-                    <small class="text-muted">Posted ${AdminUI.formatDate(a.createdAt)}${a.expiresAt ? ` &middot; Expires ${AdminUI.formatDate(a.expiresAt)}` : ""}</small>
+                    <small class="text-muted">Posted ${AdminUI.formatDate(a.createdAt)}${a.lastDay ? ` &middot; ${a.isExpired ? "Ended" : "Shows until"} ${AdminUI.formatDate(`${a.lastDay}T00:00:00`)}` : ""}</small>
                 </div>
                 <div class="d-flex flex-column gap-1">
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" data-toggle="${a.id}" title="${a.isActive ? "Hide" : "Publish"}" aria-label="${a.isActive ? "Hide" : "Publish"} ${AdminUI.escapeHtml(a.title)}">
@@ -71,49 +50,70 @@ const announcements = [
             </li>`).join("");
     };
 
+    const load = () => {
+        showMessage("Loading...");
+        AdminUI.get("List")
+            .then(data => { announcements = data; render(); })
+            .catch(error => { showMessage(error.message, "text-danger"); AdminUI.showError(error); });
+    };
+
     descInput.addEventListener("input", () => {
-        charCount.textContent = `${descInput.value.length} / 1000`;
+        charCount.textContent = `${descInput.value.length} / ${descInput.maxLength}`;
     });
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        formError.classList.add("d-none");
         form.classList.add("was-validated");
         if (!form.checkValidity()) return;
 
-        announcements.unshift({
-            id: AdminUI.generateId("ANN"),
-            title: titleInput.value.trim(),
-            description: descInput.value.trim(),
-            icon: form.querySelector("input[name='ann-icon']:checked").value,
-            isActive: activeInput.checked,
-            createdAt: new Date().toISOString(),
-            expiresAt: expiresInput.value || null
-        });
-
-        form.reset();
-        form.classList.remove("was-validated");
-        charCount.textContent = "0 / 1000";
-        AdminUI.showToast("Announcement posted");
-        render();
+        AdminUI.setBusy(submitBtn, true);
+        try {
+            const created = await AdminUI.post("Create", {
+                title: titleInput.value.trim(),
+                description: descInput.value.trim(),
+                icon: form.querySelector("input[name='ann-icon']:checked").value,
+                isActive: activeInput.checked,
+                expiresAt: expiresInput.value || null
+            });
+            announcements.unshift(created);
+            form.reset();
+            form.classList.remove("was-validated");
+            charCount.textContent = `0 / ${descInput.maxLength}`;
+            AdminUI.showToast("Announcement posted");
+            render();
+        } catch (error) {
+            formError.textContent = error.message;
+            formError.classList.remove("d-none");
+        } finally {
+            AdminUI.setBusy(submitBtn, false);
+        }
     });
 
-    listEl.addEventListener("click", (e) => {
+    listEl.addEventListener("click", async (e) => {
         const toggleBtn = e.target.closest("[data-toggle]");
-        if (toggleBtn) {
-            const ann = announcements.find(a => a.id === toggleBtn.dataset.toggle);
-            ann.isActive = !ann.isActive;
-            AdminUI.showToast(ann.isActive ? "Announcement published" : "Announcement hidden");
-            render();
-            return;
-        }
-
         const deleteBtn = e.target.closest("[data-delete]");
-        if (deleteBtn && confirm("Delete this announcement?")) {
-            announcements.splice(announcements.findIndex(a => a.id === deleteBtn.dataset.delete), 1);
-            AdminUI.showToast("Announcement deleted");
+        const button = toggleBtn ?? deleteBtn;
+        if (!button) return;
+        if (deleteBtn && !confirm("Delete this announcement?")) return;
+
+        AdminUI.setBusy(button, true);
+        try {
+            if (toggleBtn) {
+                const updated = await AdminUI.post("Toggle", { id: toggleBtn.dataset.toggle });
+                announcements = announcements.map(a => a.id === updated.id ? updated : a);
+                AdminUI.showToast(updated.isActive ? "Announcement published" : "Announcement hidden");
+            } else {
+                await AdminUI.post("Delete", { id: deleteBtn.dataset.delete });
+                announcements = announcements.filter(a => a.id !== deleteBtn.dataset.delete);
+                AdminUI.showToast("Announcement deleted");
+            }
             render();
+        } catch (error) {
+            AdminUI.setBusy(button, false);
+            AdminUI.showError(error);
         }
     });
 
-    render();
+    load();
 })();

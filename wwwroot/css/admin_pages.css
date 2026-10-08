@@ -1,17 +1,7 @@
-/*
- * Shared styles for admin pages.
- * Pages are built with plain Bootstrap 5 classes; this file only holds a few
- * project-wide tweaks. Page-specific styles live in wwwroot/css/admin/<page>.css.
- */
-
-/* ---------- Theme values (change these to restyle every admin page) ---------- */
-
 :root,
 [data-bs-theme="light"] {
-    /* One font family for the whole admin UI (loaded in _AdminLayout.cshtml). */
     --bs-body-font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-    /* Chart colour used by dashboard.js. */
     --admin-chart-color: #2a78d6;
 }
 
@@ -19,13 +9,10 @@
     --admin-chart-color: #3987e5;
 }
 
-/* ---------- Page structure ---------- */
-
 .admin-page {
     padding: 0 24px 32px;
 }
 
-/* Title + subtitle on the left, page actions on the right. */
 .page-header {
     display: flex;
     flex-wrap: wrap;
@@ -47,13 +34,11 @@
     margin-bottom: 0;
 }
 
-/* Fixed-width search box so the header doesn't resize with the placeholder. */
 .page-search {
     width: 18rem;
     max-width: 100%;
 }
 
-/* Every card header has the same height, whether it holds text or a button. */
 .card-header {
     display: flex;
     align-items: center;
@@ -63,13 +48,7 @@
     font-weight: 600;
 }
 
-/* ---------- Tables ---------- */
-
-/*
- * Fixed layout: column widths come from <colgroup>, not from the rows currently shown,
- * so filtering, searching or changing a status never makes the columns jump.
- * On small screens the table scrolls sideways (inside .table-responsive) instead of squashing.
- */
+/* Column widths come from <colgroup>, so filtering or status changes never resize columns. */
 .table-fixed {
     table-layout: fixed;
     min-width: var(--table-min-width, 640px);
@@ -86,9 +65,6 @@
     }
 }
 
-/* ---------- Buttons ---------- */
-
-/* Square icon-only button; stays the same size when its icon changes. */
 .btn-icon {
     width: 2rem;
     height: 2rem;
@@ -98,13 +74,10 @@
     justify-content: center;
 }
 
-/* Numbers that update (KPIs, counts) keep a steady width. */
 .badge,
 .kpi-value {
     font-variant-numeric: tabular-nums;
 }
-
-/* ---------- Browser details ---------- */
 
 ::selection {
     background-color: color-mix(in srgb, var(--admin-chart-color) 30%, transparent);
@@ -115,10 +88,7 @@ input[type="radio"] {
     accent-color: var(--admin-chart-color);
 }
 
-/*
- * Dark mode: Bootstrap's "dark" button/badge colours disappear on a dark background,
- * so flip them to light. Remove these if you switch the pages to a different button colour.
- */
+/* Bootstrap's dark buttons and badges vanish on a dark background, so flip them to light. */
 [data-bs-theme="dark"] {
     .btn-dark {
         --bs-btn-bg: #f8f9fa;

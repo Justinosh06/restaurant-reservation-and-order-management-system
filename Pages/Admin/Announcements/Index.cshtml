@@ -1,44 +1,53 @@
 @page
+@model RestaurantReservation.Pages.Admin.Announcements.IndexModel
+@using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Models
 @{
     ViewData["Title"] = "Announcement";
+    var descriptionMax = ModelRules.MaxLength<Announcement>(nameof(Announcement.Description));
 }
 
 <div class="admin-page">
     <div class="page-header">
         <div>
             <h1 class="page-title">Announcement</h1>
-            <p class="page-subtitle">Post notices for customers, with an icon that fits the situation</p>
         </div>
     </div>
 
     <div class="row g-3">
-        <!-- Create form -->
         <div class="col-lg-5">
             <form class="card" id="announcement-form" novalidate>
                 <div class="card-header">New announcement</div>
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="ann-title" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="ann-title" maxlength="100" required placeholder="e.g. Closed for Deepavali" />
+                        <input type="text" class="form-control" id="ann-title" maxlength="@(ModelRules.MaxLength<Announcement>(nameof(Announcement.Title)))" required placeholder="e.g. Closed for Deepavali" />
                         <div class="invalid-feedback">Title is required.</div>
                     </div>
 
                     <div class="mb-3">
                         <label for="ann-description" class="form-label">Message</label>
-                        <textarea class="form-control" id="ann-description" rows="4" maxlength="1000" required placeholder="Write the announcement..."></textarea>
+                        <textarea class="form-control" id="ann-description" rows="4" maxlength="@descriptionMax" required placeholder="Write the announcement..."></textarea>
                         <div class="invalid-feedback">Message is required.</div>
-                        <div class="form-text text-end" id="ann-char-count">0 / 1000</div>
+                        <div class="form-text text-end" id="ann-char-count">0 / @descriptionMax</div>
                     </div>
 
                     <fieldset class="mb-3">
                         <legend class="form-label fs-6">Icon</legend>
-                        <!-- Icon options rendered by announcements.js -->
-                        <div class="d-flex flex-wrap gap-2" id="icon-picker"></div>
+                        <div class="d-flex flex-wrap gap-2">
+                            @for (var i = 0; i < RestaurantReservation.Pages.Admin.Announcements.IndexModel.Icons.Count; i++)
+                            {
+                                var icon = RestaurantReservation.Pages.Admin.Announcements.IndexModel.Icons[i];
+                                <input type="radio" class="btn-check" name="ann-icon" id="ann-icon-@i" value="@icon.Value" checked="@(i == 0)" />
+                                <label class="btn btn-outline-dark btn-sm" for="ann-icon-@i"><i class="@icon.Value me-1"></i>@icon.Label</label>
+                            }
+                        </div>
                     </fieldset>
 
                     <div class="mb-3">
-                        <label for="ann-expires" class="form-label">Expires on <span class="text-muted">(optional)</span></label>
-                        <input type="date" class="form-control" id="ann-expires" />
+                        <label for="ann-expires" class="form-label">Show until <span class="text-muted">(optional)</span></label>
+                        <input type="date" class="form-control" id="ann-expires" min="@Model.Today.ToString("yyyy-MM-dd")" aria-describedby="ann-expires-help" />
+                        <div class="form-text" id="ann-expires-help">The announcement stays visible until the end of this day.</div>
                     </div>
 
                     <div class="form-check form-switch mb-3">
@@ -46,12 +55,12 @@
                         <label class="form-check-label" for="ann-active">Publish immediately</label>
                     </div>
 
-                    <button type="submit" class="btn btn-dark w-100"><i class="fa-solid fa-paper-plane me-1"></i> Post announcement</button>
+                    <div class="alert alert-danger d-none" id="ann-form-error" role="alert"></div>
+                    <button type="submit" class="btn btn-dark w-100" id="ann-submit"><i class="fa-solid fa-paper-plane me-1"></i> Post announcement</button>
                 </div>
             </form>
         </div>
 
-        <!-- Existing announcements -->
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header">
@@ -59,7 +68,7 @@
                     <small class="text-muted fw-normal" id="ann-count"></small>
                 </div>
                 <ul class="list-group list-group-flush" id="announcement-list"></ul>
-                <p class="text-center text-muted py-4 mb-0 d-none" id="ann-empty">No announcements yet.</p>
+                <p class="text-center text-muted py-4 mb-0 d-none" id="ann-message"></p>
             </div>
         </div>
     </div>

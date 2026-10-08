@@ -16,6 +16,7 @@ namespace RestaurantReservation.Models
 
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email address format.")]
+        [StringLength(256, ErrorMessage = "Email cannot exceed 256 characters.")]
         [DataType(DataType.EmailAddress)]
         public string Email { get; set; } = string.Empty;
 

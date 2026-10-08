@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RestaurantReservation.Models
 {
@@ -13,6 +14,12 @@ namespace RestaurantReservation.Models
         public DateTime StartingTime { get; set; }
 
         public DateTime? EndingTime { get; set; }
+
+        [StringLength(20)]
+        public string? TableId { get; set; }
+
+        [ForeignKey(nameof(TableId))]
+        public Table? Table { get; set; }
 
         public Order? Order { get; set; }
 

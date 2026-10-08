@@ -1,4 +1,7 @@
 @page
+@model RestaurantReservation.Pages.Admin.Settings.IndexModel
+@using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Models
 @{
     ViewData["Title"] = "Restaurant Settings";
 }
@@ -8,16 +11,19 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Restaurant Settings</h1>
-                <p class="page-subtitle">Adjust operating hours and basic restaurant details</p>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary" id="reset-settings">Discard changes</button>
-                <button type="submit" class="btn btn-dark"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
+                <button type="submit" class="btn btn-dark" id="save-settings"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
             </div>
         </div>
 
+        <div class="alert alert-danger d-none" id="settings-error" role="alert"></div>
+        <div class="alert alert-info d-none" id="settings-first-time" role="status">
+            No restaurant settings saved yet. Fill in the details below and press <strong>Save settings</strong>.
+        </div>
+
         <div class="row g-3">
-            <!-- Operating hours -->
             <div class="col-lg-7">
                 <div class="card">
                     <div class="card-header justify-content-between">
@@ -33,14 +39,12 @@
                             <div class="col-sm-3">Closes</div>
                             <div class="col-sm-3">Open?</div>
                         </div>
-                        <!-- One row per day, rendered by settings.js -->
                         <div id="hours-list"></div>
                         <small class="text-danger d-block mt-2" id="hours-error"></small>
                     </div>
                 </div>
             </div>
 
-            <!-- Restaurant details -->
             <div class="col-lg-5">
                 <div class="card">
                     <div class="card-header">
@@ -50,24 +54,25 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="set-name" class="form-label">Restaurant name</label>
-                            <input type="text" class="form-control" id="set-name" maxlength="100" required />
+                            <input type="text" class="form-control" id="set-name" maxlength="@(ModelRules.MaxLength<RestaurantSettings>(nameof(RestaurantSettings.Name)))" required />
                             <div class="invalid-feedback">Name is required.</div>
                         </div>
                         <div class="mb-3">
                             <label for="set-address" class="form-label">Address</label>
-                            <textarea class="form-control" id="set-address" rows="2" maxlength="250" required></textarea>
+                            <textarea class="form-control" id="set-address" rows="2" maxlength="@(ModelRules.MaxLength<RestaurantSettings>(nameof(RestaurantSettings.Address)))" required></textarea>
                             <div class="invalid-feedback">Address is required.</div>
                         </div>
                         <div class="mb-3">
                             <label for="set-phone" class="form-label">Phone number <span class="text-muted">(optional)</span></label>
-                            <input type="tel" class="form-control" id="set-phone" maxlength="20" />
+                            <input type="tel" class="form-control" id="set-phone" maxlength="@(ModelRules.MaxLength<RestaurantSettings>(nameof(RestaurantSettings.PhoneNumber)))" />
                         </div>
                         <div>
                             <label for="set-currency" class="form-label">Default currency</label>
                             <select class="form-select" id="set-currency">
-                                <option value="MYR">RM (MYR)</option>
-                                <option value="USD">$ (USD)</option>
-                                <option value="EUR">&euro; (EUR)</option>
+                                @foreach (var currency in Model.CurrencyOptions)
+                                {
+                                    <option value="@currency.Value">@currency.Label</option>
+                                }
                             </select>
                         </div>
                     </div>

@@ -1,12 +1,8 @@
-/* Orders page styles. Layout uses Bootstrap tables, badges and progress bars; add custom styles below. */
-
-/* Width of the progress bar in the Progress column. */
 .order-progress {
     width: 90px;
     height: 8px;
 }
 
-/* On narrow screens the status filter scrolls sideways instead of overflowing the page. */
 #status-filter {
     max-width: 100%;
     overflow-x: auto;

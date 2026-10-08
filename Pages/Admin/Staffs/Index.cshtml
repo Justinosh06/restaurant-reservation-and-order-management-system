@@ -1,4 +1,5 @@
 @page
+@model RestaurantReservation.Pages.Admin.Staffs.IndexModel
 @{
     ViewData["Title"] = "Staffs";
 }
@@ -23,10 +24,10 @@
         <div class="table-responsive">
             <table class="table table-hover table-fixed align-middle mb-0" style="--table-min-width: 560px">
                 <colgroup>
-                    <col style="width: 140px" />  @* Staff ID *@
-                    <col />                       @* Email *@
-                    <col style="width: 160px" />  @* Role *@
-                    <col style="width: 110px" />  @* Actions *@
+                    <col style="width: 140px" />
+                    <col />
+                    <col style="width: 160px" />
+                    <col style="width: 110px" />
                 </colgroup>
                 <thead>
                     <tr><th>Staff ID</th><th>Email</th><th>Role</th><th class="text-end">Actions</th></tr>
@@ -34,11 +35,9 @@
                 <tbody id="staff-body"></tbody>
             </table>
         </div>
-        <p class="text-center text-muted py-4 mb-0 d-none" id="staff-empty">No staff accounts match this search.</p>
     </div>
 </div>
 
-<!-- Add / edit staff modal -->
 <div class="modal fade" id="staff-modal" tabindex="-1" aria-labelledby="staff-modal-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content" id="staff-form" novalidate>
@@ -47,20 +46,22 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="alert alert-danger d-none" id="staff-form-error" role="alert"></div>
                 <input type="hidden" id="staff-id" />
                 <div class="mb-3">
                     <label for="staff-email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="staff-email" required placeholder="name@resto.com" />
-                    <div class="invalid-feedback">Please enter a valid email address that isn't already in use.</div>
+                    <input type="email" class="form-control" id="staff-email" required placeholder="name@resto.com"
+                           maxlength="@(RestaurantReservation.Infrastructure.Admin.ModelRules.MaxLength<RestaurantReservation.Models.Admin>(nameof(RestaurantReservation.Models.Admin.Email)))" />
+                    <div class="invalid-feedback">Please enter a valid email address.</div>
                 </div>
                 <div class="mb-3">
                     <label for="staff-password" class="form-label">Password</label>
                     <div class="input-group">
-                        <input type="password" class="form-control" id="staff-password" minlength="8" autocomplete="new-password" />
+                        <input type="password" class="form-control" id="staff-password" minlength="@RestaurantReservation.Pages.Admin.Staffs.IndexModel.MinPasswordLength" autocomplete="new-password" />
                         <button type="button" class="btn btn-outline-secondary" id="toggle-password" aria-label="Show password"><i class="fa-regular fa-eye"></i></button>
-                        <div class="invalid-feedback">Password must be at least 8 characters.</div>
+                        <div class="invalid-feedback">Password must be at least @RestaurantReservation.Pages.Admin.Staffs.IndexModel.MinPasswordLength characters.</div>
                     </div>
-                    <div class="form-text" id="password-help">At least 8 characters. Share it with the staff member so they can sign in.</div>
+                    <div class="form-text" id="password-help"></div>
                 </div>
                 <div class="mb-1">
                     <label for="staff-role" class="form-label">Role</label>
@@ -78,7 +79,6 @@
     </div>
 </div>
 
-<!-- Delete confirmation modal -->
 <div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-modal-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">

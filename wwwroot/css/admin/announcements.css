@@ -1,12 +1,8 @@
-/* Announcement page styles. Layout uses Bootstrap cards, list groups and btn-check; add custom styles below. */
-
-/* Keeps icons in the list the same width so titles line up. */
 .announcement-icon {
     width: 32px;
     text-align: center;
 }
 
-/* Keeps line breaks the admin typed in the message. */
 .announcement-text {
     white-space: pre-line;
 }

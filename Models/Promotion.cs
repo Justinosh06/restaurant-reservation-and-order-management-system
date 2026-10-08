@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RestaurantReservation.Models
 {
@@ -25,12 +24,5 @@ namespace RestaurantReservation.Models
 
         [Required]
         public DateOnly EndDate { get; set; }
-
-        // Foreign Key
-        [Required]
-        public string OrderId { get; set; } = string.Empty;
-
-        [ForeignKey(nameof(OrderId))]
-        public Order? Order { get; set; }
     }
 }

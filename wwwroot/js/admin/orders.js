@@ -1,28 +1,17 @@
-// Mock data - replace with API calls once the backend is ready.
-const ORDER_STATUSES = ["Pending", "Preparing", "Served"];
-
-const NEXT_ACTION = {
-    Pending: { label: "Start preparing", icon: "fa-solid fa-fire-burner" },
-    Preparing: { label: "Mark served", icon: "fa-solid fa-bell-concierge" }
-};
-
-const orders = [
-    { id: "ORD-1064", table: "T05", customer: "Aisyah Rahman", items: ["Carbonara x2", "Iced Lemon Tea x2"], time: "19:42", total: 8650, status: "Pending" },
-    { id: "ORD-1063", table: "T12", customer: "Jason Lim", items: ["Bolognese x3", "Garlic Bread x1"], time: "19:35", total: 12400, status: "Preparing" },
-    { id: "ORD-1062", table: "T03", customer: "Priya Nair", items: ["Aglio Olio x1", "Latte x1"], time: "19:31", total: 5600, status: "Preparing" },
-    { id: "ORD-1061", table: "T08", customer: "Wei Jie Tan", items: ["Pesto Penne x2", "Carbonara x2", "Mocha x2"], time: "19:20", total: 15890, status: "Served" },
-    { id: "ORD-1060", table: "T01", customer: "Nurul Huda", items: ["Aglio Olio x1"], time: "19:12", total: 4300, status: "Served" },
-    { id: "ORD-1059", table: "T07", customer: "Daniel Wong", items: ["Bolognese x1", "Iced Lemon Tea x1"], time: "19:05", total: 4900, status: "Pending" },
-    { id: "ORD-1058", table: "T10", customer: "Siti Aminah", items: ["Carbonara x1", "Pesto Penne x1"], time: "18:58", total: 7800, status: "Served" }
-];
-
 (() => {
+    const ORDER_STATUSES = ["Pending", "Preparing", "Served"];
+    const NEXT_ACTION = {
+        Pending: { label: "Start preparing", icon: "fa-solid fa-fire-burner" },
+        Preparing: { label: "Mark served", icon: "fa-solid fa-bell-concierge" }
+    };
+    const COLUMN_COUNT = 9;
+
+    let orders = [];
     let activeFilter = "All";
     let searchTerm = "";
 
     const filterEl = document.getElementById("status-filter");
     const bodyEl = document.getElementById("orders-body");
-    const emptyEl = document.getElementById("orders-empty");
 
     const renderFilters = () => {
         const counts = { All: orders.length };
@@ -34,7 +23,6 @@ const orders = [
             </button>`).join("");
     };
 
-    // Bootstrap progress bar: Pending = 1/3, Preparing = 2/3, Served = full.
     const renderProgress = (status) => {
         const percent = Math.round((ORDER_STATUSES.indexOf(status) + 1) / ORDER_STATUSES.length * 100);
         return `<div class="progress order-progress" role="progressbar" aria-label="${status}" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
@@ -43,12 +31,20 @@ const orders = [
     };
 
     const renderOrders = () => {
+        if (orders.length === 0) {
+            bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "No active orders right now. New orders will appear here.");
+            return;
+        }
+
         const term = searchTerm.toLowerCase();
         const visible = orders.filter(o =>
             (activeFilter === "All" || o.status === activeFilter) &&
-            (!term || [o.id, o.table, o.customer].some(v => v.toLowerCase().includes(term))));
+            (!term || [o.displayId, o.table, o.customer].some(v => (v ?? "").toLowerCase().includes(term))));
 
-        emptyEl.classList.toggle("d-none", visible.length > 0);
+        if (visible.length === 0) {
+            bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "No orders match this status or search. Try another status or clear the search box.");
+            return;
+        }
 
         bodyEl.innerHTML = visible.map(o => {
             const next = NEXT_ACTION[o.status];
@@ -58,11 +54,11 @@ const orders = [
 
             return `
                 <tr>
-                    <td class="fw-medium text-truncate">${AdminUI.escapeHtml(o.id)}</td>
-                    <td>${AdminUI.escapeHtml(o.table)}</td>
+                    <td class="fw-medium text-truncate">${AdminUI.escapeHtml(o.displayId)}</td>
+                    <td>${AdminUI.escapeHtml(o.table ?? "-")}</td>
                     <td class="text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</td>
-                    <td class="small text-muted">${o.items.map(AdminUI.escapeHtml).join("<br>")}</td>
-                    <td>${AdminUI.escapeHtml(o.time)}</td>
+                    <td class="small text-muted">${o.items.map(AdminUI.escapeHtml).join("<br>") || "-"}</td>
+                    <td class="text-nowrap">${AdminUI.formatTime(o.createdAt)}</td>
                     <td class="text-nowrap">${AdminUI.formatCurrency(o.total)}</td>
                     <td>${renderProgress(o.status)}</td>
                     <td>${AdminUI.statusBadge(o.status)}</td>
@@ -73,6 +69,16 @@ const orders = [
 
     const render = () => { renderFilters(); renderOrders(); };
 
+    const load = () => {
+        bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "Loading...");
+        AdminUI.get("List")
+            .then(data => { orders = data; render(); })
+            .catch(error => {
+                bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, error.message, "text-danger");
+                AdminUI.showError(error);
+            });
+    };
+
     filterEl.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-filter]");
         if (!btn) return;
@@ -80,15 +86,27 @@ const orders = [
         render();
     });
 
-    bodyEl.addEventListener("click", (e) => {
+    bodyEl.addEventListener("click", async (e) => {
         const btn = e.target.closest("[data-advance]");
         if (!btn) return;
-        const order = orders.find(o => o.id === btn.dataset.advance);
-        const nextIndex = ORDER_STATUSES.indexOf(order.status) + 1;
-        if (nextIndex >= ORDER_STATUSES.length) return;
-        order.status = ORDER_STATUSES[nextIndex];
-        AdminUI.showToast(`${order.id} moved to ${order.status}`);
-        render();
+
+        AdminUI.setBusy(btn, true);
+        try {
+            const order = orders.find(o => o.id === btn.dataset.advance);
+            const result = await AdminUI.post("Advance", { id: order.id, expectedStatus: order.status });
+            order.status = result.status;
+            AdminUI.showToast(`Order ${order.displayId} moved to ${order.status}`);
+            render();
+        } catch (error) {
+            const order = error.status === 409 ? orders.find(o => o.id === error.data?.id) : null;
+            if (order) {
+                order.status = error.data.status;
+                render();
+            } else {
+                AdminUI.setBusy(btn, false);
+            }
+            AdminUI.showError(error);
+        }
     });
 
     document.getElementById("order-search").addEventListener("input", (e) => {
@@ -96,5 +114,6 @@ const orders = [
         renderOrders();
     });
 
-    render();
+    renderFilters();
+    load();
 })();

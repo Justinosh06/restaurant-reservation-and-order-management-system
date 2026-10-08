@@ -1,6 +1,3 @@
-/* Promotion page styles. Layout uses Bootstrap cards and grid; add custom styles below. */
-
-/* Image upload box. */
 .image-drop {
     height: 180px;
     border-style: dashed !important;
@@ -8,7 +5,6 @@
     overflow: hidden;
 }
 
-/* Image area on each promotion card. */
 .promo-image {
     aspect-ratio: 16 / 9;
     object-fit: cover;
