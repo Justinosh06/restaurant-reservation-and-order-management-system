@@ -1,6 +1,5 @@
 (() => {
     const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    const charts = [];
     const recentOrdersEl = document.getElementById("recent-orders");
 
     document.getElementById("revenue-currency").textContent = AdminUI.currencyCode;
@@ -40,22 +39,6 @@
         }
     });
 
-    const applyChartTheme = () => {
-        const color = cssVar("--bs-primary");
-        const textColor = cssVar("--bs-secondary-color");
-        const gridColor = cssVar("--bs-border-color-translucent");
-
-        charts.forEach(chart => {
-            chart.data.datasets.forEach(ds => { ds.backgroundColor = color; ds.borderColor = color; });
-            Object.values(chart.options.scales).forEach(scale => {
-                scale.ticks.color = textColor;
-                scale.grid.color = gridColor;
-                scale.border.color = gridColor;
-            });
-            chart.update("none");
-        });
-    };
-
     const hourLabel = (hour) => new Date(2000, 0, 1, hour).toLocaleTimeString("en-MY", { hour: "numeric" });
     const dayLabel = (isoDate) => new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-MY", { weekday: "short" });
 
@@ -70,7 +53,7 @@
         setDelta("kpi-reservations-delta", data.reservationsToday, data.reservationsYesterday, String);
         setDelta("kpi-aov-delta", data.averageOrderValueToday, data.averageOrderValueYesterday, AdminUI.formatCurrency);
 
-        charts.push(new Chart(document.getElementById("chart-revenue"), {
+        new Chart(document.getElementById("chart-revenue"), {
             type: "line",
             data: {
                 labels: data.revenueLast7Days.map(d => dayLabel(d.date)),
@@ -80,17 +63,15 @@
                 interaction: { mode: "index", intersect: false },
                 scales: { y: { beginAtZero: true } }
             }
-        }));
-        charts.push(barChart("chart-status", data.ordersByStatus.map(s => s.status), data.ordersByStatus.map(s => s.count), "Orders", true));
-        charts.push(barChart("chart-hourly", data.ordersByHour.map(h => hourLabel(h.hour)), data.ordersByHour.map(h => h.count), "Orders"));
-        charts.push(barChart("chart-items", data.topItems.map(i => i.name), data.topItems.map(i => i.units), "Units sold", true));
+        });
+        barChart("chart-status", data.ordersByStatus.map(s => s.status), data.ordersByStatus.map(s => s.count), "Orders", true);
+        barChart("chart-hourly", data.ordersByHour.map(h => hourLabel(h.hour)), data.ordersByHour.map(h => h.count), "Orders");
+        barChart("chart-items", data.topItems.map(i => i.name), data.topItems.map(i => i.units), "Units sold", true);
 
         showEmpty("chart-revenue", data.revenueLast7Days.every(d => d.amount === 0), "No revenue in the last 7 days yet.");
         showEmpty("chart-status", data.ordersToday === 0, "No orders today yet.");
         showEmpty("chart-hourly", data.ordersToday === 0, "No orders today yet.");
         showEmpty("chart-items", data.topItems.length === 0, "No items sold in the last 7 days yet.");
-
-        applyChartTheme();
 
         recentOrdersEl.innerHTML = data.recentOrders.length
             ? data.recentOrders.map(o => `
@@ -105,7 +86,6 @@
     };
 
     recentOrdersEl.innerHTML = AdminUI.tableMessageRow(5, "Loading...");
-    document.addEventListener("admin-theme-change", applyChartTheme);
 
     AdminUI.get("Stats")
         .then(render)
