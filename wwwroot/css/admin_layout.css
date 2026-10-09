@@ -1,0 +1,94 @@
+body {
+    height: 100dvh;
+    padding: 8px;
+    overflow: hidden;
+
+    .page-content {
+        height: 100%;
+        overflow-y: scroll;
+        background: #ececec;
+        border-radius: 16px;
+    }
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 12px;
+
+    .menu-dropdown {
+        position: absolute;
+        padding: 12px;
+        width: fit-content;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        min-width: 160px;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+        .logo {
+            font-size: 1.8rem;
+            letter-spacing: -2px;
+            font-weight: 600;
+            margin-bottom: 0;
+            user-select: none;
+        }
+
+        .menu-dropdown-content {
+            overflow: hidden;
+            max-height: 0;
+            transition: 500ms ease-in-out;
+
+            .nav-item-container {
+                list-style: none;
+                margin-bottom: 0;
+                padding-left: 0;
+
+                .nav-item {
+                    height: fit-content;
+
+                    .nav-button {
+                        color: #888888;
+                        font-weight: 500;
+                        text-decoration: none;
+                        padding: 0 2px;
+                        width: 100%;
+                        transition: 300ms ease-in-out;
+                    }
+
+                    .nav-button.active {
+                        color: black;
+                    }
+
+                    .nav-button:hover {
+                        color: black;
+                    }
+                }
+            }
+        }
+    }
+
+    .menu-dropdown.active {
+        .menu-dropdown-content {
+            max-height: 30dvh;
+            padding-top: 18px;
+        }
+    }
+
+    .profile-avatar {
+        aspect-ratio: 1/1;
+        height: 50px;
+        border-radius: 100%;
+        background: white;
+        margin-left: auto;
+        cursor: pointer;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+    }
+}
+
+.content-container {
+    width: 100%;
+    overflow-y: scroll;
+}

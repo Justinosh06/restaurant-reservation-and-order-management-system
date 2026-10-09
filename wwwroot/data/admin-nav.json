@@ -1,0 +1,14 @@
+[
+  {
+    "Title": "Dashboard",
+    "Icon": "fa-regular fa-face-grin-squint-tears",
+    "Page": "/Admin/Index",
+    "Roles": ["Administrator", "Staff"]
+  },
+  {
+    "Title": "Staff & Roles",
+    "Icon": "fa-regular fa-user",
+    "Page": "/Admin/Users/Index",
+    "Roles": ["Administrator"]
+  }
+]
