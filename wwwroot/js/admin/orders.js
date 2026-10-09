@@ -4,7 +4,7 @@
         Pending: { label: "Start preparing", icon: "fa-solid fa-fire-burner" },
         Preparing: { label: "Mark served", icon: "fa-solid fa-bell-concierge" }
     };
-    const COLUMN_COUNT = 9;
+    const COLUMN_COUNT = 8;
 
     let orders = [];
     let activeFilter = "All";
@@ -21,13 +21,6 @@
             <button type="button" class="btn ${s === activeFilter ? "btn-primary" : "btn-outline-primary"}" data-filter="${s}" aria-pressed="${s === activeFilter}">
                 ${s} <span class="badge text-bg-secondary">${counts[s]}</span>
             </button>`).join("");
-    };
-
-    const renderProgress = (status) => {
-        const percent = Math.round((ORDER_STATUSES.indexOf(status) + 1) / ORDER_STATUSES.length * 100);
-        return `<div class="progress order-progress" role="progressbar" aria-label="${status}" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar" style="width: ${percent}%"></div>
-                </div>`;
     };
 
     const renderOrders = () => {
@@ -60,7 +53,6 @@
                     <td class="small text-muted">${o.items.map(AdminUI.escapeHtml).join("<br>") || "-"}</td>
                     <td class="text-nowrap">${AdminUI.formatTime(o.createdAt)}</td>
                     <td class="text-nowrap">${AdminUI.formatCurrency(o.total)}</td>
-                    <td>${renderProgress(o.status)}</td>
                     <td>${AdminUI.statusBadge(o.status)}</td>
                     <td>${action}</td>
                 </tr>`;

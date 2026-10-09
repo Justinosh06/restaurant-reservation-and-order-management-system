@@ -103,15 +103,23 @@
     fileInput.addEventListener("change", () => loadImage(fileInput.files[0]));
     removeImageBtn.addEventListener("click", clearImage);
 
-    ["dragenter", "dragover"].forEach(evt => dropEl.addEventListener(evt, (e) => {
+    const highlightDropArea = (e) => {
         e.preventDefault();
-        dropEl.classList.add("border-dark");
-    }));
-    ["dragleave", "drop"].forEach(evt => dropEl.addEventListener(evt, (e) => {
+        dropEl.classList.add("border-primary");
+    };
+
+    const unhighlightDropArea = (e) => {
         e.preventDefault();
-        dropEl.classList.remove("border-dark");
-    }));
-    dropEl.addEventListener("drop", (e) => loadImage(e.dataTransfer.files[0]));
+        dropEl.classList.remove("border-primary");
+    };
+
+    dropEl.addEventListener("dragenter", highlightDropArea);
+    dropEl.addEventListener("dragover", highlightDropArea);
+    dropEl.addEventListener("dragleave", unhighlightDropArea);
+    dropEl.addEventListener("drop", (e) => {
+        unhighlightDropArea(e);
+        loadImage(e.dataTransfer.files[0]);
+    });
 
     startInput.addEventListener("change", () => { endInput.min = startInput.value; });
 

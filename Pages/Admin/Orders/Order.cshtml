@@ -9,29 +9,89 @@
         <div>
             <h1 class="page-title">Orders</h1>
         </div>
-        <input type="search" id="order-search" class="form-control page-search w-auto" placeholder="Search order, table or customer" aria-label="Search orders" />
     </div>
 
-    <div class="btn-group mb-3" id="status-filter" role="group" aria-label="Filter orders by status"></div>
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button type="button" class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" role="tab" aria-controls="active-pane" aria-selected="true">Active</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button type="button" class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" role="tab" aria-controls="history-pane" aria-selected="false">History</button>
+        </li>
+    </ul>
 
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Order</th>
-                        <th>Table</th>
-                        <th>Customer</th>
-                        <th>Items</th>
-                        <th>Time</th>
-                        <th>Total</th>
-                        <th>Progress</th>
-                        <th>Status</th>
-                        <th class="text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-body"></tbody>
-            </table>
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="active-pane" role="tabpanel" aria-labelledby="active-tab">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div class="btn-group" id="status-filter" role="group" aria-label="Filter orders by status"></div>
+                <input type="search" id="order-search" class="form-control page-search w-auto" placeholder="Search order, table or customer" aria-label="Search orders" />
+            </div>
+
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Table</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Time</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab">
+            <form id="history-form" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                <div>
+                    <label for="history-from" class="form-label">From</label>
+                    <input type="date" id="history-from" class="form-control" min="2000-01-01" required
+                           value="@Model.Today.AddDays(-6).ToString("yyyy-MM-dd")" max="@Model.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div>
+                    <label for="history-to" class="form-label">To</label>
+                    <input type="date" id="history-to" class="form-control" required
+                           value="@Model.Today.ToString("yyyy-MM-dd")" max="@Model.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div>
+                    <label for="history-status" class="form-label">Status</label>
+                    <select id="history-status" class="form-select">
+                        <option value="All">All</option>
+                        @foreach (var status in RestaurantReservation.Pages.Admin.Orders.OrderModel.HistoryStatuses)
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Show orders</button>
+                <small class="text-muted ms-auto" id="history-count"></small>
+            </form>
+
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Date</th>
+                                <th>Table</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -39,4 +99,5 @@
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
     <script src="~/js/admin/orders.js" asp-append-version="true"></script>
+    <script src="~/js/admin/order-history.js" asp-append-version="true"></script>
 }

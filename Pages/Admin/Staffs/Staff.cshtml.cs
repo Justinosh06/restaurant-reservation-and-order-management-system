@@ -25,10 +25,6 @@ public class StaffModel : PageModel
 
     public record DeleteStaffRequest(string Id);
 
-    public void OnGet()
-    {
-    }
-
     public async Task<IActionResult> OnGetListAsync()
     {
         var staffs = await _db.Admins.AsNoTracking()
@@ -42,12 +38,12 @@ public class StaffModel : PageModel
     public async Task<IActionResult> OnPostCreateAsync([FromBody] SaveStaffRequest request)
     {
         var email = NormalizeEmail(request.Email);
-        var roleError = ValidateRole(request.Role, out var role);
-        var error = ValidateEmail(email) ?? ValidatePassword(request.Password, required: true) ?? roleError;
+        var error = FindError(email, request.Password, passwordRequired: true, request.Role);
         if (error is not null)
         {
             return BadRequest(new { error });
         }
+        var role = Enum.Parse<AdminRole>(request.Role!);
 
         if (await _db.Admins.AnyAsync(a => a.Email == email))
         {
@@ -72,12 +68,12 @@ public class StaffModel : PageModel
         }
 
         var email = NormalizeEmail(request.Email);
-        var roleError = ValidateRole(request.Role, out var role);
-        var error = ValidateEmail(email) ?? ValidatePassword(request.Password, required: false) ?? roleError;
+        var error = FindError(email, request.Password, passwordRequired: false, request.Role);
         if (error is not null)
         {
             return BadRequest(new { error });
         }
+        var role = Enum.Parse<AdminRole>(request.Role!);
 
         if (await _db.Admins.AnyAsync(a => a.Email == email && a.Id != admin.Id))
         {
@@ -130,20 +126,31 @@ public class StaffModel : PageModel
 
     private static string NormalizeEmail(string? email) => (email ?? string.Empty).Trim().ToLowerInvariant();
 
-    private static string? ValidateEmail(string email) =>
-        ModelRules.FirstError(new Models.Admin { Email = email }, nameof(Models.Admin.Email));
-
-    private static string? ValidatePassword(string? password, bool required)
+    private static string? FindError(string email, string? password, bool passwordRequired, string? role)
     {
-        if (string.IsNullOrEmpty(password))
+        var emailError = ModelRules.FirstError(new Models.Admin { Email = email }, nameof(Models.Admin.Email));
+        if (emailError is not null)
         {
-            return required ? $"Password must be at least {MinPasswordLength} characters." : null;
+            return emailError;
         }
-        return password.Length < MinPasswordLength ? $"Password must be at least {MinPasswordLength} characters." : null;
-    }
 
-    private static string? ValidateRole(string? value, out AdminRole role) =>
-        Enum.TryParse(value, ignoreCase: false, out role) && Enum.IsDefined(role) ? null : "Please choose a valid role.";
+        var passwordError = $"Password must be at least {MinPasswordLength} characters.";
+        if (passwordRequired && string.IsNullOrEmpty(password))
+        {
+            return passwordError;
+        }
+        if (!string.IsNullOrEmpty(password) && password.Length < MinPasswordLength)
+        {
+            return passwordError;
+        }
+
+        if (!Enum.TryParse<AdminRole>(role, out var parsedRole) || !Enum.IsDefined(parsedRole))
+        {
+            return "Please choose a valid role.";
+        }
+
+        return null;
+    }
 
     private async Task<bool> IsLastAdministratorAsync() =>
         await _db.Admins.CountAsync(a => a.Role == AdminRole.Administrator) <= 1;

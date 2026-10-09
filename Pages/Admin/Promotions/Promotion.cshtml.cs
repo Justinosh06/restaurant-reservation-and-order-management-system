@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -34,10 +35,6 @@ public class PromotionModel : PageModel
     }
 
     public record PromotionIdRequest(string Id);
-
-    public void OnGet()
-    {
-    }
 
     public async Task<IActionResult> OnGetListAsync()
     {
@@ -132,21 +129,32 @@ public class PromotionModel : PageModel
 
         var header = new byte[12];
         await using var stream = image.OpenReadStream();
-        var read = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
-        if (!MatchesSignature(image.ContentType, header.AsSpan(0, read)))
+        await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
+        if (!LooksLikeImage(image.ContentType, header))
         {
             return "This file isn't a valid JPG, PNG or WebP image.";
         }
         return null;
     }
 
-    private static bool MatchesSignature(string contentType, ReadOnlySpan<byte> header) => contentType switch
+    // Checks the first bytes of the file, so a renamed non-image file is rejected.
+    private static bool LooksLikeImage(string contentType, byte[] header)
     {
-        "image/jpeg" => header.StartsWith(new byte[] { 0xFF, 0xD8, 0xFF }),
-        "image/png" => header.StartsWith(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
-        "image/webp" => header.Length >= 12 && header[..4].SequenceEqual("RIFF"u8) && header[8..12].SequenceEqual("WEBP"u8),
-        _ => false
-    };
+        if (contentType == "image/jpeg")
+        {
+            return header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+        }
+        if (contentType == "image/png")
+        {
+            byte[] pngStart = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+            return header.Take(8).SequenceEqual(pngStart);
+        }
+        if (contentType == "image/webp")
+        {
+            return Encoding.ASCII.GetString(header, 0, 4) == "RIFF" && Encoding.ASCII.GetString(header, 8, 4) == "WEBP";
+        }
+        return false;
+    }
 
     private async Task<string> SaveImageAsync(IFormFile image)
     {

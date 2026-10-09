@@ -12,6 +12,18 @@
     "Roles": ["Administrator", "Staff"]
   },
   {
+    "Title": "Table Management",
+    "Icon": "fa-solid fa-table-cells",
+    "Page": "/Admin/Tables/Table",
+    "Roles": ["Administrator", "Staff"]
+  },
+  {
+    "Title": "Reservation Management",
+    "Icon": "fa-regular fa-calendar-check",
+    "Page": "/Admin/Reservations/Reservation",
+    "Roles": ["Administrator", "Staff"]
+  },
+  {
     "Title": "Staffs",
     "Icon": "fa-regular fa-user",
     "Page": "/Admin/Staffs/Staff",

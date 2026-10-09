@@ -39,10 +39,6 @@ public class SettingModel : PageModel
         string? DefaultCurrency,
         List<BusinessHoursRequest>? BusinessHours);
 
-    public void OnGet()
-    {
-    }
-
     public async Task<IActionResult> OnGetSettingsAsync()
     {
         var settings = await _db.RestaurantSettings.AsNoTracking()
@@ -72,10 +68,22 @@ public class SettingModel : PageModel
             return BadRequest(new { error = "Please choose a valid currency." });
         }
 
-        var hoursResult = ParseHours(request.BusinessHours);
-        if (hoursResult.Error is not null)
+        var hours = request.BusinessHours ?? [];
+        var hasEveryDayOnce = hours.Count == 7
+            && hours.Select(h => h.DayOfWeek).Distinct().Count() == 7
+            && hours.All(h => Enum.IsDefined((DayOfWeek)h.DayOfWeek));
+        if (!hasEveryDayOnce)
         {
-            return BadRequest(new { error = hoursResult.Error });
+            return BadRequest(new { error = "Operating hours must include each day of the week once." });
+        }
+
+        var invalidDays = hours
+            .Where(h => !h.IsClosed && !IsValidTimeRange(h.OpenTime, h.CloseTime))
+            .Select(h => ((DayOfWeek)h.DayOfWeek).ToString())
+            .ToList();
+        if (invalidDays.Count > 0)
+        {
+            return BadRequest(new { error = $"Closing time must be after opening time for: {string.Join(", ", invalidDays)}." });
         }
 
         var settings = await _db.RestaurantSettings
@@ -94,23 +102,24 @@ public class SettingModel : PageModel
         settings.DefaultCurrency = currency;
         settings.UpdatedAt = DateTime.UtcNow;
 
-        foreach (var parsed in hoursResult.Hours)
+        foreach (var day in hours)
         {
-            var existing = settings.BusinessHours.FirstOrDefault(h => h.DayOfWeek == parsed.DayOfWeek);
-            if (existing is null)
+            var dayOfWeek = (DayOfWeek)day.DayOfWeek;
+            var saved = settings.BusinessHours.FirstOrDefault(h => h.DayOfWeek == dayOfWeek);
+            if (saved is null)
             {
-                existing = new BusinessHours
+                saved = new BusinessHours
                 {
                     Id = Guid.NewGuid().ToString("N"),
-                    DayOfWeek = parsed.DayOfWeek,
+                    DayOfWeek = dayOfWeek,
                     RestaurantSettingsId = settings.Id
                 };
-                settings.BusinessHours.Add(existing);
+                settings.BusinessHours.Add(saved);
             }
 
-            existing.IsClosed = parsed.IsClosed;
-            existing.OpenTime = parsed.OpenTime;
-            existing.CloseTime = parsed.CloseTime;
+            saved.IsClosed = day.IsClosed;
+            saved.OpenTime = day.IsClosed ? null : TimeOnly.Parse(day.OpenTime!);
+            saved.CloseTime = day.IsClosed ? null : TimeOnly.Parse(day.CloseTime!);
         }
 
         await _db.SaveChangesAsync();
@@ -118,42 +127,8 @@ public class SettingModel : PageModel
         return new JsonResult(ToDto(settings));
     }
 
-    private static (List<BusinessHours> Hours, string? Error) ParseHours(List<BusinessHoursRequest>? requested)
-    {
-        if (requested is null || requested.Count != 7 ||
-            requested.Select(h => h.DayOfWeek).Distinct().Count() != 7 ||
-            requested.Any(h => !Enum.IsDefined((DayOfWeek)h.DayOfWeek)))
-        {
-            return ([], "Operating hours must include each day of the week once.");
-        }
-
-        var hours = new List<BusinessHours>();
-        var invalidDays = new List<string>();
-
-        foreach (var day in requested)
-        {
-            var dayOfWeek = (DayOfWeek)day.DayOfWeek;
-            if (day.IsClosed)
-            {
-                hours.Add(new BusinessHours { DayOfWeek = dayOfWeek, IsClosed = true });
-                continue;
-            }
-
-            if (!TimeOnly.TryParse(day.OpenTime, out var open) ||
-                !TimeOnly.TryParse(day.CloseTime, out var close) ||
-                close <= open)
-            {
-                invalidDays.Add(dayOfWeek.ToString());
-                continue;
-            }
-
-            hours.Add(new BusinessHours { DayOfWeek = dayOfWeek, IsClosed = false, OpenTime = open, CloseTime = close });
-        }
-
-        return invalidDays.Count > 0
-            ? ([], $"Closing time must be after opening time for: {string.Join(", ", invalidDays)}.")
-            : (hours, null);
-    }
+    private static bool IsValidTimeRange(string? openTime, string? closeTime) =>
+        TimeOnly.TryParse(openTime, out var open) && TimeOnly.TryParse(closeTime, out var close) && close > open;
 
     private static object ToDto(RestaurantSettings? settings) => new
     {

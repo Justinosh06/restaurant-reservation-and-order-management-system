@@ -17,6 +17,21 @@
         messageEl.textContent = text;
     };
 
+    const statusOf = (a) => {
+        if (!a.isActive) return "Hidden";
+        if (a.isExpired) return "Expired";
+        return "Active";
+    };
+
+    const dateLine = (a) => {
+        let text = `Posted ${AdminUI.formatDate(a.createdAt)}`;
+        if (a.lastDay) {
+            const label = a.isExpired ? "Ended" : "Shows until";
+            text += ` &middot; ${label} ${AdminUI.formatDate(`${a.lastDay}T00:00:00`)}`;
+        }
+        return text;
+    };
+
     const render = () => {
         const activeCount = announcements.filter(a => a.isActive && !a.isExpired).length;
         document.getElementById("ann-count").textContent = `${announcements.length} total, ${activeCount} active`;
@@ -34,10 +49,10 @@
                 <div class="flex-grow-1">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <h6 class="mb-0">${AdminUI.escapeHtml(a.title)}</h6>
-                        ${AdminUI.statusBadge(!a.isActive ? "Hidden" : a.isExpired ? "Expired" : "Active")}
+                        ${AdminUI.statusBadge(statusOf(a))}
                     </div>
                     <p class="mb-1 text-muted announcement-text">${AdminUI.escapeHtml(a.description)}</p>
-                    <small class="text-muted">Posted ${AdminUI.formatDate(a.createdAt)}${a.lastDay ? ` &middot; ${a.isExpired ? "Ended" : "Shows until"} ${AdminUI.formatDate(`${a.lastDay}T00:00:00`)}` : ""}</small>
+                    <small class="text-muted">${dateLine(a)}</small>
                 </div>
                 <div class="d-flex flex-column gap-1">
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-icon" data-toggle="${a.id}" title="${a.isActive ? "Hide" : "Publish"}" aria-label="${a.isActive ? "Hide" : "Publish"} ${AdminUI.escapeHtml(a.title)}">
@@ -90,28 +105,44 @@
         }
     });
 
-    listEl.addEventListener("click", async (e) => {
-        const toggleBtn = e.target.closest("[data-toggle]");
-        const deleteBtn = e.target.closest("[data-delete]");
-        const button = toggleBtn ?? deleteBtn;
-        if (!button) return;
-        if (deleteBtn && !confirm("Delete this announcement?")) return;
-
+    const toggleAnnouncement = async (button) => {
         AdminUI.setBusy(button, true);
         try {
-            if (toggleBtn) {
-                const updated = await AdminUI.post("Toggle", { id: toggleBtn.dataset.toggle });
-                announcements = announcements.map(a => a.id === updated.id ? updated : a);
-                AdminUI.showToast(updated.isActive ? "Announcement published" : "Announcement hidden");
-            } else {
-                await AdminUI.post("Delete", { id: deleteBtn.dataset.delete });
-                announcements = announcements.filter(a => a.id !== deleteBtn.dataset.delete);
-                AdminUI.showToast("Announcement deleted");
-            }
+            const updated = await AdminUI.post("Toggle", { id: button.dataset.toggle });
+            announcements = announcements.map(a => a.id === updated.id ? updated : a);
+            AdminUI.showToast(updated.isActive ? "Announcement published" : "Announcement hidden");
             render();
         } catch (error) {
             AdminUI.setBusy(button, false);
             AdminUI.showError(error);
+        }
+    };
+
+    const deleteAnnouncement = async (button) => {
+        if (!confirm("Delete this announcement?")) return;
+
+        AdminUI.setBusy(button, true);
+        try {
+            await AdminUI.post("Delete", { id: button.dataset.delete });
+            announcements = announcements.filter(a => a.id !== button.dataset.delete);
+            AdminUI.showToast("Announcement deleted");
+            render();
+        } catch (error) {
+            AdminUI.setBusy(button, false);
+            AdminUI.showError(error);
+        }
+    };
+
+    listEl.addEventListener("click", (e) => {
+        const toggleButton = e.target.closest("[data-toggle]");
+        if (toggleButton) {
+            toggleAnnouncement(toggleButton);
+            return;
+        }
+
+        const deleteButton = e.target.closest("[data-delete]");
+        if (deleteButton) {
+            deleteAnnouncement(deleteButton);
         }
     });
 

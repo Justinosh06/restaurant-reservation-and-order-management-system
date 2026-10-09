@@ -37,6 +37,8 @@ const AdminUI = (() => {
         Pending: "text-bg-warning",
         Preparing: "text-bg-primary",
         Served: "text-bg-success",
+        Completed: "text-bg-secondary",
+        Cancelled: "text-bg-danger",
         Active: "text-bg-success",
         Scheduled: "text-bg-warning",
         Ended: "text-bg-secondary",
@@ -78,9 +80,12 @@ const AdminUI = (() => {
     // Calls "<current page>?handler=<handler>" and returns the JSON response.
     // On failure it throws an Error whose message is the server's { error } text,
     // with .status (HTTP code) and .data (full response body) attached.
-    const request = async (handler, { method = "GET", json, formData } = {}) => {
+    const request = async (handler, { method = "GET", json, formData, query = {} } = {}) => {
         const url = new URL(window.location.pathname, window.location.origin);
         url.searchParams.set("handler", handler);
+        for (const [key, value] of Object.entries(query)) {
+            url.searchParams.set(key, value);
+        }
 
         const headers = { "Accept": "application/json" };
         let body;
@@ -109,9 +114,7 @@ const AdminUI = (() => {
         return data;
     };
 
-    // get("List") -> OnGetListAsync, post("Create", obj) -> OnPostCreateAsync (JSON body),
-    // postForm("Create", formData) -> OnPostCreateAsync (multipart, used for file uploads).
-    const get = (handler) => request(handler);
+    const get = (handler, query = {}) => request(handler, { query });
     const post = (handler, json = {}) => request(handler, { method: "POST", json });
     const postForm = (handler, formData) => request(handler, { method: "POST", formData });
 

@@ -36,10 +36,6 @@ public class AnnouncementModel : PageModel
 
     public record AnnouncementIdRequest(string Id);
 
-    public void OnGet()
-    {
-    }
-
     public async Task<IActionResult> OnGetListAsync()
     {
         var announcements = await _db.Announcements.AsNoTracking()
@@ -125,8 +121,8 @@ public class AnnouncementModel : PageModel
         isActive = a.IsActive,
         isExpired = a.ExpiresAt <= DateTime.UtcNow,
         createdAt = a.CreatedAt,
-        lastDay = a.ExpiresAt is { } expiresAt
-            ? DateOnly.FromDateTime(_clock.ToLocal(expiresAt).AddTicks(-1)).ToString("yyyy-MM-dd")
+        lastDay = a.ExpiresAt.HasValue
+            ? DateOnly.FromDateTime(_clock.ToLocal(a.ExpiresAt.Value).AddTicks(-1)).ToString("yyyy-MM-dd")
             : null
     };
 }

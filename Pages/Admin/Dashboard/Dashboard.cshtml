@@ -2,22 +2,39 @@
 @model RestaurantReservation.Pages.Admin.Dashboard.DashboardModel
 @{
     ViewData["Title"] = "Dashboard";
+    var today = Model.Today.ToString("yyyy-MM-dd");
+    var weekAgo = Model.Today.AddDays(-6).ToString("yyyy-MM-dd");
 }
 
 <div class="admin-page px-3 pb-4">
     <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
         <div>
             <h1 class="page-title">Dashboard</h1>
-            <p class="page-subtitle">Overview of today's restaurant activity</p>
+            <p class="page-subtitle" id="range-label"></p>
         </div>
-        <small class="text-muted" id="dashboard-date"></small>
+        <form id="range-form" class="d-flex flex-wrap align-items-end gap-2" data-today="@today">
+            <div>
+                <label for="range-from" class="form-label small mb-0">From</label>
+                <input type="date" id="range-from" class="form-control form-control-sm" min="2000-01-01" value="@weekAgo" max="@today" required />
+            </div>
+            <div>
+                <label for="range-to" class="form-label small mb-0">To</label>
+                <input type="date" id="range-to" class="form-control form-control-sm" value="@today" max="@today" required />
+            </div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Quick date ranges">
+                <button type="button" class="btn btn-outline-primary" data-range="today">Today</button>
+                <button type="button" class="btn btn-outline-primary" data-range="week">Last 7 days</button>
+                <button type="button" class="btn btn-outline-primary" data-range="month">This month</button>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+        </form>
     </div>
 
     <div class="row g-3 mb-3">
         <div class="col-sm-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="text-muted small" title="From served and completed orders"><i class="fa-solid fa-coins me-1"></i> Revenue today</div>
+                    <div class="text-muted small" title="From served and completed orders"><i class="fa-solid fa-coins me-1"></i> Revenue</div>
                     <div class="fs-3 fw-semibold kpi-value" id="kpi-revenue">-</div>
                     <small class="text-muted" id="kpi-revenue-delta">&nbsp;</small>
                 </div>
@@ -26,7 +43,7 @@
         <div class="col-sm-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="text-muted small"><i class="fa-solid fa-receipt me-1"></i> Orders today</div>
+                    <div class="text-muted small"><i class="fa-solid fa-receipt me-1"></i> Orders</div>
                     <div class="fs-3 fw-semibold kpi-value" id="kpi-orders">-</div>
                     <small class="text-muted" id="kpi-orders-delta">&nbsp;</small>
                 </div>
@@ -35,7 +52,7 @@
         <div class="col-sm-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="text-muted small"><i class="fa-solid fa-calendar-check me-1"></i> Reservations today</div>
+                    <div class="text-muted small"><i class="fa-solid fa-calendar-check me-1"></i> Reservations</div>
                     <div class="fs-3 fw-semibold kpi-value" id="kpi-reservations">-</div>
                     <small class="text-muted" id="kpi-reservations-delta">&nbsp;</small>
                 </div>
@@ -53,35 +70,33 @@
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-lg-8">
+        <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header"><span>Revenue from served orders, last 7 days (<span id="revenue-currency"></span>)</span></div>
+                <div class="card-header"><span>Revenue from served orders (<span id="revenue-currency"></span>)</span></div>
                 <div class="card-body">
-                    <div class="chart-box"><canvas id="chart-revenue" role="img" aria-label="Line chart of daily revenue over the last 7 days"></canvas></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header">Today's orders by status</div>
-                <div class="card-body">
-                    <div class="chart-box"><canvas id="chart-status" role="img" aria-label="Bar chart of today's orders by status"></canvas></div>
+                    <div id="chart-revenue" role="img" aria-label="Line chart of revenue per day in the chosen date range"></div>
                 </div>
             </div>
         </div>
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header">Orders by hour (today)</div>
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span>Orders</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Show orders by day or by hour">
+                        <button type="button" class="btn btn-outline-primary active" id="orders-by-day">By day</button>
+                        <button type="button" class="btn btn-outline-primary" id="orders-by-hour">By hour</button>
+                    </div>
+                </div>
                 <div class="card-body">
-                    <div class="chart-box"><canvas id="chart-hourly" role="img" aria-label="Bar chart of orders placed per hour today"></canvas></div>
+                    <div id="chart-orders" role="img" aria-label="Bar chart of orders per day or per hour in the chosen date range"></div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-header">Top menu items (units served, last 7 days)</div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">Top menu items (units served)</div>
                 <div class="card-body">
-                    <div class="chart-box"><canvas id="chart-items" role="img" aria-label="Bar chart of top selling menu items in the last 7 days"></canvas></div>
+                    <div id="chart-items" role="img" aria-label="Bar chart of the top selling menu items in the chosen date range"></div>
                 </div>
             </div>
         </div>
@@ -104,7 +119,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/lib/chart.js/chart.umd.min.js"></script>
+    <script src="~/lib/apexcharts/apexcharts.min.js"></script>
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
     <script src="~/js/admin/dashboard.js" asp-append-version="true"></script>
 }

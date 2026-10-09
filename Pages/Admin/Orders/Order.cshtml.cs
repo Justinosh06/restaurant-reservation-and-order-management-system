@@ -11,23 +11,66 @@ public class OrderModel : PageModel
 {
     private static readonly OrderStatus[] ActiveStatuses = [OrderStatus.InQueue, OrderStatus.Preparing, OrderStatus.Served];
 
-    private readonly ApplicationDbContext _db;
+    public static readonly string[] HistoryStatuses = Enum.GetValues<OrderStatus>().Select(AdminDisplay.OrderStatusLabel).ToArray();
 
-    public OrderModel(ApplicationDbContext db)
+    private readonly ApplicationDbContext _db;
+    private readonly RestaurantClock _clock;
+
+    public OrderModel(ApplicationDbContext db, RestaurantClock clock)
     {
         _db = db;
+        _clock = clock;
     }
+
+    public DateOnly Today => _clock.Today;
 
     public record AdvanceRequest(string Id, string? ExpectedStatus);
 
-    public void OnGet()
-    {
-    }
+    public record OrderRow(
+        string Id,
+        string DisplayId,
+        string? Table,
+        string Customer,
+        List<string> Items,
+        DateTime CreatedAt,
+        int Total,
+        string Status);
 
     public async Task<IActionResult> OnGetListAsync()
     {
-        var orders = await _db.Orders.AsNoTracking()
-            .Where(o => ActiveStatuses.Contains(o.Status))
+        var activeOrders = _db.Orders.Where(o => ActiveStatuses.Contains(o.Status));
+        return new JsonResult(await ToRowsAsync(activeOrders));
+    }
+
+    public async Task<IActionResult> OnGetHistoryAsync(string? from, string? to, string? status)
+    {
+        var dateError = DateRangeInput.Check(from, to, out var fromDate, out var toDate);
+        if (dateError is not null)
+        {
+            return BadRequest(new { error = dateError });
+        }
+
+        var startUtc = _clock.StartOfDayUtc(fromDate);
+        var endUtc = _clock.StartOfDayUtc(toDate.AddDays(1));
+        var orders = _db.Orders.Where(o => o.CreatedAt >= startUtc && o.CreatedAt < endUtc);
+
+        if (!string.IsNullOrEmpty(status) && status != "All")
+        {
+            var matches = Enum.GetValues<OrderStatus>().Where(s => AdminDisplay.OrderStatusLabel(s) == status).ToList();
+            if (matches.Count == 0)
+            {
+                return BadRequest(new { error = "Please choose a valid status." });
+            }
+            var orderStatus = matches[0];
+            orders = orders.Where(o => o.Status == orderStatus);
+        }
+
+        return new JsonResult(await ToRowsAsync(orders));
+    }
+
+    private async Task<List<OrderRow>> ToRowsAsync(IQueryable<Order> query)
+    {
+        var orders = await query.AsNoTracking()
             .OrderByDescending(o => o.CreatedAt)
             .Select(o => new
             {
@@ -47,17 +90,15 @@ public class OrderModel : PageModel
                 .ToListAsync())
             .ToLookup(oi => oi.OrderId, oi => $"{oi.Name} x{oi.Quantity}");
 
-        return new JsonResult(orders.Select(o => new
-        {
-            id = o.Id,
-            displayId = AdminDisplay.ShortId(o.Id),
-            table = o.TableId,
-            customer = o.CustomerEmail,
-            items = items[o.Id],
-            createdAt = o.CreatedAt,
-            total = o.TotalAmount,
-            status = AdminDisplay.OrderStatus(o.Status)
-        }));
+        return orders.Select(o => new OrderRow(
+            o.Id,
+            AdminDisplay.ShortId(o.Id),
+            o.TableId,
+            o.CustomerEmail,
+            items[o.Id].ToList(),
+            o.CreatedAt,
+            o.TotalAmount,
+            AdminDisplay.OrderStatusLabel(o.Status))).ToList();
     }
 
     public async Task<IActionResult> OnPostAdvanceAsync([FromBody] AdvanceRequest request)
@@ -68,7 +109,7 @@ public class OrderModel : PageModel
             return NotFound(new { error = "This order no longer exists. Refresh the page." });
         }
 
-        var current = AdminDisplay.OrderStatus(order.Status);
+        var current = AdminDisplay.OrderStatusLabel(order.Status);
         if (current != request.ExpectedStatus)
         {
             return new ConflictObjectResult(new { error = $"This order was already moved to {current} by someone else.", id = order.Id, status = current });
@@ -93,6 +134,6 @@ public class OrderModel : PageModel
         }
         await _db.SaveChangesAsync();
 
-        return new JsonResult(new { id = order.Id, status = AdminDisplay.OrderStatus(order.Status) });
+        return new JsonResult(new { id = order.Id, status = AdminDisplay.OrderStatusLabel(order.Status) });
     }
 }

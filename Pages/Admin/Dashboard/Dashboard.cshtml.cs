@@ -23,74 +23,77 @@ public class DashboardModel : PageModel
         _clock = clock;
     }
 
-    public void OnGet()
-    {
-    }
+    public DateOnly Today => _clock.Today;
 
-    public async Task<IActionResult> OnGetStatsAsync()
+    public async Task<IActionResult> OnGetStatsAsync(string? from, string? to)
     {
-        var today = _clock.Today;
-        var yesterday = today.AddDays(-1);
-        var weekStart = today.AddDays(-6);
-        var weekStartUtc = _clock.StartOfDayUtc(weekStart);
+        var dateError = DateRangeInput.Check(from, to, out var fromDate, out var toDate);
+        if (dateError is not null)
+        {
+            return BadRequest(new { error = dateError });
+        }
 
-        var yesterdayStartUtc = _clock.StartOfDayUtc(yesterday);
+        // The previous period has the same number of days and ends the day before the chosen range.
+        var dayCount = toDate.DayNumber - fromDate.DayNumber + 1;
+        var previousFrom = fromDate.AddDays(-dayCount);
+        var days = Enumerable.Range(0, dayCount).Select(i => fromDate.AddDays(i)).ToList();
+
+        var startUtc = _clock.StartOfDayUtc(previousFrom);
+        var endUtc = _clock.StartOfDayUtc(toDate.AddDays(1));
 
         var placedOrders = (await _db.Orders.AsNoTracking()
-                .Where(o => o.CreatedAt >= yesterdayStartUtc && o.Status != OrderStatus.Cancelled)
-                .Select(o => new { o.Status, o.CreatedAt })
+                .Where(o => o.CreatedAt >= startUtc && o.CreatedAt < endUtc && o.Status != OrderStatus.Cancelled)
+                .Select(o => o.CreatedAt)
                 .ToListAsync())
-            .Select(o =>
-            {
-                var local = _clock.ToLocal(o.CreatedAt);
-                return new { o.Status, Day = DateOnly.FromDateTime(local), local.Hour };
-            })
+            .Select(createdAt => _clock.ToLocal(createdAt))
+            .Select(local => new { Day = DateOnly.FromDateTime(local), local.Hour })
             .ToList();
 
         var servedOrders = (await _db.Orders.AsNoTracking()
-                .Where(o => RevenueStatuses.Contains(o.Status) && (o.ServedAt ?? o.CreatedAt) >= weekStartUtc)
+                .Where(o => RevenueStatuses.Contains(o.Status))
+                .Where(o => (o.ServedAt ?? o.CreatedAt) >= startUtc && (o.ServedAt ?? o.CreatedAt) < endUtc)
                 .Select(o => new { o.TotalAmount, ServedAt = o.ServedAt ?? o.CreatedAt })
                 .ToListAsync())
             .Select(o => new { o.TotalAmount, Day = DateOnly.FromDateTime(_clock.ToLocal(o.ServedAt)) })
             .ToList();
 
-        var ordersToday = placedOrders.Where(o => o.Day == today).ToList();
-        var ordersYesterday = placedOrders.Where(o => o.Day == yesterday).ToList();
-        var servedToday = servedOrders.Where(o => o.Day == today).ToList();
-        var servedYesterday = servedOrders.Where(o => o.Day == yesterday).ToList();
-        var revenueByDay = servedOrders
-            .GroupBy(o => o.Day)
-            .ToDictionary(g => g.Key, g => g.Sum(o => o.TotalAmount));
+        var orders = placedOrders.Where(o => o.Day >= fromDate).ToList();
+        var previousOrders = placedOrders.Where(o => o.Day < fromDate).ToList();
+        var served = servedOrders.Where(o => o.Day >= fromDate).ToList();
+        var previousServed = servedOrders.Where(o => o.Day < fromDate).ToList();
 
-        var reservationsToday = await CountReservationsAsync(today);
-        var reservationsYesterday = await CountReservationsAsync(yesterday);
+        var revenue = served.Sum(o => o.TotalAmount);
+        var previousRevenue = previousServed.Sum(o => o.TotalAmount);
 
-        var revenueLast7Days = Enumerable.Range(0, 7)
-            .Select(offset => weekStart.AddDays(offset))
-            .Select(day => new
-            {
-                date = day.ToString("yyyy-MM-dd"),
-                amount = revenueByDay.GetValueOrDefault(day)
-            });
+        var reservations = await _db.Reservations.CountAsync(r =>
+            r.Date >= fromDate && r.Date <= toDate && r.Status != ReservationStatus.Cancelled);
+        var previousReservations = await _db.Reservations.CountAsync(r =>
+            r.Date >= previousFrom && r.Date < fromDate && r.Status != ReservationStatus.Cancelled);
 
-        var ordersByStatus = new[]
+        var revenueByDay = days.Select(day => new
         {
-            new { status = "Pending", count = ordersToday.Count(o => o.Status == OrderStatus.InQueue) },
-            new { status = "Preparing", count = ordersToday.Count(o => o.Status == OrderStatus.Preparing) },
-            new { status = "Served", count = ordersToday.Count(o => RevenueStatuses.Contains(o.Status)) }
-        };
+            date = day.ToString("yyyy-MM-dd"),
+            amount = served.Where(o => o.Day == day).Sum(o => o.TotalAmount)
+        });
 
-        var (firstHour, lastHour) = await GetOpeningHoursAsync(today.DayOfWeek);
-        if (ordersToday.Count > 0)
+        var ordersByDay = days.Select(day => new
         {
-            firstHour = Math.Min(firstHour, ordersToday.Min(o => o.Hour));
-            lastHour = Math.Max(lastHour, ordersToday.Max(o => o.Hour));
-        }
-        var ordersByHour = Enumerable.Range(firstHour, lastHour - firstHour + 1)
-            .Select(hour => new { hour, count = ordersToday.Count(o => o.Hour == hour) });
+            date = day.ToString("yyyy-MM-dd"),
+            count = orders.Count(o => o.Day == day)
+        });
 
+        var firstHour = orders.Count > 0 ? Math.Min(DefaultFirstHour, orders.Min(o => o.Hour)) : DefaultFirstHour;
+        var lastHour = orders.Count > 0 ? Math.Max(DefaultLastHour, orders.Max(o => o.Hour)) : DefaultLastHour;
+        var ordersByHour = Enumerable.Range(firstHour, lastHour - firstHour + 1).Select(hour => new
+        {
+            hour,
+            count = orders.Count(o => o.Hour == hour)
+        });
+
+        var rangeStartUtc = _clock.StartOfDayUtc(fromDate);
         var topItems = await _db.OrderItems.AsNoTracking()
-            .Where(oi => RevenueStatuses.Contains(oi.Order!.Status) && (oi.Order.ServedAt ?? oi.Order.CreatedAt) >= weekStartUtc)
+            .Where(oi => RevenueStatuses.Contains(oi.Order!.Status))
+            .Where(oi => (oi.Order!.ServedAt ?? oi.Order.CreatedAt) >= rangeStartUtc && (oi.Order.ServedAt ?? oi.Order.CreatedAt) < endUtc)
             .GroupBy(oi => oi.MenuItem!.Name)
             .Select(g => new { name = g.Key, units = g.Sum(oi => oi.Quantity) })
             .OrderByDescending(x => x.units)
@@ -108,49 +111,27 @@ public class DashboardModel : PageModel
                 table = o.TableId,
                 createdAt = o.CreatedAt,
                 total = o.TotalAmount,
-                status = AdminDisplay.OrderStatus(o.Status)
+                status = AdminDisplay.OrderStatusLabel(o.Status)
             });
-
-        var revenueToday = servedToday.Sum(o => o.TotalAmount);
-        var revenueYesterday = servedYesterday.Sum(o => o.TotalAmount);
 
         return new JsonResult(new
         {
-            revenueToday,
-            revenueYesterday,
-            averageOrderValueToday = AverageAmount(revenueToday, servedToday.Count),
-            averageOrderValueYesterday = AverageAmount(revenueYesterday, servedYesterday.Count),
-            ordersToday = ordersToday.Count,
-            ordersYesterday = ordersYesterday.Count,
-            reservationsToday,
-            reservationsYesterday,
-            revenueLast7Days,
-            ordersByStatus,
+            revenue,
+            previousRevenue,
+            orders = orders.Count,
+            previousOrders = previousOrders.Count,
+            reservations,
+            previousReservations,
+            averageOrderValue = Average(revenue, served.Count),
+            previousAverageOrderValue = Average(previousRevenue, previousServed.Count),
+            revenueByDay,
+            ordersByDay,
             ordersByHour,
             topItems,
             recentOrders
         });
     }
 
-    private static int AverageAmount(int total, int count) =>
+    private static int Average(int total, int count) =>
         count == 0 ? 0 : (int)Math.Round((double)total / count, MidpointRounding.AwayFromZero);
-
-    private Task<int> CountReservationsAsync(DateOnly date) =>
-        _db.Reservations.CountAsync(r => r.Date == date && r.Status != ReservationStatus.Cancelled);
-
-    private async Task<(int First, int Last)> GetOpeningHoursAsync(DayOfWeek day)
-    {
-        var hours = await _db.BusinessHours.AsNoTracking()
-            .Where(h => h.DayOfWeek == day && !h.IsClosed)
-            .Select(h => new { h.OpenTime, h.CloseTime })
-            .FirstOrDefaultAsync();
-
-        if (hours?.OpenTime is not { } open || hours.CloseTime is not { } close)
-        {
-            return (DefaultFirstHour, DefaultLastHour);
-        }
-
-        var last = close.Minute == 0 ? close.Hour - 1 : close.Hour;
-        return (open.Hour, Math.Max(open.Hour, last));
-    }
 }
