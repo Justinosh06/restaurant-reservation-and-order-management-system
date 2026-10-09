@@ -1,0 +1,130 @@
+@page
+@model ManagementModel
+@using System.Globalization
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Table Management";
+    var now = DateTime.Now;
+    var upcomingReservations = Model.Reservations
+        .Where(reservation => reservation.ReservationAt >= now)
+        .ToList();
+}
+
+<link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
+
+<div class="service-app" data-selected-table="@Model.SelectedTableId">
+    <main class="service-main">
+        <div class="floor-toolbar">
+            <div>
+                <p class="eyebrow">DINING ROOM</p>
+                <h1>Table Management</h1>
+                <p class="subheading">Choose a table to view its availability and bookings.</p>
+            </div>
+            <div class="floor-toolbar-actions">
+                <a class="new-reservation-button"
+                   href="/Reservation/Management?new=true"
+                   id="newReservationButton">
+                    <span aria-hidden="true">+</span> New reservation
+                </a>
+                <div class="legend" aria-label="Table availability">
+                    <span><i class="legend-dot available"></i>Available</span>
+                    <span><i class="legend-dot reserved"></i>Reserved</span>
+                    <span><i class="legend-dot soon"></i>Starting soon</span>
+                </div>
+            </div>
+        </div>
+
+        <section class="floorplan-shell" id="floorplan" aria-label="Restaurant floor plan">
+            <div class="floorplan-label">
+                <span><i class="floor-indicator"></i> Main floor</span>
+                <span>@Model.Tables.Count tables</span>
+            </div>
+            <div class="floorplan">
+                @foreach (var table in Model.Tables)
+                {
+                    var nextReservation = Model.Reservations
+                        .Where(reservation => reservation.TableId == table.Id && reservation.ReservationAt >= now)
+                        .OrderBy(reservation => reservation.ReservationAt)
+                        .FirstOrDefault();
+                    var startsSoon = nextReservation is not null
+                        && nextReservation.ReservationAt <= now.AddMinutes(60);
+
+                    <button type="button"
+                            class="floor-table @(nextReservation is null ? "available" : startsSoon ? "soon" : "reserved")"
+                            data-table-id="@table.Id"
+                            data-capacity="@table.Capacity"
+                            aria-label="Table @table.Id, @(nextReservation is null ? "available" : "reserved")">
+                        <span class="table-status-mark" aria-hidden="true"></span>
+                        <span class="table-name">T@(table.Id)</span>
+                        @if (nextReservation is not null)
+                        {
+                            <span class="table-booking">
+                                <span>@nextReservation.PartySize guests</span>
+                                <span>@nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="table-seats">@table.Capacity seats</span>
+                        }
+                    </button>
+                }
+            </div>
+            <div class="floorplan-footer">
+                <span>Tap a table to see its reservations.</span>
+                <a class="floor-status-count" href="/Reservation/Management">
+                    @upcomingReservations.Count upcoming reservations
+                </a>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="panel-backdrop" id="panelBackdrop"></div>
+<aside class="reservation-panel table-details-panel"
+       id="tableDetailsPanel"
+       aria-labelledby="panelTitle"
+       aria-hidden="true">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">TABLE DETAILS</p>
+            <h2 id="panelTitle">Table</h2>
+            <span class="panel-capacity" id="panelCapacity"></span>
+        </div>
+        <button type="button" class="panel-close" id="closePanelButton" aria-label="Close panel">×</button>
+    </div>
+
+    <div class="panel-body">
+        <section>
+            <div class="panel-section-heading">
+                <h3>Upcoming reservations</h3>
+                <span id="tableReservationCount"></span>
+            </div>
+            <div id="tableReservationList" class="table-reservation-list">
+                @foreach (var reservation in Model.Reservations
+                    .Where(item => item.ReservationAt >= now)
+                    .OrderBy(item => item.ReservationAt))
+                {
+                    <article class="table-reservation" data-table-reservation="@reservation.TableId">
+                        <div class="reservation-card-heading">
+                            <div>
+                                <strong>@reservation.CustomerName</strong>
+                                <span>@reservation.PartySize guests · @reservation.ReservationAt.ToString("ddd, MMM d · h:mm tt", CultureInfo.CurrentCulture)</span>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+            <p class="no-table-reservations" id="noTableReservations">No upcoming reservations for this table.</p>
+        </section>
+
+        <a class="submit-reservation-button manage-table-reservations"
+           id="manageTableReservations"
+           href="/Reservation/Management">
+            Manage reservations
+        </a>
+    </div>
+</aside>
+
+<script src="~/js/table-management.js" asp-append-version="true"></script>

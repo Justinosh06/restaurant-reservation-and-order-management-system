@@ -1,0 +1,223 @@
+@page
+@model ManagementModel
+@using System.Globalization
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Reservation Management";
+    var reservations = Model.Reservations
+        .Where(reservation => Model.FilterTableId is null || reservation.TableId == Model.FilterTableId)
+        .OrderBy(reservation => reservation.ReservationAt)
+        .ToList();
+}
+
+<link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
+
+<div class="service-app reservation-management-page"
+     data-reopen-form="@(Model.IsFormOpen ? "true" : "false")"
+     data-form-mode="@Model.FormMode">
+    <main class="service-main">
+        <div class="floor-toolbar">
+            <div>
+                <p class="eyebrow">YOUR SERVICE</p>
+                <h1>Reservation Management</h1>
+                <p class="subheading">Create, update, and cancel guest reservations.</p>
+            </div>
+            <div class="reservation-list-toolbar">
+                <form method="get" class="reservation-filter">
+                    <label for="tableFilter">Table</label>
+                    <select id="tableFilter" name="tableId" onchange="this.form.submit()">
+                        <option value="">All tables</option>
+                        @foreach (var table in Model.Tables)
+                        {
+                            <option value="@table.Id" selected="@(Model.FilterTableId == table.Id)">
+                                Table @table.Id
+                            </option>
+                        }
+                    </select>
+                </form>
+                <a class="new-reservation-button"
+                   asp-page="/Reservation/Management"
+                   asp-route-newReservation="true"
+                   asp-route-tableId="@Model.FilterTableId"
+                   id="newReservationButton">
+                    <span aria-hidden="true">+</span> New reservation
+                </a>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="status-message" role="status">@Model.StatusMessage</div>
+        }
+
+        <section class="reservations-section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">SCHEDULE</p>
+                    <h2>All reservations</h2>
+                </div>
+                <span class="reservation-total">@reservations.Count total</span>
+            </div>
+
+            @if (reservations.Count == 0)
+            {
+                <div class="empty-reservations">
+                    <span class="empty-icon" aria-hidden="true">＋</span>
+                    <strong>No reservations found</strong>
+                    <p>Create a reservation or choose another table filter.</p>
+                </div>
+            }
+            else
+            {
+                <div class="reservation-agenda">
+                    @foreach (var reservation in reservations)
+                    {
+                        <article class="agenda-item">
+                            <div class="agenda-date">
+                                <strong>@reservation.ReservationAt.ToString("dd", CultureInfo.CurrentCulture)</strong>
+                                <span>@reservation.ReservationAt.ToString("MMM", CultureInfo.CurrentCulture)</span>
+                            </div>
+                            <div class="agenda-details">
+                                <strong>@reservation.CustomerName</strong>
+                                <span>Table @reservation.TableId · @reservation.PartySize guests</span>
+                            </div>
+                            <time class="agenda-time" datetime="@reservation.ReservationAt.ToString("yyyy-MM-ddTHH:mm:ss")">
+                                @reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)
+                            </time>
+                            @if (!string.IsNullOrWhiteSpace(reservation.ContactNumber))
+                            {
+                                <span class="agenda-contact">@reservation.ContactNumber</span>
+                            }
+                            <div class="agenda-actions">
+                                <a class="agenda-manage"
+                                   asp-page="/Reservation/Management"
+                                   asp-route-edit="@reservation.Id"
+                                   asp-route-tableId="@Model.FilterTableId">
+                                    Edit
+                                </a>
+                                <form method="post" asp-page-handler="Delete" class="delete-reservation-form">
+                                    <input type="hidden" name="ReservationId" value="@reservation.Id" />
+                                    <input type="hidden" name="FilterTableId" value="@Model.FilterTableId" />
+                                    <button type="submit" class="agenda-delete">Delete</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+        @if (reservations.Any(reservation => reservation.ReservationAt < DateTime.Now))
+        {
+            <p class="reservation-history-note">
+                Past reservations are included so you can still review, edit, or remove them.
+            </p>
+        }
+    </main>
+</div>
+
+<div class="panel-backdrop @(Model.IsFormOpen ? "open" : "")" id="reservationFormBackdrop"></div>
+<aside class="reservation-panel reservation-editor-panel @(Model.IsFormOpen ? "open" : "")"
+       id="reservationEditorPanel"
+       aria-labelledby="reservationEditorTitle"
+       aria-hidden="@(!Model.IsFormOpen ? "true" : "false")">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">GUEST BOOKING</p>
+            <h2 id="reservationEditorTitle">@(Model.FormMode == "edit" ? "Edit reservation" : "New reservation")</h2>
+        </div>
+        <button type="button" class="panel-close" id="closeReservationForm" aria-label="Close form">×</button>
+    </div>
+
+    <div class="panel-body">
+        <form method="post"
+              asp-page-handler="Create"
+              id="createReservationForm"
+              class="reservation-form"
+              hidden="@(Model.FormMode == "edit")">
+            <input type="hidden" asp-for="FilterTableId" />
+            <div asp-validation-summary="All" class="validation-summary"></div>
+
+            <label for="createTableId">Table</label>
+            <select asp-for="Input.TableId" id="createTableId" class="reservation-select">
+                @foreach (var table in Model.Tables)
+                {
+                    <option value="@table.Id">Table @table.Id · @table.Capacity seats</option>
+                }
+            </select>
+            <span asp-validation-for="Input.TableId" class="field-error"></span>
+
+            <label for="createCustomerName">Customer name</label>
+            <input asp-for="Input.CustomerName" id="createCustomerName" autocomplete="name" maxlength="80" placeholder="Name for the booking" />
+            <span asp-validation-for="Input.CustomerName" class="field-error"></span>
+
+            <div class="form-row">
+                <div>
+                    <label for="createPartySize">Guests</label>
+                    <input asp-for="Input.PartySize" id="createPartySize" type="number" min="1" max="20" />
+                    <span asp-validation-for="Input.PartySize" class="field-error"></span>
+                </div>
+                <div>
+                    <label for="createReservationAt">Date and time</label>
+                    <input asp-for="Input.ReservationAt" id="createReservationAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                    <span asp-validation-for="Input.ReservationAt" class="field-error"></span>
+                </div>
+            </div>
+
+            <label for="createContactNumber">Phone <span class="optional-label">optional</span></label>
+            <input asp-for="Input.ContactNumber" id="createContactNumber" autocomplete="tel" maxlength="30" placeholder="Contact number" />
+
+            <label for="createNotes">Notes <span class="optional-label">optional</span></label>
+            <textarea asp-for="Input.Notes" id="createNotes" rows="3" maxlength="500" placeholder="Allergies, occasion, or other notes"></textarea>
+
+            <button type="submit" class="submit-reservation-button">Create reservation</button>
+        </form>
+
+        <form method="post"
+              asp-page-handler="Update"
+              id="editReservationForm"
+              class="reservation-form"
+              hidden="@(Model.FormMode != "edit")">
+            <input type="hidden" asp-for="ReservationId" />
+            <input type="hidden" asp-for="FilterTableId" />
+            <div asp-validation-summary="All" class="validation-summary"></div>
+
+            <label for="editTableId">Table</label>
+            <select asp-for="Input.TableId" id="editTableId" class="reservation-select">
+                @foreach (var table in Model.Tables)
+                {
+                    <option value="@table.Id">Table @table.Id · @table.Capacity seats</option>
+                }
+            </select>
+            <span asp-validation-for="Input.TableId" class="field-error"></span>
+
+            <label for="editCustomerName">Customer name</label>
+            <input asp-for="Input.CustomerName" id="editCustomerName" autocomplete="name" maxlength="80" placeholder="Name for the booking" />
+            <span asp-validation-for="Input.CustomerName" class="field-error"></span>
+
+            <div class="form-row">
+                <div>
+                    <label for="editPartySize">Guests</label>
+                    <input asp-for="Input.PartySize" id="editPartySize" type="number" min="1" max="20" />
+                    <span asp-validation-for="Input.PartySize" class="field-error"></span>
+                </div>
+                <div>
+                    <label for="editReservationAt">Date and time</label>
+                    <input asp-for="Input.ReservationAt" id="editReservationAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                    <span asp-validation-for="Input.ReservationAt" class="field-error"></span>
+                </div>
+            </div>
+
+            <label for="editContactNumber">Phone <span class="optional-label">optional</span></label>
+            <input asp-for="Input.ContactNumber" id="editContactNumber" autocomplete="tel" maxlength="30" placeholder="Contact number" />
+
+            <label for="editNotes">Notes <span class="optional-label">optional</span></label>
+            <textarea asp-for="Input.Notes" id="editNotes" rows="3" maxlength="500" placeholder="Allergies, occasion, or other notes"></textarea>
+
+            <button type="submit" class="submit-reservation-button">Save changes</button>
+        </form>
+    </div>
+</aside>
+
+<script src="~/js/reservation-management.js" asp-append-version="true"></script>

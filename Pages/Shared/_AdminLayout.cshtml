@@ -1,0 +1,55 @@
+@using Restaurant_Reservation_and_Order_Management_System.Infrastructure.Navigation
+@inject SidebarNavService NavService
+
+@{
+    var navItems = await NavService.GetNavItemsForUserAsync(User);
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Restaurant Admin Portal</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin_layout.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="page-content">
+        <header class="header">
+            <div class="menu-dropdown" id="header-menu-dropdown">
+                <h1 class="logo">Resto</h1>
+                <div class="menu-dropdown-content">
+                    <ul class="d-flex flex-column nav-item-container">
+                        @foreach (var item in navItems)
+                        {
+                            var isActive = string.Equals(currentPage, item.Page, StringComparison.OrdinalIgnoreCase);
+                            <li class="nav-item mb-2">
+                                <a asp-page="@item.Page" class="nav-button @(isActive ? "active" : "")">
+                                    <i class="@item.Icon"></i>
+                                    @item.Title
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+            <div class="profile-avatar" aria-label="User profile"></div>
+        </header>
+
+        <main role="main" class="content-container">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/stateTriggerer.js" asp-append-version="true"></script>
+    <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

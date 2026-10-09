@@ -1,0 +1,14 @@
+[
+  {
+    "Title": "Table Management",
+    "Icon": "fa-solid fa-table-cells",
+    "Page": "/Table/Management",
+    "Roles": []
+  },
+  {
+    "Title": "Reservation Management",
+    "Icon": "fa-regular fa-calendar-check",
+    "Page": "/Reservation/Management",
+    "Roles": []
+  }
+]

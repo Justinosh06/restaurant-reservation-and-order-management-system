@@ -1,0 +1,91 @@
+body {
+    height: 100dvh;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.page-content {
+    height: 100%;
+    overflow-y: auto;
+    background: #ececec;
+    border-radius: 16px;
+}
+
+.header {
+    position: sticky;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    right: 0;
+    min-height: 76px;
+    padding: 12px;
+}
+
+.menu-dropdown {
+    position: absolute;
+    z-index: 1;
+    min-width: 160px;
+    width: fit-content;
+    padding: 12px;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 1px 1px 4px rgb(0 0 0 / 5%);
+    cursor: pointer;
+}
+
+.menu-dropdown .logo {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: -2px;
+    user-select: none;
+}
+
+.menu-dropdown-content {
+    overflow: hidden;
+    max-height: 0;
+    transition: 300ms ease-in-out;
+}
+
+.menu-dropdown.active .menu-dropdown-content {
+    max-height: 30dvh;
+    padding-top: 18px;
+}
+
+.nav-item-container {
+    margin-bottom: 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.nav-item-container .nav-item {
+    height: fit-content;
+}
+
+.nav-item-container .nav-button {
+    display: block;
+    width: 100%;
+    padding: 3px 2px;
+    color: #888;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 180ms ease-in-out;
+}
+
+.nav-item-container .nav-button.active,
+.nav-item-container .nav-button:hover {
+    color: #171915;
+}
+
+.profile-avatar {
+    width: 46px;
+    aspect-ratio: 1;
+    margin-left: auto;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 1px 1px 4px rgb(0 0 0 / 5%);
+}
+
+.content-container {
+    width: 100%;
+}

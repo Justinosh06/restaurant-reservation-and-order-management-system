@@ -2,6 +2,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddSingleton<Restaurant_Reservation_and_Order_Management_System.Data.ReservationStore>();
+builder.Services.AddScoped<Restaurant_Reservation_and_Order_Management_System.Infrastructure.Navigation.SidebarNavService>();
 
 var app = builder.Build();
 

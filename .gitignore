@@ -5,6 +5,7 @@
 
 # dotenv files
 .env
+Data/reservations.json
 
 # User-specific files
 *.rsuser
