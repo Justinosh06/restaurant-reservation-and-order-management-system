@@ -1,0 +1,14 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.IndexModel
+@{
+    ViewData["Title"] = "Customer Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Customer Dashboard</h1>
+    <form method="post" asp-page="/Logout">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+    </form>
+</div>
+<p>Welcome, <strong>@User.Identity?.Name</strong>! You are logged in as <span class="badge bg-primary">Customer</span>.</p>
+<p class="text-muted">Book a table and place your food orders.</p>

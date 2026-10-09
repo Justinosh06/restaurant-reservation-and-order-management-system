@@ -1,0 +1,120 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3 text-center mb-1">Welcome Back</h1>
+                <p class="text-center text-muted mb-4">Log in as Admin, Staff or Customer</p>
+
+                @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                {
+                    <div class="alert alert-success">@Model.SuccessMessage</div>
+                }
+
+                <form method="post" id="loginForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.Email" class="form-label"></label>
+                        <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
+                        <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Input.Password" class="form-label"></label>
+                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" placeholder="Enter your password" />
+                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                    </div>
+
+                    <button type="button" id="loginButton" class="btn btn-primary w-100">Login</button>
+
+                    <!-- CAPTCHA step: opens after the Login button is clicked -->
+                    <div class="modal fade" id="captchaModal" tabindex="-1" aria-labelledby="captchaModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h2 class="modal-title h5" id="captchaModalLabel">Security Check</h2>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-2">Type the characters shown in the image to confirm you are not a robot.</p>
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+                                        <img id="captchaImage" alt="CAPTCHA image" width="200" height="70" class="border rounded" />
+                                        <button type="button" id="refreshCaptcha" class="btn btn-outline-secondary btn-sm">&#x21bb; New image</button>
+                                    </div>
+                                    <label asp-for="Input.CaptchaAnswer" class="form-label"></label>
+                                    <input asp-for="Input.CaptchaAnswer" class="form-control text-uppercase" autocomplete="off" maxlength="5" />
+                                    <div id="captchaError" class="text-danger small mt-1 d-none">Please enter the characters shown.</div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Verify &amp; Login</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <hr class="my-4" />
+
+                <div class="text-center">
+                    <p class="text-muted mb-2">First time here? Register a customer account first.</p>
+                    <a asp-page="/Register" class="btn btn-outline-primary w-100">Register</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const form = document.getElementById('loginForm');
+            const loginButton = document.getElementById('loginButton');
+            const modalElement = document.getElementById('captchaModal');
+            const modal = new bootstrap.Modal(modalElement);
+            const image = document.getElementById('captchaImage');
+            const answer = document.getElementById('Input_CaptchaAnswer');
+            const error = document.getElementById('captchaError');
+
+            function loadCaptcha() {
+                answer.value = '';
+                image.src = '?handler=Captcha&t=' + Date.now();
+            }
+
+            // Login button: check the email/password fields first, then show the CAPTCHA step.
+            loginButton.addEventListener('click', function () {
+                if (!$(form).valid()) {
+                    return;
+                }
+                error.classList.add('d-none');
+                loadCaptcha();
+                modal.show();
+            });
+
+            modalElement.addEventListener('shown.bs.modal', () => answer.focus());
+            document.getElementById('refreshCaptcha').addEventListener('click', loadCaptcha);
+
+            // Pressing Enter in the email/password fields opens the CAPTCHA instead of skipping it.
+            form.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !modalElement.contains(e.target)) {
+                    e.preventDefault();
+                    loginButton.click();
+                }
+            });
+
+            form.addEventListener('submit', function (e) {
+                if (!answer.value.trim()) {
+                    e.preventDefault();
+                    error.classList.remove('d-none');
+                }
+            });
+        })();
+    </script>
+}

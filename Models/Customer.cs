@@ -13,6 +13,14 @@ namespace RestaurantReservation.Models
         [DataType(DataType.EmailAddress)]
         public string Email { get; set; } = string.Empty;
 
+        [StringLength(100)]
+        public string FullName { get; set; } = string.Empty;
+
+        [StringLength(20)]
+        [DataType(DataType.PhoneNumber)]
+        public string? PhoneNumber { get; set; }
+
+        // Stores a hashed password (ASP.NET Core PasswordHasher), never plain text.
         [DataType(DataType.Password)]
         public string? Password { get; set; }
     }

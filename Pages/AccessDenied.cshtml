@@ -1,0 +1,11 @@
+@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="text-center py-5">
+    <h1 class="h3 text-danger">Access Denied</h1>
+    <p class="text-muted">Your account does not have permission to open this page.</p>
+    <a asp-page="/Login" class="btn btn-primary">Back to my page</a>
+</div>
