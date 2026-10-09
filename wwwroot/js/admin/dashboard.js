@@ -8,7 +8,6 @@
     document.getElementById("dashboard-date").textContent =
         new Date().toLocaleDateString("en-MY", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-    Chart.defaults.maintainAspectRatio = false;
     Chart.defaults.plugins.legend.display = false;
 
     const setDelta = (id, today, yesterday, format) => {
@@ -34,7 +33,7 @@
 
     const barChart = (canvasId, labels, values, label, horizontal = false) => new Chart(document.getElementById(canvasId), {
         type: "bar",
-        data: { labels, datasets: [{ label, data: values, borderRadius: 4, maxBarThickness: 32 }] },
+        data: { labels, datasets: [{ label, data: values, backgroundColor: cssVar("--bs-primary"), borderRadius: 4, maxBarThickness: 32 }] },
         options: {
             indexAxis: horizontal ? "y" : "x",
             scales: { [horizontal ? "x" : "y"]: { beginAtZero: true, ticks: { precision: 0 } } }
@@ -42,7 +41,7 @@
     });
 
     const applyChartTheme = () => {
-        const color = cssVar("--admin-chart-color");
+        const color = cssVar("--bs-primary");
         const textColor = cssVar("--bs-secondary-color");
         const gridColor = cssVar("--bs-border-color-translucent");
 
@@ -75,7 +74,7 @@
             type: "line",
             data: {
                 labels: data.revenueLast7Days.map(d => dayLabel(d.date)),
-                datasets: [{ label: `Revenue (${AdminUI.currencyCode})`, data: data.revenueLast7Days.map(d => d.amount / 100), borderWidth: 2, tension: 0.3 }]
+                datasets: [{ label: `Revenue (${AdminUI.currencyCode})`, data: data.revenueLast7Days.map(d => d.amount / 100), borderColor: cssVar("--bs-primary"), backgroundColor: cssVar("--bs-primary"), borderWidth: 2, tension: 0.3 }]
             },
             options: {
                 interaction: { mode: "index", intersect: false },

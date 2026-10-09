@@ -8,7 +8,7 @@
 }
 
 <div class="admin-page">
-    <div class="page-header">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
         <div>
             <h1 class="page-title">Promotion</h1>
         </div>
@@ -62,7 +62,7 @@
                     </div>
 
                     <div class="alert alert-danger d-none" id="promo-form-error" role="alert"></div>
-                    <button type="submit" class="btn btn-dark w-100" id="promo-submit"><i class="fa-solid fa-plus me-1"></i> Create promotion</button>
+                    <button type="submit" class="btn btn-primary w-100" id="promo-submit"><i class="fa-solid fa-plus me-1"></i> Create promotion</button>
                 </div>
             </form>
         </div>
@@ -77,10 +77,6 @@
         </div>
     </div>
 </div>
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/admin/promotions.css" asp-append-version="true" />
-}
 
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>

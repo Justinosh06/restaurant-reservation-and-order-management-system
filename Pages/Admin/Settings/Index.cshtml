@@ -8,13 +8,13 @@
 
 <div class="admin-page">
     <form id="settings-form" novalidate>
-        <div class="page-header">
+        <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
             <div>
                 <h1 class="page-title">Restaurant Settings</h1>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary" id="reset-settings">Discard changes</button>
-                <button type="submit" class="btn btn-dark" id="save-settings"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
+                <button type="submit" class="btn btn-primary" id="save-settings"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
             </div>
         </div>
 
@@ -26,7 +26,7 @@
         <div class="row g-3">
             <div class="col-lg-7">
                 <div class="card">
-                    <div class="card-header justify-content-between">
+                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <span>Operating hours</span>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="copy-monday">
                             <i class="fa-regular fa-copy me-1"></i> Apply Monday to all days
@@ -81,10 +81,6 @@
         </div>
     </form>
 </div>
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/admin/settings.css" asp-append-version="true" />
-}
 
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>

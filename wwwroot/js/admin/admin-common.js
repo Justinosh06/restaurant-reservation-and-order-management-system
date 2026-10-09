@@ -52,7 +52,7 @@ const AdminUI = (() => {
         Ended: "text-bg-secondary",
         Expired: "text-bg-secondary",
         Hidden: "text-bg-secondary",
-        Administrator: "text-bg-dark",
+        Administrator: "text-bg-info",
         Staff: "bg-body-secondary text-body border"
     };
 

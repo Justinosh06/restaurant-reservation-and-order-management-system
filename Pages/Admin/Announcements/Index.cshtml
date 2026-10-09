@@ -8,7 +8,7 @@
 }
 
 <div class="admin-page">
-    <div class="page-header">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
         <div>
             <h1 class="page-title">Announcement</h1>
         </div>
@@ -39,7 +39,7 @@
                             {
                                 var icon = RestaurantReservation.Pages.Admin.Announcements.IndexModel.Icons[i];
                                 <input type="radio" class="btn-check" name="ann-icon" id="ann-icon-@i" value="@icon.Value" checked="@(i == 0)" />
-                                <label class="btn btn-outline-dark btn-sm" for="ann-icon-@i"><i class="@icon.Value me-1"></i>@icon.Label</label>
+                                <label class="btn btn-outline-primary btn-sm" for="ann-icon-@i"><i class="@icon.Value me-1"></i>@icon.Label</label>
                             }
                         </div>
                     </fieldset>
@@ -56,7 +56,7 @@
                     </div>
 
                     <div class="alert alert-danger d-none" id="ann-form-error" role="alert"></div>
-                    <button type="submit" class="btn btn-dark w-100" id="ann-submit"><i class="fa-solid fa-paper-plane me-1"></i> Post announcement</button>
+                    <button type="submit" class="btn btn-primary w-100" id="ann-submit"><i class="fa-solid fa-paper-plane me-1"></i> Post announcement</button>
                 </div>
             </form>
         </div>
@@ -73,10 +73,6 @@
         </div>
     </div>
 </div>
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/admin/announcements.css" asp-append-version="true" />
-}
 
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>

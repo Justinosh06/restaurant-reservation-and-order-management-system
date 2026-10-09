@@ -18,7 +18,7 @@
         ORDER_STATUSES.forEach(s => counts[s] = orders.filter(o => o.status === s).length);
 
         filterEl.innerHTML = ["All", ...ORDER_STATUSES].map(s => `
-            <button type="button" class="btn ${s === activeFilter ? "btn-dark" : "btn-outline-dark"}" data-filter="${s}" aria-pressed="${s === activeFilter}">
+            <button type="button" class="btn ${s === activeFilter ? "btn-primary" : "btn-outline-primary"}" data-filter="${s}" aria-pressed="${s === activeFilter}">
                 ${s} <span class="badge text-bg-secondary">${counts[s]}</span>
             </button>`).join("");
     };
@@ -26,7 +26,7 @@
     const renderProgress = (status) => {
         const percent = Math.round((ORDER_STATUSES.indexOf(status) + 1) / ORDER_STATUSES.length * 100);
         return `<div class="progress order-progress" role="progressbar" aria-label="${status}" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar bg-dark" style="width: ${percent}%"></div>
+                    <div class="progress-bar" style="width: ${percent}%"></div>
                 </div>`;
     };
 
@@ -49,7 +49,7 @@
         bodyEl.innerHTML = visible.map(o => {
             const next = NEXT_ACTION[o.status];
             const action = next
-                ? `<button type="button" class="btn btn-sm btn-dark w-100" data-advance="${o.id}"><i class="${next.icon} me-1"></i>${next.label}</button>`
+                ? `<button type="button" class="btn btn-sm btn-primary w-100" data-advance="${o.id}"><i class="${next.icon} me-1"></i>${next.label}</button>`
                 : `<span class="d-block text-center text-muted small"><i class="fa-solid fa-check me-1"></i>Done</span>`;
 
             return `
