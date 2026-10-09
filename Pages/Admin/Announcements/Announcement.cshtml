@@ -1,5 +1,5 @@
-@page
-@model RestaurantReservation.Pages.Admin.Announcements.IndexModel
+@page "/Admin/Announcements"
+@model RestaurantReservation.Pages.Admin.Announcements.AnnouncementModel
 @using RestaurantReservation.Infrastructure.Admin
 @using RestaurantReservation.Models
 @{
@@ -35,9 +35,9 @@
                     <fieldset class="mb-3">
                         <legend class="form-label fs-6">Icon</legend>
                         <div class="d-flex flex-wrap gap-2">
-                            @for (var i = 0; i < RestaurantReservation.Pages.Admin.Announcements.IndexModel.Icons.Count; i++)
+                            @for (var i = 0; i < RestaurantReservation.Pages.Admin.Announcements.AnnouncementModel.Icons.Count; i++)
                             {
-                                var icon = RestaurantReservation.Pages.Admin.Announcements.IndexModel.Icons[i];
+                                var icon = RestaurantReservation.Pages.Admin.Announcements.AnnouncementModel.Icons[i];
                                 <input type="radio" class="btn-check" name="ann-icon" id="ann-icon-@i" value="@icon.Value" checked="@(i == 0)" />
                                 <label class="btn btn-outline-primary btn-sm" for="ann-icon-@i"><i class="@icon.Value me-1"></i>@icon.Label</label>
                             }

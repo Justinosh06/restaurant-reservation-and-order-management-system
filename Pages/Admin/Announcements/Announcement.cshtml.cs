@@ -7,7 +7,7 @@ using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Pages.Admin.Announcements;
 
-public class IndexModel : PageModel
+public class AnnouncementModel : PageModel
 {
     public static readonly IReadOnlyList<(string Value, string Label)> Icons =
     [
@@ -24,7 +24,7 @@ public class IndexModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
 
-    public IndexModel(ApplicationDbContext db, RestaurantClock clock)
+    public AnnouncementModel(ApplicationDbContext db, RestaurantClock clock)
     {
         _db = db;
         _clock = clock;

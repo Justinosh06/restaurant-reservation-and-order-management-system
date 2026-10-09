@@ -7,13 +7,13 @@ using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Pages.Admin.Orders;
 
-public class IndexModel : PageModel
+public class OrderModel : PageModel
 {
     private static readonly OrderStatus[] ActiveStatuses = [OrderStatus.InQueue, OrderStatus.Preparing, OrderStatus.Served];
 
     private readonly ApplicationDbContext _db;
 
-    public IndexModel(ApplicationDbContext db)
+    public OrderModel(ApplicationDbContext db)
     {
         _db = db;
     }

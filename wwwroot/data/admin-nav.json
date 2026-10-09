@@ -2,37 +2,37 @@
   {
     "Title": "Dashboard",
     "Icon": "fa-solid fa-chart-line",
-    "Page": "/Admin/Index",
+    "Page": "/Admin/Dashboard/Dashboard",
     "Roles": ["Administrator", "Staff"]
   },
   {
     "Title": "Orders",
     "Icon": "fa-solid fa-receipt",
-    "Page": "/Admin/Orders/Index",
+    "Page": "/Admin/Orders/Order",
     "Roles": ["Administrator", "Staff"]
   },
   {
     "Title": "Staffs",
     "Icon": "fa-regular fa-user",
-    "Page": "/Admin/Staffs/Index",
+    "Page": "/Admin/Staffs/Staff",
     "Roles": ["Administrator"]
   },
   {
     "Title": "Announcement",
     "Icon": "fa-solid fa-bullhorn",
-    "Page": "/Admin/Announcements/Index",
+    "Page": "/Admin/Announcements/Announcement",
     "Roles": ["Administrator"]
   },
   {
     "Title": "Promotion",
     "Icon": "fa-solid fa-tags",
-    "Page": "/Admin/Promotions/Index",
+    "Page": "/Admin/Promotions/Promotion",
     "Roles": ["Administrator"]
   },
   {
     "Title": "Restaurant Settings",
     "Icon": "fa-solid fa-gear",
-    "Page": "/Admin/Settings/Index",
+    "Page": "/Admin/Settings/Setting",
     "Roles": ["Administrator"]
   }
 ]

@@ -9,7 +9,7 @@ using RestaurantReservation.Models.Enums;
 
 namespace RestaurantReservation.Pages.Admin.Settings;
 
-public class IndexModel : PageModel
+public class SettingModel : PageModel
 {
     private static readonly TimeOnly DefaultOpenTime = new(11, 0);
     private static readonly TimeOnly DefaultCloseTime = new(22, 0);
@@ -22,7 +22,7 @@ public class IndexModel : PageModel
 
     private readonly ApplicationDbContext _db;
 
-    public IndexModel(ApplicationDbContext db)
+    public SettingModel(ApplicationDbContext db)
     {
         _db = db;
     }

@@ -5,16 +5,6 @@
  *   <script src="~/js/admin/admin-common.js"></script>
  *   <script src="~/js/admin/orders.js"></script>
  *
- * It exposes one global object, AdminUI, with:
- *   - Formatting: escapeHtml, formatCurrency, formatDate, formatTime, currencyCode
- *   - Rendering:  statusBadge, tableMessageRow
- *   - Feedback:   showToast, showError, setBusy
- *   - Server:     get, post, postForm (call the current page's Razor Page handlers)
- *
- * Server calls go to the page's own PageModel handlers. For example,
- * AdminUI.post("Create", {...}) on /Admin/Staffs calls OnPostCreateAsync in
- * Pages/Admin/Staffs/Index.cshtml.cs. POSTs automatically send the anti-forgery
- * token that _AdminLayout.cshtml renders, so pages don't need to handle it.
  */
 const AdminUI = (() => {
     // Always pass user-entered text through this before putting it into innerHTML.

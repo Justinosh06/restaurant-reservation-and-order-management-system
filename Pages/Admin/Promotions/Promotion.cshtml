@@ -1,10 +1,10 @@
-@page
-@model RestaurantReservation.Pages.Admin.Promotions.IndexModel
+@page "/Admin/Promotions"
+@model RestaurantReservation.Pages.Admin.Promotions.PromotionModel
 @using RestaurantReservation.Infrastructure.Admin
 @using RestaurantReservation.Models
 @{
     ViewData["Title"] = "Promotion";
-    var maxImageMb = RestaurantReservation.Pages.Admin.Promotions.IndexModel.MaxImageBytes / (1024 * 1024);
+    var maxImageMb = RestaurantReservation.Pages.Admin.Promotions.PromotionModel.MaxImageBytes / (1024 * 1024);
 }
 
 <div class="admin-page">
@@ -27,8 +27,8 @@
                             <span>Click or drop an image here</span>
                         </div>
                         <input type="file" id="promo-image" class="d-none"
-                               accept="@string.Join(", ", RestaurantReservation.Pages.Admin.Promotions.IndexModel.AllowedImageTypes.Keys)"
-                               data-max-bytes="@RestaurantReservation.Pages.Admin.Promotions.IndexModel.MaxImageBytes" />
+                               accept="@string.Join(", ", RestaurantReservation.Pages.Admin.Promotions.PromotionModel.AllowedImageTypes.Keys)"
+                               data-max-bytes="@RestaurantReservation.Pages.Admin.Promotions.PromotionModel.MaxImageBytes" />
                         <div class="d-flex justify-content-between align-items-center mt-1">
                             <small class="form-text">JPG, PNG or WebP, up to @maxImageMb MB</small>
                             <button type="button" class="btn btn-link btn-sm p-0 d-none" id="remove-image">Remove image</button>

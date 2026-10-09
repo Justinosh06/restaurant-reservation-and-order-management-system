@@ -8,7 +8,7 @@ using RestaurantReservation.Models;
 namespace RestaurantReservation.Pages.Admin.Promotions;
 
 [RequestFormLimits(MultipartBodyLengthLimit = MaxImageBytes + 1024 * 1024)]
-public class IndexModel : PageModel
+public class PromotionModel : PageModel
 {
     public const int MaxImageBytes = 5 * 1024 * 1024;
     private const string UploadFolder = "uploads/promotions";
@@ -23,9 +23,9 @@ public class IndexModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly IWebHostEnvironment _env;
     private readonly RestaurantClock _clock;
-    private readonly ILogger<IndexModel> _logger;
+    private readonly ILogger<PromotionModel> _logger;
 
-    public IndexModel(ApplicationDbContext db, IWebHostEnvironment env, RestaurantClock clock, ILogger<IndexModel> logger)
+    public PromotionModel(ApplicationDbContext db, IWebHostEnvironment env, RestaurantClock clock, ILogger<PromotionModel> logger)
     {
         _db = db;
         _env = env;

@@ -8,14 +8,14 @@ using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Pages.Admin.Staffs;
 
-public class IndexModel : PageModel
+public class StaffModel : PageModel
 {
     public const int MinPasswordLength = 8;
 
     private readonly ApplicationDbContext _db;
     private readonly IPasswordHasher<Models.Admin> _passwordHasher;
 
-    public IndexModel(ApplicationDbContext db, IPasswordHasher<Models.Admin> passwordHasher)
+    public StaffModel(ApplicationDbContext db, IPasswordHasher<Models.Admin> passwordHasher)
     {
         _db = db;
         _passwordHasher = passwordHasher;

@@ -5,9 +5,9 @@ using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Models;
 
-namespace RestaurantReservation.Pages.Admin;
+namespace RestaurantReservation.Pages.Admin.Dashboard;
 
-public class IndexModel : PageModel
+public class DashboardModel : PageModel
 {
     private const int DefaultFirstHour = 10;
     private const int DefaultLastHour = 22;
@@ -17,7 +17,7 @@ public class IndexModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
 
-    public IndexModel(ApplicationDbContext db, RestaurantClock clock)
+    public DashboardModel(ApplicationDbContext db, RestaurantClock clock)
     {
         _db = db;
         _clock = clock;
