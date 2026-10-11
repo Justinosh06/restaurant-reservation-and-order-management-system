@@ -82,6 +82,10 @@ namespace RestaurantReservation.Data
                 entity.Property(a => a.Role)
                       .HasConversion<string>()
                       .HasMaxLength(20);
+
+                entity.Property(a => a.Gender)
+                      .HasConversion<string>()
+                      .HasMaxLength(10);
             });
 
             // -------------------------------------------------------------

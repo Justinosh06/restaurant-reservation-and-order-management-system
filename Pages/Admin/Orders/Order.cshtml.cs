@@ -24,14 +24,38 @@ public class OrderModel : PageModel
 
     public DateOnly Today => _clock.Today;
 
+    // null when today's opening hours haven't been set in Restaurant Settings.
+    public bool? IsOpenNow { get; private set; }
+
+    public async Task OnGetAsync()
+    {
+        var now = _clock.Now;
+        var hours = await _db.BusinessHours.AsNoTracking().FirstOrDefaultAsync(h => h.DayOfWeek == now.DayOfWeek);
+        if (hours is null)
+        {
+            return;
+        }
+
+        if (hours.IsClosed || hours.OpenTime is null || hours.CloseTime is null)
+        {
+            IsOpenNow = false;
+            return;
+        }
+
+        var time = TimeOnly.FromDateTime(now);
+        IsOpenNow = time.IsBetween(hours.OpenTime.Value, hours.CloseTime.Value);
+    }
+
     public record AdvanceRequest(string Id, string? ExpectedStatus);
+
+    public record OrderItemRow(string Name, int Quantity, int UnitPrice, string? Remarks);
 
     public record OrderRow(
         string Id,
         string DisplayId,
         string? Table,
         string Customer,
-        List<string> Items,
+        List<OrderItemRow> Items,
         DateTime CreatedAt,
         int Total,
         string Status);
@@ -84,11 +108,11 @@ public class OrderModel : PageModel
             .ToListAsync();
 
         var orderIds = orders.Select(o => o.Id).ToList();
-        var items = (await _db.OrderItems.AsNoTracking()
-                .Where(oi => orderIds.Contains(oi.OrderId))
-                .Select(oi => new { oi.OrderId, oi.MenuItem!.Name, oi.Quantity })
-                .ToListAsync())
-            .ToLookup(oi => oi.OrderId, oi => $"{oi.Name} x{oi.Quantity}");
+        var orderItems = await _db.OrderItems.AsNoTracking()
+            .Where(oi => orderIds.Contains(oi.OrderId))
+            .Select(oi => new { oi.OrderId, oi.MenuItem!.Name, oi.MenuItem.Price, oi.Quantity, oi.Remarks })
+            .ToListAsync();
+        var items = orderItems.ToLookup(oi => oi.OrderId, oi => new OrderItemRow(oi.Name, oi.Quantity, oi.Price, oi.Remarks));
 
         return orders.Select(o => new OrderRow(
             o.Id,

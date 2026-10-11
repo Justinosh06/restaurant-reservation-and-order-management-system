@@ -32,7 +32,7 @@ public class AnnouncementModel : PageModel
 
     public DateOnly Today => _clock.Today;
 
-    public record CreateAnnouncementRequest(string? Title, string? Description, string? Icon, bool IsActive, string? ExpiresAt);
+    public record SaveAnnouncementRequest(string? Id, string? Title, string? Description, string? Icon, bool IsActive, string? ExpiresAt);
 
     public record AnnouncementIdRequest(string Id);
 
@@ -45,43 +45,78 @@ public class AnnouncementModel : PageModel
         return new JsonResult(announcements.Select(ToDto));
     }
 
-    public async Task<IActionResult> OnPostCreateAsync([FromBody] CreateAnnouncementRequest request)
+    public async Task<IActionResult> OnPostCreateAsync([FromBody] SaveAnnouncementRequest request)
     {
-        var announcement = new Announcement
-        {
-            Title = request.Title?.Trim() ?? string.Empty,
-            Description = request.Description?.Trim() ?? string.Empty,
-            Icon = request.Icon ?? string.Empty,
-            IsActive = request.IsActive
-        };
-
-        var error = ModelRules.FirstError(announcement, nameof(Announcement.Title), nameof(Announcement.Description));
+        var announcement = new Announcement();
+        var error = Apply(request, announcement);
         if (error is not null)
         {
             return BadRequest(new { error });
-        }
-        if (!Icons.Any(i => i.Value == announcement.Icon))
-        {
-            return BadRequest(new { error = "Please choose one of the listed icons." });
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.ExpiresAt))
-        {
-            if (!DateOnly.TryParseExact(request.ExpiresAt, "yyyy-MM-dd", out var lastDay))
-            {
-                return BadRequest(new { error = "Please enter a valid date." });
-            }
-            if (lastDay < _clock.Today)
-            {
-                return BadRequest(new { error = "The \"Show until\" date can't be in the past." });
-            }
-            announcement.ExpiresAt = _clock.StartOfDayUtc(lastDay.AddDays(1));
         }
 
         _db.Announcements.Add(announcement);
         await _db.SaveChangesAsync();
 
         return new JsonResult(ToDto(announcement));
+    }
+
+    public async Task<IActionResult> OnPostUpdateAsync([FromBody] SaveAnnouncementRequest request)
+    {
+        var announcement = await _db.Announcements.FindAsync(request.Id);
+        if (announcement is null)
+        {
+            return NotFound(new { error = "This announcement no longer exists. Refresh the page." });
+        }
+
+        var error = Apply(request, announcement);
+        if (error is not null)
+        {
+            return BadRequest(new { error });
+        }
+
+        await _db.SaveChangesAsync();
+
+        return new JsonResult(ToDto(announcement));
+    }
+
+    // Copies the form values onto the announcement. Returns an error message, or null when everything is valid.
+    private string? Apply(SaveAnnouncementRequest request, Announcement announcement)
+    {
+        var title = request.Title?.Trim() ?? string.Empty;
+        var description = request.Description?.Trim() ?? string.Empty;
+        var error = ModelRules.FirstError(new Announcement { Title = title, Description = description },
+            nameof(Announcement.Title), nameof(Announcement.Description));
+        if (error is not null)
+        {
+            return error;
+        }
+        if (!Icons.Any(i => i.Value == request.Icon))
+        {
+            return "Please choose one of the listed icons.";
+        }
+
+        DateTime? expiresAt = null;
+        if (!string.IsNullOrWhiteSpace(request.ExpiresAt))
+        {
+            if (!DateOnly.TryParseExact(request.ExpiresAt, "yyyy-MM-dd", out var lastDay))
+            {
+                return "Please enter a valid date.";
+            }
+            expiresAt = _clock.StartOfDayUtc(lastDay.AddDays(1));
+
+            // A past date is only allowed when it is the date the announcement already had.
+            if (lastDay < _clock.Today && expiresAt != announcement.ExpiresAt)
+            {
+                return "The \"Show until\" date can't be in the past.";
+            }
+        }
+
+        announcement.Title = title;
+        announcement.Description = description;
+        announcement.Icon = request.Icon!;
+        announcement.IsActive = request.IsActive;
+        announcement.ExpiresAt = expiresAt;
+        return null;
     }
 
     public async Task<IActionResult> OnPostToggleAsync([FromBody] AnnouncementIdRequest request)
@@ -118,6 +153,7 @@ public class AnnouncementModel : PageModel
         title = a.Title,
         description = a.Description,
         icon = a.Icon,
+        category = Icons.FirstOrDefault(i => i.Value == a.Icon).Label ?? "General",
         isActive = a.IsActive,
         isExpired = a.ExpiresAt <= DateTime.UtcNow,
         createdAt = a.CreatedAt,

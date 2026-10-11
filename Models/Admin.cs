@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using RestaurantReservation.Models.Enums;
 
 namespace RestaurantReservation.Models
 {
@@ -25,5 +26,8 @@ namespace RestaurantReservation.Models
 
         [Required]
         public AdminRole Role { get; set; } = AdminRole.Staff;
+
+        // Nullable so accounts created before this field existed still load; the Staffs page requires it.
+        public Gender? Gender { get; set; }
     }
 }

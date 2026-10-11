@@ -1,31 +1,146 @@
 (() => {
-    const COLUMN_COUNT = 7;
+    const PAGE_SIZE = 12;
+    const ITEMS_SHOWN = 4;
+    const STATUS_STYLES = {
+        Pending: { color: "warning", icon: "fa-hourglass-half" },
+        Preparing: { color: "primary", icon: "fa-fire-burner" },
+        Served: { color: "success", icon: "fa-bell-concierge" },
+        Completed: { color: "secondary", icon: "fa-check-double" },
+        Cancelled: { color: "danger", icon: "fa-ban" }
+    };
+
+    let orders = [];
+    let status = "All";
+    let shownCount = PAGE_SIZE;
 
     const form = document.getElementById("history-form");
     const fromInput = document.getElementById("history-from");
     const toInput = document.getElementById("history-to");
-    const statusInput = document.getElementById("history-status");
+    const statusGroup = document.getElementById("history-status");
+    const searchInput = document.getElementById("history-search");
     const countEl = document.getElementById("history-count");
-    const bodyEl = document.getElementById("history-body");
+    const gridEl = document.getElementById("history-grid");
+    const moreButton = document.getElementById("history-more");
+    const orderModal = new bootstrap.Modal(document.getElementById("order-modal"));
 
-    const showOrders = (orders) => {
-        countEl.textContent = `${orders.length} order${orders.length === 1 ? "" : "s"}`;
+    const styleOf = (s) => STATUS_STYLES[s] ?? { color: "secondary", icon: "fa-circle" };
 
-        if (orders.length === 0) {
-            bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "No orders found for these dates.");
+    const statusPill = (s) => {
+        const style = styleOf(s);
+        return `<span class="badge rounded-pill border bg-${style.color}-subtle text-${style.color}-emphasis border-${style.color}-subtle">
+            <i class="fa-solid ${style.icon} me-1"></i>${AdminUI.escapeHtml(s)}</span>`;
+    };
+
+    const itemRows = (items) => items.map(item => `
+        <tr>
+            <td class="ps-0">${AdminUI.escapeHtml(item.name)}</td>
+            <td class="text-center">${item.quantity}</td>
+            <td class="text-end pe-0">${AdminUI.formatCurrency(item.unitPrice * item.quantity)}</td>
+        </tr>`).join("");
+
+    const orderCard = (o) => {
+        const style = styleOf(o.status);
+        const more = o.items.length > ITEMS_SHOWN
+            ? `<div class="small text-body-secondary text-center">+${o.items.length - ITEMS_SHOWN} more items</div>`
+            : "";
+
+        return `
+            <div class="col-md-6 col-xxl-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="bg-${style.color}-subtle text-${style.color}-emphasis rounded-3 fw-semibold small text-center px-2 py-3">${AdminUI.escapeHtml(o.table ?? "-")}</div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-semibold text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</div>
+                                <div class="small text-body-secondary">Order #${AdminUI.escapeHtml(o.displayId)} &middot; Table ${AdminUI.escapeHtml(o.table ?? "-")}</div>
+                            </div>
+                            ${statusPill(o.status)}
+                        </div>
+
+                        <div class="d-flex justify-content-between small text-body-secondary border-bottom pb-2 my-3">
+                            <span>${AdminUI.formatDate(o.createdAt)}</span>
+                            <span>${AdminUI.formatTime(o.createdAt)}</span>
+                        </div>
+
+                        <table class="table table-sm table-borderless small mb-1">
+                            <thead>
+                                <tr class="text-body-secondary">
+                                    <th class="ps-0 fw-normal text-body-secondary">Items</th>
+                                    <th class="text-center fw-normal text-body-secondary">Qty</th>
+                                    <th class="text-end pe-0 fw-normal text-body-secondary">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>${itemRows(o.items.slice(0, ITEMS_SHOWN))}</tbody>
+                        </table>
+                        ${more}
+
+                        <div class="d-flex justify-content-between fw-semibold border-top pt-2 mt-auto">
+                            <span>Total</span>
+                            <span>${AdminUI.formatCurrency(o.total)}</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-light border mt-3" data-details="${o.id}">View details</button>
+                    </div>
+                </div>
+            </div>`;
+    };
+
+    const showDetails = (o) => {
+        document.getElementById("order-modal-title").textContent = `Order #${o.displayId}`;
+        const remarks = o.items.filter(item => item.remarks);
+        document.getElementById("order-modal-body").innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                ${statusPill(o.status)}
+                <span class="small text-body-secondary">${AdminUI.formatDate(o.createdAt)}, ${AdminUI.formatTime(o.createdAt)}</span>
+            </div>
+            <dl class="row small mb-3">
+                <dt class="col-4 fw-normal text-body-secondary">Customer</dt><dd class="col-8 text-break">${AdminUI.escapeHtml(o.customer)}</dd>
+                <dt class="col-4 fw-normal text-body-secondary">Table</dt><dd class="col-8">${AdminUI.escapeHtml(o.table ?? "-")}</dd>
+            </dl>
+            <table class="table table-sm small mb-2">
+                <thead><tr><th class="ps-0">Items</th><th class="text-center">Qty</th><th class="text-end pe-0">Price</th></tr></thead>
+                <tbody>${itemRows(o.items)}</tbody>
+                <tfoot><tr class="fw-semibold"><td class="ps-0" colspan="2">Total</td><td class="text-end pe-0">${AdminUI.formatCurrency(o.total)}</td></tr></tfoot>
+            </table>
+            ${remarks.length ? `
+                <div class="small fw-semibold mb-1">Remarks</div>
+                ${remarks.map(item => `<div class="bg-body-tertiary rounded-2 small px-2 py-1 mb-1">${AdminUI.escapeHtml(item.name)}: ${AdminUI.escapeHtml(item.remarks)}</div>`).join("")}` : ""}
+            <p class="small text-body-secondary mb-0 mt-2">Prices shown are today's menu prices.</p>`;
+        orderModal.show();
+    };
+
+    const showGridMessage = (text, tone = "text-body-secondary") => {
+        gridEl.innerHTML = `<div class="col-12"><div class="bg-body-tertiary rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div></div>`;
+        moreButton.classList.add("d-none");
+    };
+
+    const matchesSearch = (o) => {
+        const term = searchInput.value.trim().toLowerCase();
+        return !term || [o.displayId, o.table, o.customer].some(v => (v ?? "").toLowerCase().includes(term));
+    };
+
+    const render = () => {
+        const visible = orders.filter(matchesSearch);
+        countEl.textContent = `${visible.length} order${visible.length === 1 ? "" : "s"}`;
+
+        if (visible.length === 0) {
+            showGridMessage(orders.length ? "No orders match this search." : "No orders found for these dates.");
             return;
         }
 
-        bodyEl.innerHTML = orders.map(o => `
-            <tr>
-                <td class="fw-medium">${AdminUI.escapeHtml(o.displayId)}</td>
-                <td class="text-nowrap">${AdminUI.formatDate(o.createdAt)}, ${AdminUI.formatTime(o.createdAt)}</td>
-                <td>${AdminUI.escapeHtml(o.table ?? "-")}</td>
-                <td>${AdminUI.escapeHtml(o.customer)}</td>
-                <td class="small text-muted">${o.items.map(AdminUI.escapeHtml).join("<br>") || "-"}</td>
-                <td class="text-nowrap">${AdminUI.formatCurrency(o.total)}</td>
-                <td>${AdminUI.statusBadge(o.status)}</td>
-            </tr>`).join("");
+        gridEl.innerHTML = visible.slice(0, shownCount).map(orderCard).join("");
+        moreButton.classList.toggle("d-none", visible.length <= shownCount);
+    };
+
+    // The selected status is a dark pill; the others are plain text pills.
+    const showSelectedStatus = () => {
+        for (const button of statusGroup.querySelectorAll("[data-status]")) {
+            const selected = button.dataset.status === status;
+            button.classList.toggle("btn-dark", selected);
+            button.classList.toggle("btn-link", !selected);
+            button.classList.toggle("text-body", !selected);
+            button.classList.toggle("text-decoration-none", !selected);
+            button.setAttribute("aria-pressed", String(selected));
+        }
     };
 
     const loadHistory = () => {
@@ -35,12 +150,13 @@
         }
 
         countEl.textContent = "";
-        bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, "Loading...");
+        shownCount = PAGE_SIZE;
+        showGridMessage("Loading...");
 
-        AdminUI.get("History", { from: fromInput.value, to: toInput.value, status: statusInput.value })
-            .then(showOrders)
+        AdminUI.get("History", { from: fromInput.value, to: toInput.value, status })
+            .then(data => { orders = data; render(); })
             .catch(error => {
-                bodyEl.innerHTML = AdminUI.tableMessageRow(COLUMN_COUNT, error.message, "text-danger");
+                showGridMessage(error.message, "text-danger");
                 AdminUI.showError(error);
             });
     };
@@ -50,5 +166,29 @@
         loadHistory();
     });
 
+    statusGroup.addEventListener("click", (e) => {
+        const button = e.target.closest("[data-status]");
+        if (!button) return;
+        status = button.dataset.status;
+        showSelectedStatus();
+        loadHistory();
+    });
+
+    searchInput.addEventListener("input", () => {
+        shownCount = PAGE_SIZE;
+        render();
+    });
+
+    moreButton.addEventListener("click", () => {
+        shownCount += PAGE_SIZE;
+        render();
+    });
+
+    gridEl.addEventListener("click", (e) => {
+        const button = e.target.closest("[data-details]");
+        if (button) showDetails(orders.find(o => o.id === button.dataset.details));
+    });
+
+    showSelectedStatus();
     document.getElementById("history-tab").addEventListener("shown.bs.tab", loadHistory, { once: true });
 })();

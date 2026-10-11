@@ -7,113 +7,167 @@
 }
 
 <div class="admin-page px-3 pb-4">
-    <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
-            <h1 class="page-title">Dashboard</h1>
-            <p class="page-subtitle" id="range-label"></p>
+            <h1 class="h4 fw-semibold mb-1">Welcome back</h1>
+            <p class="text-body-secondary mb-0">Here's how the restaurant is doing: <span class="fw-semibold text-body" id="range-label"></span></p>
         </div>
-        <form id="range-form" class="d-flex flex-wrap align-items-end gap-2" data-today="@today">
-            <div>
-                <label for="range-from" class="form-label small mb-0">From</label>
-                <input type="date" id="range-from" class="form-control form-control-sm" min="2000-01-01" value="@weekAgo" max="@today" required />
+        <form id="range-form" class="d-flex flex-wrap align-items-center gap-2" data-today="@today">
+            <div class="d-flex gap-1 bg-body border rounded-pill p-1" role="group" aria-label="Quick date ranges">
+                <button type="button" class="btn btn-sm rounded-pill" data-range="today">Today</button>
+                <button type="button" class="btn btn-sm rounded-pill" data-range="week">Last 7 days</button>
+                <button type="button" class="btn btn-sm rounded-pill" data-range="month">This month</button>
             </div>
-            <div>
-                <label for="range-to" class="form-label small mb-0">To</label>
-                <input type="date" id="range-to" class="form-control form-control-sm" value="@today" max="@today" required />
+            <div class="input-group input-group-sm w-auto">
+                <label class="input-group-text bg-body" for="range-from"><i class="fa-regular fa-calendar"></i></label>
+                <input type="date" id="range-from" class="form-control" min="2000-01-01" value="@weekAgo" max="@today" required aria-label="From date" />
+                <span class="input-group-text bg-body">to</span>
+                <input type="date" id="range-to" class="form-control" value="@today" max="@today" required aria-label="To date" />
+                <button type="submit" class="btn btn-outline-secondary">Apply</button>
             </div>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Quick date ranges">
-                <button type="button" class="btn btn-outline-primary" data-range="today">Today</button>
-                <button type="button" class="btn btn-outline-primary" data-range="week">Last 7 days</button>
-                <button type="button" class="btn btn-outline-primary" data-range="month">This month</button>
-            </div>
-            <button type="submit" class="btn btn-sm btn-primary">Apply</button>
         </form>
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-sm-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-muted small" title="From served and completed orders"><i class="fa-solid fa-coins me-1"></i> Revenue</div>
-                    <div class="fs-3 fw-semibold kpi-value" id="kpi-revenue">-</div>
-                    <small class="text-muted" id="kpi-revenue-delta">&nbsp;</small>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1">
+                    <div class="card-body d-flex justify-content-between align-items-end gap-2">
+                        <div>
+                            <div class="small text-body-secondary fw-medium">Revenue</div>
+                            <div class="fs-4 fw-semibold" id="kpi-revenue">-</div>
+                        </div>
+                        <div id="spark-revenue" aria-hidden="true"></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center small px-3 py-2">
+                    <i class="fa-solid fa-circle-info text-body-secondary" title="From served and completed orders"></i>
+                    <span id="kpi-revenue-delta">&nbsp;</span>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-muted small"><i class="fa-solid fa-receipt me-1"></i> Orders</div>
-                    <div class="fs-3 fw-semibold kpi-value" id="kpi-orders">-</div>
-                    <small class="text-muted" id="kpi-orders-delta">&nbsp;</small>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1">
+                    <div class="card-body d-flex justify-content-between align-items-end gap-2">
+                        <div>
+                            <div class="small text-body-secondary fw-medium">Orders</div>
+                            <div class="fs-4 fw-semibold" id="kpi-orders">-</div>
+                        </div>
+                        <div id="spark-orders" aria-hidden="true"></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center small px-3 py-2">
+                    <i class="fa-solid fa-circle-info text-body-secondary" title="All orders placed, except cancelled ones"></i>
+                    <span id="kpi-orders-delta">&nbsp;</span>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-muted small"><i class="fa-solid fa-calendar-check me-1"></i> Reservations</div>
-                    <div class="fs-3 fw-semibold kpi-value" id="kpi-reservations">-</div>
-                    <small class="text-muted" id="kpi-reservations-delta">&nbsp;</small>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1">
+                    <div class="card-body d-flex justify-content-between align-items-end gap-2">
+                        <div>
+                            <div class="small text-body-secondary fw-medium">Reservations</div>
+                            <div class="fs-4 fw-semibold" id="kpi-reservations">-</div>
+                        </div>
+                        <div id="spark-reservations" aria-hidden="true"></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center small px-3 py-2">
+                    <i class="fa-solid fa-circle-info text-body-secondary" title="Reservations booked for these dates, except cancelled ones"></i>
+                    <span id="kpi-reservations-delta">&nbsp;</span>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-muted small" title="From served and completed orders"><i class="fa-solid fa-chart-simple me-1"></i> Avg. order value</div>
-                    <div class="fs-3 fw-semibold kpi-value" id="kpi-aov">-</div>
-                    <small class="text-muted" id="kpi-aov-delta">&nbsp;</small>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1">
+                    <div class="card-body d-flex justify-content-between align-items-end gap-2">
+                        <div>
+                            <div class="small text-body-secondary fw-medium">Avg. order value</div>
+                            <div class="fs-4 fw-semibold" id="kpi-aov">-</div>
+                        </div>
+                        <div id="spark-aov" aria-hidden="true"></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center small px-3 py-2">
+                    <i class="fa-solid fa-circle-info text-body-secondary" title="From served and completed orders"></i>
+                    <span id="kpi-aov-delta">&nbsp;</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-header"><span>Revenue from served orders (<span id="revenue-currency"></span>)</span></div>
-                <div class="card-body">
-                    <div id="chart-revenue" role="img" aria-label="Line chart of revenue per day in the chosen date range"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <span>Orders</span>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Show orders by day or by hour">
-                        <button type="button" class="btn btn-outline-primary active" id="orders-by-day">By day</button>
-                        <button type="button" class="btn btn-outline-primary" id="orders-by-hour">By hour</button>
+        <div class="col-xl-8">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="small text-body-secondary fw-medium px-3 pt-3 pb-2">Revenue trend</div>
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1 mt-0 flex-grow-1">
+                    <div class="card-body">
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="small text-body-secondary">Total revenue (<span id="revenue-currency"></span>):</span>
+                            <span class="fs-5 fw-semibold" id="revenue-total">-</span>
+                        </div>
+                        <div id="chart-revenue" role="img" aria-label="Line chart of revenue per day in the chosen date range"></div>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div id="chart-orders" role="img" aria-label="Bar chart of orders per day or per hour in the chosen date range"></div>
-                </div>
             </div>
         </div>
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">Top menu items (units served)</div>
-                <div class="card-body">
-                    <div id="chart-items" role="img" aria-label="Bar chart of the top selling menu items in the chosen date range"></div>
+        <div class="col-xl-4">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="small text-body-secondary fw-medium px-3 pt-3 pb-2">Orders</div>
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1 mt-0 flex-grow-1">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end">
+                            <div class="d-flex gap-1 bg-body-tertiary rounded-pill p-1" role="group" aria-label="Show orders by day or by hour">
+                                <button type="button" class="btn btn-sm rounded-pill btn-light shadow-sm active" id="orders-by-day">By day</button>
+                                <button type="button" class="btn btn-sm rounded-pill" id="orders-by-hour">By hour</button>
+                            </div>
+                        </div>
+                        <div id="chart-orders" role="img" aria-label="Bar chart of orders per day or per hour in the chosen date range"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <span>Recent orders</span>
-            <a asp-page="/Admin/Orders/Order" class="btn btn-sm btn-outline-primary">View all</a>
+    <div class="row g-3">
+        <div class="col-xl-4">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="small text-body-secondary fw-medium px-3 pt-3 pb-2">Top menu items <span class="fw-normal">(units served)</span></div>
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1 mt-0 flex-grow-1">
+                    <div class="card-body">
+                        <div id="chart-items" role="img" aria-label="Bar chart of the top selling menu items in the chosen date range"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr><th>Order</th><th>Table</th><th>Time</th><th>Total</th><th>Status</th></tr>
-                </thead>
-                <tbody id="recent-orders"></tbody>
-            </table>
+        <div class="col-xl-8">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
+                    <span class="small text-body-secondary fw-medium">Recent orders</span>
+                    <a asp-page="/Admin/Orders/Order" class="btn btn-sm btn-light border">View all<i class="fa-solid fa-chevron-right ms-1 small"></i></a>
+                </div>
+                <div class="card bg-body border-0 shadow-sm rounded-4 m-1 mt-0 flex-grow-1 overflow-hidden">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-body-secondary fw-medium ps-3">Order</th>
+                                    <th class="text-body-secondary fw-medium">Customer</th>
+                                    <th class="text-body-secondary fw-medium">Table</th>
+                                    <th class="text-body-secondary fw-medium">Items</th>
+                                    <th class="text-body-secondary fw-medium">Time</th>
+                                    <th class="text-body-secondary fw-medium">Status</th>
+                                    <th class="text-body-secondary fw-medium text-end pe-3">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

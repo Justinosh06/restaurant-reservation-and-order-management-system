@@ -32,6 +32,10 @@ namespace Restaurant_Reservation_and_Order_Management_System.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("Gender")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<string>("Password")
                         .HasColumnType("nvarchar(max)");
 

@@ -53,25 +53,11 @@ public class PromotionModel : PageModel
         [FromForm] string? endDate,
         IFormFile? image)
     {
-        var promotion = new Promotion
-        {
-            Title = title?.Trim() ?? string.Empty,
-            Description = description?.Trim() ?? string.Empty
-        };
-
-        var error = ModelRules.FirstError(promotion, nameof(Promotion.Title), nameof(Promotion.Description));
+        var promotion = new Promotion();
+        var error = Apply(promotion, title, description, startDate, endDate);
         if (error is not null)
         {
             return BadRequest(new { error });
-        }
-        if (!DateOnly.TryParseExact(startDate, "yyyy-MM-dd", out var start) ||
-            !DateOnly.TryParseExact(endDate, "yyyy-MM-dd", out var end))
-        {
-            return BadRequest(new { error = "Please enter a valid start and end date." });
-        }
-        if (end < start)
-        {
-            return BadRequest(new { error = "The end date must be on or after the start date." });
         }
 
         if (image is { Length: > 0 })
@@ -83,9 +69,6 @@ public class PromotionModel : PageModel
             }
             promotion.ImageUrl = await SaveImageAsync(image);
         }
-
-        promotion.StartDate = start;
-        promotion.EndDate = end;
 
         _db.Promotions.Add(promotion);
         try
@@ -99,6 +82,93 @@ public class PromotionModel : PageModel
         }
 
         return new JsonResult(ToDto(promotion));
+    }
+
+    // A new image replaces the old one; removeImage clears it. Without either, the current image is kept.
+    public async Task<IActionResult> OnPostUpdateAsync(
+        [FromForm] string? id,
+        [FromForm] string? title,
+        [FromForm] string? description,
+        [FromForm] string? startDate,
+        [FromForm] string? endDate,
+        [FromForm] bool removeImage,
+        IFormFile? image)
+    {
+        var promotion = await _db.Promotions.FindAsync(id);
+        if (promotion is null)
+        {
+            return NotFound(new { error = "This promotion no longer exists. Refresh the page." });
+        }
+
+        var error = Apply(promotion, title, description, startDate, endDate);
+        if (error is not null)
+        {
+            return BadRequest(new { error });
+        }
+
+        var oldImageUrl = promotion.ImageUrl;
+        if (image is { Length: > 0 })
+        {
+            var imageError = await ValidateImageAsync(image);
+            if (imageError is not null)
+            {
+                return BadRequest(new { error = imageError });
+            }
+            promotion.ImageUrl = await SaveImageAsync(image);
+        }
+        else if (removeImage)
+        {
+            promotion.ImageUrl = null;
+        }
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch
+        {
+            if (promotion.ImageUrl != oldImageUrl)
+            {
+                DeleteImage(promotion.ImageUrl);
+            }
+            throw;
+        }
+
+        if (promotion.ImageUrl != oldImageUrl)
+        {
+            DeleteImage(oldImageUrl);
+        }
+
+        return new JsonResult(ToDto(promotion));
+    }
+
+    // Copies the form values onto the promotion. Returns an error message, or null when everything is valid.
+    private static string? Apply(Promotion promotion, string? title, string? description, string? startDate, string? endDate)
+    {
+        var trimmedTitle = title?.Trim() ?? string.Empty;
+        var trimmedDescription = description?.Trim() ?? string.Empty;
+
+        var error = ModelRules.FirstError(new Promotion { Title = trimmedTitle, Description = trimmedDescription },
+            nameof(Promotion.Title), nameof(Promotion.Description));
+        if (error is not null)
+        {
+            return error;
+        }
+        if (!DateOnly.TryParseExact(startDate, "yyyy-MM-dd", out var start) ||
+            !DateOnly.TryParseExact(endDate, "yyyy-MM-dd", out var end))
+        {
+            return "Please enter a valid start and end date.";
+        }
+        if (end < start)
+        {
+            return "The end date must be on or after the start date.";
+        }
+
+        promotion.Title = trimmedTitle;
+        promotion.Description = trimmedDescription;
+        promotion.StartDate = start;
+        promotion.EndDate = end;
+        return null;
     }
 
     public async Task<IActionResult> OnPostDeleteAsync([FromBody] PromotionIdRequest request)

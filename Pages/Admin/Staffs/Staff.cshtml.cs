@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 
 namespace RestaurantReservation.Pages.Admin.Staffs;
 
@@ -21,7 +22,7 @@ public class StaffModel : PageModel
         _passwordHasher = passwordHasher;
     }
 
-    public record SaveStaffRequest(string? Id, string? Email, string? Password, string? Role);
+    public record SaveStaffRequest(string? Id, string? Email, string? Password, string? Role, string? Gender);
 
     public record DeleteStaffRequest(string Id);
 
@@ -38,19 +39,20 @@ public class StaffModel : PageModel
     public async Task<IActionResult> OnPostCreateAsync([FromBody] SaveStaffRequest request)
     {
         var email = NormalizeEmail(request.Email);
-        var error = FindError(email, request.Password, passwordRequired: true, request.Role);
+        var error = FindError(email, request.Password, passwordRequired: true, request.Role, request.Gender);
         if (error is not null)
         {
             return BadRequest(new { error });
         }
         var role = Enum.Parse<AdminRole>(request.Role!);
+        var gender = Enum.Parse<Gender>(request.Gender!);
 
         if (await _db.Admins.AnyAsync(a => a.Email == email))
         {
             return BadRequest(new { error = "An account with this email already exists." });
         }
 
-        var admin = new Models.Admin { Id = Guid.NewGuid().ToString("N"), Email = email, Role = role };
+        var admin = new Models.Admin { Id = Guid.NewGuid().ToString("N"), Email = email, Role = role, Gender = gender };
         admin.Password = _passwordHasher.HashPassword(admin, request.Password!);
 
         _db.Admins.Add(admin);
@@ -68,12 +70,13 @@ public class StaffModel : PageModel
         }
 
         var email = NormalizeEmail(request.Email);
-        var error = FindError(email, request.Password, passwordRequired: false, request.Role);
+        var error = FindError(email, request.Password, passwordRequired: false, request.Role, request.Gender);
         if (error is not null)
         {
             return BadRequest(new { error });
         }
         var role = Enum.Parse<AdminRole>(request.Role!);
+        var gender = Enum.Parse<Gender>(request.Gender!);
 
         if (await _db.Admins.AnyAsync(a => a.Email == email && a.Id != admin.Id))
         {
@@ -87,6 +90,7 @@ public class StaffModel : PageModel
 
         admin.Email = email;
         admin.Role = role;
+        admin.Gender = gender;
         if (!string.IsNullOrEmpty(request.Password))
         {
             admin.Password = _passwordHasher.HashPassword(admin, request.Password);
@@ -121,12 +125,13 @@ public class StaffModel : PageModel
         id = admin.Id,
         displayId = AdminDisplay.ShortId(admin.Id),
         email = admin.Email,
-        role = admin.Role.ToString()
+        role = admin.Role.ToString(),
+        gender = admin.Gender?.ToString()
     };
 
     private static string NormalizeEmail(string? email) => (email ?? string.Empty).Trim().ToLowerInvariant();
 
-    private static string? FindError(string email, string? password, bool passwordRequired, string? role)
+    private static string? FindError(string email, string? password, bool passwordRequired, string? role, string? gender)
     {
         var emailError = ModelRules.FirstError(new Models.Admin { Email = email }, nameof(Models.Admin.Email));
         if (emailError is not null)
@@ -147,6 +152,11 @@ public class StaffModel : PageModel
         if (!Enum.TryParse<AdminRole>(role, out var parsedRole) || !Enum.IsDefined(parsedRole))
         {
             return "Please choose a valid role.";
+        }
+
+        if (!Enum.TryParse<Gender>(gender, out var parsedGender) || !Enum.IsDefined(parsedGender))
+        {
+            return "Please choose a gender.";
         }
 
         return null;

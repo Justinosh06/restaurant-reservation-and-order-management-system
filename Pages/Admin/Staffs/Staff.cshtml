@@ -5,31 +5,82 @@
 }
 
 <div class="admin-page px-3 pb-4">
-    <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
-            <h1 class="page-title">Staffs</h1>
-            <p class="page-subtitle">Create and manage staff accounts. Staff can sign in right away, so they don't need to register.</p>
+            <h1 class="h4 fw-semibold mb-1">Staffs</h1>
+            <p class="text-body-secondary mb-0">Manage who can sign in to the admin portal.</p>
         </div>
-        <button type="button" class="btn btn-primary" id="btn-add-staff"><i class="fa-solid fa-plus me-1"></i> Add staff</button>
+        <button type="button" class="btn btn-dark" id="btn-add-staff"><i class="fa-solid fa-plus me-1"></i> Add staff</button>
     </div>
 
-    <div class="card">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <div>
-                <span>Staff accounts</span>
-                <small class="text-muted fw-normal" id="staff-count"></small>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <span class="rounded-3 bg-dark-subtle text-dark-emphasis px-3 py-2"><i class="fa-solid fa-users fa-fw"></i></span>
+                    <div>
+                        <div class="small text-body-secondary">All accounts</div>
+                        <div class="fs-5 fw-semibold lh-sm" id="summary-total">-</div>
+                    </div>
+                </div>
             </div>
-            <input type="search" id="staff-search" class="form-control form-control-sm page-search w-auto" placeholder="Search by email" aria-label="Search staff" />
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr><th>Staff ID</th><th>Email</th><th>Role</th><th class="text-end">Actions</th></tr>
-                </thead>
-                <tbody id="staff-body"></tbody>
-            </table>
+        <div class="col-6 col-xl-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <span class="rounded-3 bg-info-subtle text-info-emphasis px-3 py-2"><i class="fa-solid fa-user-shield fa-fw"></i></span>
+                    <div>
+                        <div class="small text-body-secondary">Administrators</div>
+                        <div class="fs-5 fw-semibold lh-sm" id="count-Administrator">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <span class="rounded-3 bg-success-subtle text-success-emphasis px-3 py-2"><i class="fa-solid fa-user fa-fw"></i></span>
+                    <div>
+                        <div class="small text-body-secondary">Staff</div>
+                        <div class="fs-5 fw-semibold lh-sm" id="count-Staff">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <span class="rounded-3 bg-warning-subtle text-warning-emphasis px-3 py-2"><i class="fa-solid fa-circle-question fa-fw"></i></span>
+                    <div>
+                        <div class="small text-body-secondary">Gender not set</div>
+                        <div class="fs-5 fw-semibold lh-sm" id="summary-no-gender">-</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <div class="input-group w-auto">
+            <span class="input-group-text bg-body"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+            <input type="search" id="staff-search" class="form-control" placeholder="Search by email" aria-label="Search staff" />
+        </div>
+        <select class="form-select w-auto" id="staff-role-filter" aria-label="Filter by role">
+            <option value="">All roles</option>
+            <option value="Administrator">Administrator</option>
+            <option value="Staff">Staff</option>
+        </select>
+        <select class="form-select w-auto" id="staff-gender-filter" aria-label="Filter by gender">
+            <option value="">All genders</option>
+            @foreach (var gender in Enum.GetNames<RestaurantReservation.Models.Enums.Gender>())
+            {
+                <option value="@gender">@gender</option>
+            }
+        </select>
+        <small class="text-body-secondary ms-auto" id="staff-count"></small>
+    </div>
+
+    <div class="row g-3" id="staff-grid"></div>
 </div>
 
 <div class="modal fade" id="staff-modal" tabindex="-1" aria-labelledby="staff-modal-title" aria-hidden="true">
@@ -56,6 +107,19 @@
                         <div class="invalid-feedback">Password must be at least @RestaurantReservation.Pages.Admin.Staffs.StaffModel.MinPasswordLength characters.</div>
                     </div>
                     <div class="form-text" id="password-help"></div>
+                </div>
+                <div class="mb-3">
+                    <span class="form-label d-block" id="staff-gender-label">Gender</span>
+                    <div class="d-flex gap-2" role="radiogroup" aria-labelledby="staff-gender-label">
+                        @foreach (var gender in Enum.GetNames<RestaurantReservation.Models.Enums.Gender>())
+                        {
+                            <input type="radio" class="btn-check" name="staff-gender" id="staff-gender-@gender" value="@gender" required />
+                            <label class="btn btn-outline-secondary flex-fill" for="staff-gender-@gender">
+                                <i class="fa-solid @(gender == "Female" ? "fa-person-dress" : "fa-person") me-1"></i>@gender
+                            </label>
+                        }
+                    </div>
+                    <div class="small text-danger mt-1 d-none" id="staff-gender-error">Please choose a gender.</div>
                 </div>
                 <div class="mb-1">
                     <label for="staff-role" class="form-label">Role</label>

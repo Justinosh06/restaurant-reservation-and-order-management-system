@@ -54,7 +54,8 @@ public class DashboardModel : PageModel
                 .Where(o => (o.ServedAt ?? o.CreatedAt) >= startUtc && (o.ServedAt ?? o.CreatedAt) < endUtc)
                 .Select(o => new { o.TotalAmount, ServedAt = o.ServedAt ?? o.CreatedAt })
                 .ToListAsync())
-            .Select(o => new { o.TotalAmount, Day = DateOnly.FromDateTime(_clock.ToLocal(o.ServedAt)) })
+            .Select(o => new { o.TotalAmount, Local = _clock.ToLocal(o.ServedAt) })
+            .Select(o => new { o.TotalAmount, Day = DateOnly.FromDateTime(o.Local), o.Local.Hour })
             .ToList();
 
         var orders = placedOrders.Where(o => o.Day >= fromDate).ToList();
@@ -73,7 +74,18 @@ public class DashboardModel : PageModel
         var revenueByDay = days.Select(day => new
         {
             date = day.ToString("yyyy-MM-dd"),
-            amount = served.Where(o => o.Day == day).Sum(o => o.TotalAmount)
+            amount = served.Where(o => o.Day == day).Sum(o => o.TotalAmount),
+            orders = served.Count(o => o.Day == day)
+        });
+
+        var reservationDays = await _db.Reservations.AsNoTracking()
+            .Where(r => r.Date >= fromDate && r.Date <= toDate && r.Status != ReservationStatus.Cancelled)
+            .Select(r => r.Date)
+            .ToListAsync();
+        var reservationsByDay = days.Select(day => new
+        {
+            date = day.ToString("yyyy-MM-dd"),
+            count = reservationDays.Count(d => d == day)
         });
 
         var ordersByDay = days.Select(day => new
@@ -82,12 +94,20 @@ public class DashboardModel : PageModel
             count = orders.Count(o => o.Day == day)
         });
 
-        var firstHour = orders.Count > 0 ? Math.Min(DefaultFirstHour, orders.Min(o => o.Hour)) : DefaultFirstHour;
-        var lastHour = orders.Count > 0 ? Math.Max(DefaultLastHour, orders.Max(o => o.Hour)) : DefaultLastHour;
+        var busyHours = orders.Select(o => o.Hour).Concat(served.Select(o => o.Hour)).ToList();
+        var firstHour = busyHours.Count > 0 ? Math.Min(DefaultFirstHour, busyHours.Min()) : DefaultFirstHour;
+        var lastHour = busyHours.Count > 0 ? Math.Max(DefaultLastHour, busyHours.Max()) : DefaultLastHour;
         var ordersByHour = Enumerable.Range(firstHour, lastHour - firstHour + 1).Select(hour => new
         {
             hour,
             count = orders.Count(o => o.Hour == hour)
+        });
+
+        // Used instead of revenueByDay when the range is a single day.
+        var revenueByHour = Enumerable.Range(firstHour, lastHour - firstHour + 1).Select(hour => new
+        {
+            hour,
+            amount = served.Where(o => o.Hour == hour).Sum(o => o.TotalAmount)
         });
 
         var rangeStartUtc = _clock.StartOfDayUtc(fromDate);
@@ -103,12 +123,23 @@ public class DashboardModel : PageModel
         var recentOrders = (await _db.Orders.AsNoTracking()
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(5)
-                .Select(o => new { o.Id, o.TotalAmount, o.Status, o.CreatedAt, o.Session!.TableId })
+                .Select(o => new
+                {
+                    o.Id,
+                    o.TotalAmount,
+                    o.Status,
+                    o.CreatedAt,
+                    o.Session!.TableId,
+                    CustomerEmail = o.Customer!.Email,
+                    ItemCount = _db.OrderItems.Where(oi => oi.OrderId == o.Id).Sum(oi => oi.Quantity)
+                })
                 .ToListAsync())
             .Select(o => new
             {
                 id = AdminDisplay.ShortId(o.Id),
                 table = o.TableId,
+                customer = o.CustomerEmail,
+                itemCount = o.ItemCount,
                 createdAt = o.CreatedAt,
                 total = o.TotalAmount,
                 status = AdminDisplay.OrderStatusLabel(o.Status)
@@ -125,6 +156,8 @@ public class DashboardModel : PageModel
             averageOrderValue = Average(revenue, served.Count),
             previousAverageOrderValue = Average(previousRevenue, previousServed.Count),
             revenueByDay,
+            revenueByHour,
+            reservationsByDay,
             ordersByDay,
             ordersByHour,
             topItems,

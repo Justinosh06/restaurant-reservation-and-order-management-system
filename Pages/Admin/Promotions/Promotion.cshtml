@@ -2,78 +2,121 @@
 @model RestaurantReservation.Pages.Admin.Promotions.PromotionModel
 @using RestaurantReservation.Infrastructure.Admin
 @using RestaurantReservation.Models
+@using RestaurantReservation.Pages.Admin.Promotions
 @{
-    ViewData["Title"] = "Promotion";
-    var maxImageMb = RestaurantReservation.Pages.Admin.Promotions.PromotionModel.MaxImageBytes / (1024 * 1024);
+    ViewData["Title"] = "Promotions";
+    var maxImageMb = PromotionModel.MaxImageBytes / (1024 * 1024);
 }
 
 <div class="admin-page px-3 pb-4">
-    <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
-            <h1 class="page-title">Promotion</h1>
+            <h1 class="h4 fw-semibold mb-1">Promotions</h1>
+            <p class="text-body-secondary mb-0">Create and manage the deals shown to customers.</p>
+        </div>
+        <button type="button" class="btn btn-dark" id="btn-new-promotion"><i class="fa-solid fa-plus me-1"></i> New promotion</button>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body d-flex flex-wrap gap-2">
+            <div class="input-group flex-grow-1 w-auto">
+                <span class="input-group-text bg-body"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+                <input type="search" id="promo-search" class="form-control" placeholder="Search promotions by title" aria-label="Search promotions by title" />
+            </div>
+            <select class="form-select w-auto" id="promo-status-filter" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                <option value="Active">Active</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Ended">Ended</option>
+            </select>
         </div>
     </div>
 
     <div class="row g-3">
-        <div class="col-lg-5">
-            <form class="card" id="promo-form" novalidate>
-                <div class="card-header">New promotion</div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label" for="promo-image">Image</label>
-                        <div class="image-drop border rounded bg-body-tertiary d-flex flex-column align-items-center justify-content-center text-muted"
-                             id="image-drop" tabindex="0" role="button" aria-label="Upload promotion image">
-                            <i class="fa-regular fa-image fs-3"></i>
-                            <span>Click or drop an image here</span>
-                        </div>
-                        <input type="file" id="promo-image" class="d-none"
-                               accept="@string.Join(", ", RestaurantReservation.Pages.Admin.Promotions.PromotionModel.AllowedImageTypes.Keys)"
-                               data-max-bytes="@RestaurantReservation.Pages.Admin.Promotions.PromotionModel.MaxImageBytes" />
-                        <div class="d-flex justify-content-between align-items-center mt-1">
-                            <small class="form-text">JPG, PNG or WebP, up to @maxImageMb MB</small>
-                            <button type="button" class="btn btn-link btn-sm p-0 d-none" id="remove-image">Remove image</button>
-                        </div>
-                        <small class="text-danger" id="image-error"></small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="promo-title" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="promo-title" maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Title)))" required placeholder="e.g. Pasta Tuesday 20% off" />
-                        <div class="invalid-feedback">Title is required.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="promo-description" class="form-label">Description</label>
-                        <textarea class="form-control" id="promo-description" rows="3" maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Description)))" required placeholder="Describe the promotion and its terms..."></textarea>
-                        <div class="invalid-feedback">Description is required.</div>
-                    </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label for="promo-start" class="form-label">Start date</label>
-                            <input type="date" class="form-control" id="promo-start" required />
-                            <div class="invalid-feedback">Start date is required.</div>
-                        </div>
-                        <div class="col-6">
-                            <label for="promo-end" class="form-label">End date</label>
-                            <input type="date" class="form-control" id="promo-end" required />
-                            <div class="invalid-feedback">End date must be on or after the start date.</div>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-danger d-none" id="promo-form-error" role="alert"></div>
-                    <button type="submit" class="btn btn-primary w-100" id="promo-submit"><i class="fa-solid fa-plus me-1"></i> Create promotion</button>
-                </div>
-            </form>
+        <div class="col-lg-8">
+            <div class="d-flex flex-column gap-3" id="promo-list"></div>
         </div>
 
-        <div class="col-lg-7">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span>All promotions</span>
-                <small class="text-muted" id="promo-count"></small>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-body fw-semibold py-3">Overview</div>
+                <ul class="list-group list-group-flush" id="promo-stats"></ul>
+                <div class="card-footer bg-body small text-body-secondary" id="promo-updated"></div>
             </div>
-            <div class="row row-cols-1 row-cols-md-2 g-3" id="promo-list"></div>
-            <p class="text-center text-muted py-4 d-none" id="promo-message"></p>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="promo-modal" tabindex="-1" aria-labelledby="promo-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <form class="modal-content" id="promo-form" novalidate>
+            <div class="modal-header">
+                <h5 class="modal-title" id="promo-modal-title">New promotion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="promo-id" />
+                <div class="mb-3">
+                    <label class="form-label" for="promo-image">Image <span class="text-body-secondary">(optional)</span></label>
+                    <div class="ratio ratio-21x9 border border-2 rounded-3 bg-body-tertiary overflow-hidden" id="image-drop" tabindex="0" role="button" aria-label="Upload promotion image">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-body-secondary">
+                            <i class="fa-regular fa-image fs-3 mb-1"></i>
+                            <span class="small">Click or drop an image here</span>
+                        </div>
+                    </div>
+                    <input type="file" id="promo-image" class="d-none"
+                           accept="@string.Join(", ", PromotionModel.AllowedImageTypes.Keys)"
+                           data-max-bytes="@PromotionModel.MaxImageBytes" />
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <small class="form-text">JPG, PNG or WebP, up to @maxImageMb MB</small>
+                        <button type="button" class="btn btn-link btn-sm p-0 d-none" id="remove-image">Remove image</button>
+                    </div>
+                    <small class="text-danger" id="image-error"></small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="promo-title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="promo-title" maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Title)))" required placeholder="e.g. Pasta Tuesday 20% off" />
+                    <div class="invalid-feedback">Title is required.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="promo-description" class="form-label">Description</label>
+                    <textarea class="form-control" id="promo-description" rows="3" maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Description)))" required placeholder="Describe the promotion and its terms..."></textarea>
+                    <div class="invalid-feedback">Description is required.</div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label for="promo-start" class="form-label">Start date</label>
+                        <input type="date" class="form-control" id="promo-start" required />
+                        <div class="invalid-feedback">Start date is required.</div>
+                    </div>
+                    <div class="col-6">
+                        <label for="promo-end" class="form-label">End date</label>
+                        <input type="date" class="form-control" id="promo-end" required />
+                        <div class="invalid-feedback">End date must be on or after the start date.</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger d-none mt-3 mb-0" id="promo-form-error" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-dark" id="promo-submit">Create promotion</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="promo-view-modal" tabindex="-1" aria-labelledby="promo-view-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="promo-view-title">Promotion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="promo-view-body"></div>
         </div>
     </div>
 </div>
