@@ -17,7 +17,7 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages;
 
 // One login page for everyone. The role comes from the database:
 //   Admins table (Administrator / Staff) -> admin portal on admin.localhost
-//   Customers table                      -> /Customer on the main site
+//   Customers table                      -> landing page on the main site
 public class LoginModel : PageModel
 {
     private readonly ApplicationDbContext _db;
@@ -56,11 +56,11 @@ public class LoginModel : PageModel
         public string? CaptchaAnswer { get; set; }
     }
 
-    public IActionResult OnGet()
+    public IActionResult OnGet(string? returnUrl = null)
     {
         if (User.IsInRole(AppRoles.Customer))
         {
-            return RedirectToPage("/Customer/Index");
+            return RedirectToCustomerPage(returnUrl);
         }
 
         return Page();
@@ -73,7 +73,8 @@ public class LoginModel : PageModel
         return Content(_captcha.CreateCaptchaSvg(HttpContext.Session), "image/svg+xml");
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    // returnUrl is the page the customer wanted before being sent here (e.g. /Customer/Profile).
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         if (!ModelState.IsValid)
         {
@@ -124,11 +125,15 @@ public class LoginModel : PageModel
             // Step 3 (Customer): sign in on the main site.
             var name = string.IsNullOrWhiteSpace(customer.FullName) ? customer.Email : customer.FullName;
             await SignInAsync(customer.Id, name, customer.Email, AppRoles.Customer);
-            return RedirectToPage("/Customer/Index");
+            return RedirectToCustomerPage(returnUrl);
         }
 
         return InvalidLogin();
     }
+
+    // Only local URLs are followed, so the login page cannot be used to redirect to another site.
+    private IActionResult RedirectToCustomerPage(string? returnUrl) =>
+        Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Index");
 
     private IActionResult InvalidLogin()
     {
