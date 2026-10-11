@@ -1,0 +1,93 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ProfileModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<h1>My Profile</h1>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <p>@Model.SuccessMessage</p>
+}
+
+@if (!Model.IsEditing)
+{
+    @* View mode *@
+    <div>
+        <div>
+            <label>User ID</label>
+            <input type="text" value="@Model.UserId" readonly />
+        </div>
+
+        <div>
+            <label>First Name</label>
+            <input type="text" value="@Model.Input.FirstName" readonly />
+        </div>
+
+        <div>
+            <label>Last Name</label>
+            <input type="text" value="@Model.Input.LastName" readonly />
+        </div>
+
+        <div>
+            <label>Email</label>
+            <input type="text" value="@Model.Email" readonly />
+        </div>
+
+        <div>
+            <label>Phone Number</label>
+            <input type="text" value="@Model.Input.PhoneNumber" readonly />
+        </div>
+    </div>
+
+    <form method="get">
+        <button type="submit" name="edit" value="true">Edit</button>
+    </form>
+
+    <p><a asp-page="/Customer/Index">Back to Dashboard</a></p>
+}
+else
+{
+    @* Edit mode: User ID and Email stay locked *@
+    <form method="post">
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div>
+            <label>User ID</label>
+            <input type="text" value="@Model.UserId" disabled />
+        </div>
+
+        <div>
+            <label asp-for="Input.FirstName"></label>
+            <input asp-for="Input.FirstName" autocomplete="given-name" />
+            <span asp-validation-for="Input.FirstName"></span>
+        </div>
+
+        <div>
+            <label asp-for="Input.LastName"></label>
+            <input asp-for="Input.LastName" autocomplete="family-name" />
+            <span asp-validation-for="Input.LastName"></span>
+        </div>
+
+        <div>
+            <label>Email</label>
+            <input type="text" value="@Model.Email" disabled />
+        </div>
+
+        <div>
+            <label asp-for="Input.PhoneNumber"></label>
+            <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
+            <span asp-validation-for="Input.PhoneNumber"></span>
+        </div>
+
+        <div>
+            <button type="button" onclick="location.href='@Url.Page("/Customer/Profile")'">Cancel</button>
+            <button type="submit">Save</button>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
