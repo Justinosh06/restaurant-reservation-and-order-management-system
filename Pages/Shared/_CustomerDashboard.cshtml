@@ -1,0 +1,101 @@
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Models
+@model IndexModel
+@{
+    // Order and session times are stored in UTC.
+    DateTime ToLocal(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
+
+    var visits = Model.Orders.Where(o => o.Session is not null).Select(o => o.Session!).ToList();
+}
+
+<section class="dash-header">
+    <div>
+        <h1 class="hero-title">Welcome back, @User.Identity?.Name.</h1>
+        <span class="hero-tag">Customer dashboard</span>
+    </div>
+
+    <div class="dash-actions">
+        <a asp-page="/Table/Index" asp-route-tableId="@IndexModel.MenuTableId" class="pill-btn">
+            Menu <i class="fa-solid fa-arrow-right ms-1"></i>
+        </a>
+        <a asp-page="/Reservation/Management" class="pill-btn">Reserve a table</a>
+    </div>
+</section>
+
+<section class="history">
+    <h2 class="section-title">Order history</h2>
+
+    @if (Model.Orders.Count == 0)
+    {
+        <p class="empty-note">You have not placed any orders yet.</p>
+    }
+    else
+    {
+        <div class="history-scroll">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Status</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.Orders)
+                    {
+                        <tr>
+                            <td>@ToLocal(order.CreatedAt).ToString("d MMM yyyy, HH:mm")</td>
+                            <td>@string.Join(", ", Model.OrderItems[order.Id].Select(i => $"{i.Quantity} x {i.MenuItem?.Name}"))</td>
+                            <td><span class="status-pill @(order.Status == OrderStatus.Cancelled ? "muted" : "")">@order.Status</span></td>
+                            <td class="text-end menu-price">@Model.Currency.FormatCents(order.TotalAmount)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="history">
+    <h2 class="section-title">Dining history</h2>
+
+    @if (visits.Count == 0)
+    {
+        <p class="empty-note">You have not dined with us yet.</p>
+    }
+    else
+    {
+        <div class="history-scroll">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Arrived</th>
+                        <th>Left</th>
+                        <th class="text-end">Time at table</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var visit in visits)
+                    {
+                        <tr>
+                            <td>@ToLocal(visit.StartingTime).ToString("d MMM yyyy")</td>
+                            <td>@ToLocal(visit.StartingTime).ToString("HH:mm")</td>
+                            @if (visit.EndingTime is { } end)
+                            {
+                                <td>@ToLocal(end).ToString("HH:mm")</td>
+                                <td class="text-end">@((int)(end - visit.StartingTime).TotalMinutes) min</td>
+                            }
+                            else
+                            {
+                                <td><span class="status-pill">Dining now</span></td>
+                                <td class="text-end">&ndash;</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

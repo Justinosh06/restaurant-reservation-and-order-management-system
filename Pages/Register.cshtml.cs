@@ -68,7 +68,7 @@ public class RegisterModel : PageModel
     {
         if (User.IsInRole(AppRoles.Customer))
         {
-            return RedirectToPage("/Customer/Index");
+            return RedirectToPage("/Index");
         }
 
         return Page();
