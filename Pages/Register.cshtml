@@ -15,9 +15,15 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
                     <div class="mb-3">
-                        <label asp-for="Input.FullName" class="form-label"></label>
-                        <input asp-for="Input.FullName" class="form-control" autocomplete="name" />
-                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                        <label asp-for="Input.FirstName" class="form-label"></label>
+                        <input asp-for="Input.FirstName" class="form-control" autocomplete="given-name" />
+                        <span asp-validation-for="Input.FirstName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.LastName" class="form-label"></label>
+                        <input asp-for="Input.LastName" class="form-control" autocomplete="family-name" />
+                        <span asp-validation-for="Input.LastName" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
