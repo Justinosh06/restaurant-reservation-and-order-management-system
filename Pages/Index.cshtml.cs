@@ -8,7 +8,7 @@ using RestaurantReservation.Models.Enums;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages;
 
-// Home page. Visitors see the public landing page; a logged-in customer sees their dashboard instead.
+// Home page. Everyone sees the landing page; a logged-in customer also gets their order and dining history.
 public class IndexModel : PageModel
 {
     private const int ShortMenuSize = 5;
@@ -55,7 +55,6 @@ public class IndexModel : PageModel
         if (User.IsInRole(AppRoles.Customer))
         {
             await LoadDashboardAsync();
-            return;
         }
 
         var available = _db.MenuItems.AsNoTracking().Where(m => m.Availability);

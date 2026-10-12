@@ -7,34 +7,142 @@
     var isCustomer = User.IsInRole(AppRoles.Customer);
 
     // Visitors must log in first; the login page then sends them on to the page they picked.
-    var menuLoginUrl = Url.Page("/Login", new { returnUrl = Url.Page("/Table/Index", new { tableId = IndexModel.MenuTableId }) });
+    var menuUrl = Url.Page("/Table/Index", new { tableId = IndexModel.MenuTableId });
+    var menuLinkUrl = isCustomer ? menuUrl : Url.Page("/Login", new { returnUrl = menuUrl });
     var reserveUrl = Url.Page("/Reservation/Management");
-    var reserveLoginUrl = Url.Page("/Login", new { returnUrl = reserveUrl });
+
+    const string mapEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3689.51102615882!2d113.98775958961416!3d22.372084687791705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3403fb70f463265b%3A0xb412a51f5ac2f272!2sResto%20Bar%20%26%20Grill!5e0!3m2!1sen!2smy!4v1791788991346!5m2!1sen!2smy";
+    // Same place as the embedded map, opened in Google Maps.
+    const string mapOpenUrl = "https://www.google.com/maps?cid=12975615030493114994";
 }
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
 <link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
 
 <div class="landing">
-    <nav class="landing-nav">
-        <a asp-page="/Index" class="brand">@Model.RestaurantName</a>
+    <partial name="_LandingNav" model="Model.RestaurantName" />
 
-        <div class="nav-actions">
-            @if (isCustomer)
+    <section class="hero">
+        <div class="hero-text">
+            <h1 class="hero-title">Fresh pasta, good coffee, a table for you.</h1>
+            @* <span class="hero-tag">Dine in &middot; Reserve ahead</span> *@
+        </div>
+        <img class="hero-img" src="~/images/landing-hero.jpg" alt="Dishes served at @Model.RestaurantName" />
+    </section>
+
+    <section class="booking-row">
+        @* Reservations need a customer account, so visitors go through the login page first. *@
+        <form class="reservation-card" method="get" action="@(isCustomer ? reserveUrl : Url.Page("/Login"))">
+            @if (!isCustomer)
             {
-                <span class="greeting">Hi, @User.Identity?.Name</span>
-                <a asp-page="/Customer/Profile" class="nav-link-plain">My Profile</a>
-                <form method="post" asp-page="/Logout">
-                    <button type="submit" class="pill-btn">Logout</button>
-                </form>
+                <input type="hidden" name="returnUrl" value="@reserveUrl" />
+            }
+            <h2 class="card-title">Reservation</h2>
+
+            <label class="field">
+                <span class="field-label">Date</span>
+                <input type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            </label>
+            <label class="field">
+                <span class="field-label">Time</span>
+                <input type="time" />
+            </label>
+            <label class="field">
+                <span class="field-label">Guests</span>
+                <input type="number" min="1" max="20" placeholder="2" />
+            </label>
+
+            <button type="submit" class="pill-btn w-100">Reserve a table</button>
+        </form>
+
+        <div class="today-menu">
+            <h2 class="section-title">Today's menu</h2>
+
+            @if (Model.ShortMenu.Count == 0)
+            {
+                <p class="empty-note">Our menu is being updated. Please check back soon.</p>
             }
             else
             {
-                <a asp-page="/Login" class="nav-link-plain">Login</a>
-                <a asp-page="/Register" class="pill-btn">Register</a>
+                <ul class="menu-list">
+                    @foreach (var item in Model.ShortMenu)
+                    {
+                        <li>
+                            <span>@item.Name</span>
+                            <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <a href="@menuLinkUrl" class="pill-btn menu-btn">
+                View full menu <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+            @if (!isCustomer)
+            {
+                <p class="hint">Log in to see the full menu and place an order.</p>
             }
         </div>
-    </nav>
+    </section>
+
+    @if (Model.ChefSpecials.Count > 0)
+    {
+        <section class="specials">
+            <h2 class="section-title text-center">Chef's specials</h2>
+
+            <div class="specials-grid">
+                @foreach (var item in Model.ChefSpecials)
+                {
+                    <figure class="special-card">
+                        <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                        <figcaption>
+                            <span>@item.Name</span>
+                            <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
+                        </figcaption>
+                    </figure>
+                }
+            </div>
+        </section>
+    }
+
+    <details class="reviews">
+        <summary>
+            <span>Reviews</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </summary>
+
+        @if (Model.Reviews.Count == 0)
+        {
+            <p class="empty-note">No reviews yet.</p>
+        }
+        else
+        {
+            <ul class="review-list">
+                @foreach (var review in Model.Reviews)
+                {
+                    <li>
+                        <div class="review-head">
+                            <strong>@(review.Customer?.FirstName ?? "Guest")</strong>
+                            <span class="review-rating" aria-label="@review.Rating out of 5">
+                                @for (var star = 1; star <= 5; star++)
+                                {
+                                    <i class="@(star <= review.Rating ? "fa-solid" : "fa-regular") fa-star"></i>
+                                }
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(review.Description))
+                        {
+                            <p>@review.Description</p>
+                        }
+                        @if (review.MenuItem is not null)
+                        {
+                            <span class="hint">on @review.MenuItem.Name</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </details>
 
     @if (isCustomer)
     {
@@ -42,132 +150,9 @@
     }
     else
     {
-        <section class="hero">
-            <div class="hero-text">
-                <h1 class="hero-title">Fresh pasta, good coffee, a table for you.</h1>
-                <span class="hero-tag">Dine in &middot; Reserve ahead</span>
-            </div>
-            <img class="hero-img" src="~/images/landing-hero.jpg" alt="Dishes served at @Model.RestaurantName" />
-        </section>
-
-        <section class="booking-row">
-            @* Reservations need a customer account, so this goes through the login page first. *@
-            <form class="reservation-card" method="get" asp-page="/Login">
-                <input type="hidden" name="returnUrl" value="@reserveUrl" />
-                <h2 class="card-title">Reservation</h2>
-
-                <label class="field">
-                    <span class="field-label">Date</span>
-                    <input type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                </label>
-                <label class="field">
-                    <span class="field-label">Time</span>
-                    <input type="time" />
-                </label>
-                <label class="field">
-                    <span class="field-label">Guests</span>
-                    <input type="number" min="1" max="20" placeholder="2" />
-                </label>
-
-                <button type="submit" class="pill-btn w-100">Reserve a table</button>
-            </form>
-
-            <div class="today-menu">
-                <h2 class="section-title">Today's menu</h2>
-
-                @if (Model.ShortMenu.Count == 0)
-                {
-                    <p class="empty-note">Our menu is being updated. Please check back soon.</p>
-                }
-                else
-                {
-                    <ul class="menu-list">
-                        @foreach (var item in Model.ShortMenu)
-                        {
-                            <li>
-                                <span>@item.Name</span>
-                                <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
-                            </li>
-                        }
-                    </ul>
-                }
-
-                <a href="@menuLoginUrl" class="pill-btn menu-btn">
-                    View full menu <i class="fa-solid fa-arrow-right ms-1"></i>
-                </a>
-                <p class="hint">Log in to see the full menu and place an order.</p>
-            </div>
-        </section>
-
-        @if (Model.ChefSpecials.Count > 0)
-        {
-            <section class="specials">
-                <h2 class="section-title text-center">Chef's specials</h2>
-
-                <div class="specials-grid">
-                    @foreach (var item in Model.ChefSpecials)
-                    {
-                        <figure class="special-card">
-                            <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
-                            <figcaption>
-                                <span>@item.Name</span>
-                                <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
-                            </figcaption>
-                        </figure>
-                    }
-                </div>
-            </section>
-        }
-
-        <details class="reviews">
-            <summary>
-                <span>Reviews</span>
-                <i class="fa-solid fa-arrow-right"></i>
-            </summary>
-
-            @if (Model.Reviews.Count == 0)
-            {
-                <p class="empty-note">No reviews yet.</p>
-            }
-            else
-            {
-                <ul class="review-list">
-                    @foreach (var review in Model.Reviews)
-                    {
-                        <li>
-                            <div class="review-head">
-                                <strong>@(review.Customer?.FirstName ?? "Guest")</strong>
-                                <span class="review-rating" aria-label="@review.Rating out of 5">
-                                    @for (var star = 1; star <= 5; star++)
-                                    {
-                                        <i class="@(star <= review.Rating ? "fa-solid" : "fa-regular") fa-star"></i>
-                                    }
-                                </span>
-                            </div>
-                            @if (!string.IsNullOrWhiteSpace(review.Description))
-                            {
-                                <p>@review.Description</p>
-                            }
-                            @if (review.MenuItem is not null)
-                            {
-                                <span class="hint">on @review.MenuItem.Name</span>
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-        </details>
-
         <section class="location">
-            @if (!string.IsNullOrWhiteSpace(Model.Settings?.Address))
-            {
-                <iframe class="map" title="Map to @Model.RestaurantName" loading="lazy"
-                        src="https://www.google.com/maps?q=@Uri.EscapeDataString(Model.Settings.Address)&output=embed"></iframe>
-            }
-            else
-            {
-                <div class="map map-placeholder"><i class="fa-solid fa-map-location-dot"></i></div>
-            }
+            <iframe class="map" title="Map to @Model.RestaurantName" src="@mapEmbedUrl"
+                    allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
 
             <div class="location-info">
                 <h2 class="section-title">Location &amp; opening hours</h2>
@@ -208,7 +193,9 @@
                 }
             </div>
 
-            <a href="@reserveLoginUrl" class="pill-btn location-btn">Reserve a table</a>
+            <a href="@mapOpenUrl" target="_blank" rel="noopener" class="pill-btn location-btn">
+                Open map <i class="fa-solid fa-arrow-up-right-from-square ms-2"></i>
+            </a>
         </section>
     }
 </div>

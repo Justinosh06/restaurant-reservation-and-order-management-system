@@ -1,0 +1,22 @@
+@using RestaurantReservation.Infrastructure.Authentication
+@model string
+
+<nav class="landing-nav">
+    <a asp-page="/Index" class="brand">@Model</a>
+
+    <div class="nav-actions">
+        @if (User.IsInRole(AppRoles.Customer))
+        {
+            <span class="greeting">Hi, @User.Identity?.Name</span>
+            <a asp-page="/Customer/Profile" class="nav-link-plain">My Profile</a>
+            <form method="post" asp-page="/Logout">
+                <button type="submit" class="pill-btn">Logout</button>
+            </form>
+        }
+        else
+        {
+            <a asp-page="/Login" class="nav-link-plain">Login</a>
+            <a asp-page="/Register" class="pill-btn">Register</a>
+        }
+    </div>
+</nav>

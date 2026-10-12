@@ -51,6 +51,37 @@
         white-space: nowrap;
     }
 
+    .field {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #F2F2F3;
+
+        .field-label {
+            width: 52px;
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+
+        input {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            color: #444444;
+        }
+
+        input:focus {
+            outline: none;
+        }
+    }
+
+    .field:focus-within {
+        outline: 2px solid black;
+    }
+
     .landing-nav {
         display: flex;
         align-items: center;
@@ -140,37 +171,6 @@
                 font-weight: 600;
                 font-family: "Bricolage Grotesque", sans-serif;
                 margin-bottom: 4px;
-            }
-
-            .field {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 8px 12px;
-                border-radius: 8px;
-                background: #F2F2F3;
-
-                .field-label {
-                    width: 52px;
-                    flex-shrink: 0;
-                    font-weight: 500;
-                }
-
-                input {
-                    flex: 1;
-                    min-width: 0;
-                    border: none;
-                    background: transparent;
-                    color: #444444;
-                }
-
-                input:focus {
-                    outline: none;
-                }
-            }
-
-            .field:focus-within {
-                outline: 2px solid black;
             }
 
             .pill-btn {
@@ -274,12 +274,10 @@
         }
     }
 
-    .dash-header {
-        display: flex;
-        align-items: end;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 24px;
+    .profile {
+        width: 100%;
+        max-width: 560px;
+        margin: 0 auto;
 
         .hero-title {
             font-size: 3.4rem;
@@ -287,22 +285,65 @@
             font-weight: 600;
             font-family: "Bricolage Grotesque", sans-serif;
             letter-spacing: -2px;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
         }
 
-        .hero-tag {
-            display: inline-block;
-            padding: 6px 14px;
+        .notice {
+            padding: 8px 12px;
             border-radius: 8px;
-            background: #DFDFE1;
-            color: #444444;
+            background: white;
             font-weight: 500;
         }
 
-        .dash-actions {
+        .profile-card {
             display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 16px;
+            border-radius: 16px;
+            background: #DFDFE1;
+        }
+
+        .field .field-label {
+            width: 120px;
+        }
+
+        .field.locked {
+            background: transparent;
+            outline: 1px solid #CCCCCC;
+
+            input {
+                color: #666666;
+            }
+        }
+
+        .field-error {
+            color: #B3261E;
+            font-size: 0.85rem;
+        }
+
+        .field-error:empty,
+        .validation-summary-valid {
+            display: none;
+        }
+
+        .profile-actions {
+            display: flex;
+            justify-content: flex-end;
             flex-wrap: wrap;
             gap: 12px;
+            margin-top: 8px;
+        }
+
+        .pill-btn.ghost {
+            background: transparent;
+            color: black;
+            outline: 1px solid black;
+        }
+
+        .pill-btn.ghost:hover {
+            background: #F2F2F3;
+            color: black;
         }
     }
 
@@ -369,15 +410,6 @@
             align-self: stretch;
         }
 
-        .map-placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #DFDFE1;
-            color: #888888;
-            font-size: 3rem;
-        }
-
         .location-info {
             align-self: start;
         }
@@ -430,6 +462,10 @@
 
         .specials-grid {
             grid-template-columns: 1fr;
+        }
+
+        .profile .hero-title {
+            font-size: 2.6rem;
         }
 
         .location {
