@@ -13,7 +13,7 @@ public class IndexModel : PageModel
 {
     private const int ShortMenuSize = 5;
     private const int ChefSpecialsSize = 2;
-    private const int ReviewsSize = 3;
+    private const int ReviewsSize = 6;
     private const int HistorySize = 10;
 
     // The menu page is opened per table (/Table/{tableId}); online customers use this one until tables are assigned.
@@ -54,7 +54,9 @@ public class IndexModel : PageModel
 
         if (User.IsInRole(AppRoles.Customer))
         {
-            await LoadDashboardAsync();
+            // Sample history for now; switch back to LoadDashboardAsync once order processing saves real orders.
+            Orders = SampleOrders.All;
+            OrderItems = SampleOrders.Items;
         }
 
         var available = _db.MenuItems.AsNoTracking().Where(m => m.Availability);
