@@ -1,0 +1,137 @@
+@page "{id}"
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Models
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.OrderModel
+@{
+    ViewData["Title"] = $"Order #{Model.Order.Id}";
+
+    // Order and session times are stored in UTC.
+    DateTime ToLocal(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
+
+    var visit = Model.Order.Session;
+}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
+<link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
+
+<div class="landing">
+    <partial name="_LandingNav" model="Model.RestaurantName" />
+
+    <section class="order-detail">
+        <a asp-page="/Index" class="back-link"><i class="fa-solid fa-arrow-left me-1"></i> Back to dashboard</a>
+
+        <div class="order-head">
+            <h1 class="hero-title">Order #@Model.Order.Id</h1>
+            <span class="status-pill @(Model.Order.Status == OrderStatus.Cancelled ? "muted" : "")">@Model.Order.Status</span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <p class="notice">@Model.SuccessMessage</p>
+        }
+
+        <dl class="order-meta">
+            <div>
+                <dt>Ordered</dt>
+                <dd>@ToLocal(Model.Order.CreatedAt).ToString("d MMM yyyy, HH:mm")</dd>
+            </div>
+            @if (visit is not null)
+            {
+                <div>
+                    <dt>Arrived</dt>
+                    <dd>@ToLocal(visit.StartingTime).ToString("HH:mm")</dd>
+                </div>
+                <div>
+                    <dt>Left</dt>
+                    <dd>@(visit.EndingTime is { } end ? ToLocal(end).ToString("HH:mm") : "Dining now")</dd>
+                </div>
+            }
+            <div>
+                <dt>Items</dt>
+                <dd>@Model.Items.Sum(i => i.Quantity)</dd>
+            </div>
+        </dl>
+
+        <form method="post" class="order-card-box">
+            <ul class="order-items">
+                @foreach (var item in Model.Items)
+                {
+                    var price = item.MenuItem?.Price ?? 0;
+                    var index = Model.Feedback.FindIndex(f => f.MenuItemId == item.MenuItemId);
+                    // An item ordered twice gets one feedback box, under its first line.
+                    var showFeedback = index >= 0 && item == Model.Items.First(i => i.MenuItemId == item.MenuItemId);
+
+                    <li class="order-item">
+                        @if (!string.IsNullOrEmpty(item.MenuItem?.ThumbnailImage))
+                        {
+                            <img src="@Url.Content(item.MenuItem.ThumbnailImage)" alt="" />
+                        }
+                        else
+                        {
+                            <span class="item-img-blank"></span>
+                        }
+
+                        <div>
+                            <strong class="item-name">@item.MenuItem?.Name</strong>
+                            @if (!string.IsNullOrWhiteSpace(item.Remarks))
+                            {
+                                <span class="hint d-block">Note: @item.Remarks</span>
+                            }
+                            <span class="menu-price">@Model.Currency.FormatCents(price) &times; @item.Quantity</span>
+                        </div>
+
+                        <strong class="item-total">@Model.Currency.FormatCents(price * item.Quantity)</strong>
+
+                        @if (showFeedback)
+                        {
+                            var input = Model.Feedback[index];
+
+                            <div class="item-feedback">
+                                <input type="hidden" name="Feedback[@index].MenuItemId" value="@input.MenuItemId" />
+
+                                <div class="star-input" role="radiogroup" aria-label="Rating for @item.MenuItem?.Name">
+                                    @for (var star = 5; star >= 1; star--)
+                                    {
+                                        <input type="radio" class="star-radio" id="rating-@index-@star" name="Feedback[@index].Rating"
+                                               value="@star" checked="@(input.Rating == star)" />
+                                        <label class="star" for="rating-@index-@star" title="@star out of 5">
+                                            <i class="fa-solid fa-star"></i>
+                                        </label>
+                                    }
+                                    <input type="radio" id="rating-@index-none" name="Feedback[@index].Rating" value="" />
+                                    <label class="star-clear" for="rating-@index-none">Clear</label>
+                                </div>
+
+                                <textarea name="Feedback[@index].Description" rows="2" maxlength="300"
+                                          placeholder="Tell us about this dish (optional)"
+                                          aria-label="Comment on @item.MenuItem?.Name">@input.Description</textarea>
+
+                                @if (Model.Errors.TryGetValue(input.MenuItemId, out var error))
+                                {
+                                    <span class="field-error">@error</span>
+                                }
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+
+            <div class="order-total-line">
+                <span>Total</span>
+                <strong>@Model.Currency.FormatCents(Model.Order.TotalAmount)</strong>
+            </div>
+
+            @if (Model.Feedback.Count > 0)
+            {
+                <div class="order-actions">
+                    <span class="hint">Feedback is optional. Rate only the items you want to.</span>
+                    <button type="submit" class="pill-btn">Send feedback</button>
+                </div>
+            }
+            else if (!Model.CanReview)
+            {
+                <p class="hint mb-0">Feedback can be left once an order has been served.</p>
+            }
+        </form>
+    </section>
+</div>
