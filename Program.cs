@@ -11,7 +11,6 @@ using RestaurantReservation.Infrastructure.Navigation;
 using RestaurantReservation.Infrastructure.Stripe;
 
 using RestaurantReservation.Models;
-using RestaurantReservation.Data;
 using RestaurantReservation.Services;
 
 var builder = WebApplication.CreateBuilder(args);
