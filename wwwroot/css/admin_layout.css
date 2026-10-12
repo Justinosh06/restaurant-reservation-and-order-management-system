@@ -6,7 +6,7 @@ body {
     .page-content {
         height: 100%;
         overflow-y: scroll;
-        background: #ececec;
+        background: #F2F2F3;
         border-radius: 16px;
     }
 }
