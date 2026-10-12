@@ -205,12 +205,12 @@
 
     const highlightDropArea = (e) => {
         e.preventDefault();
-        dropEl.classList.add("border-primary");
+        dropEl.classList.add("border-dark");
     };
 
     const unhighlightDropArea = (e) => {
         e.preventDefault();
-        dropEl.classList.remove("border-primary");
+        dropEl.classList.remove("border-dark");
     };
 
     dropEl.addEventListener("dragenter", highlightDropArea);

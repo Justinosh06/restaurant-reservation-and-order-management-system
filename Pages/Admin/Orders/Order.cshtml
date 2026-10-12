@@ -4,7 +4,7 @@
     ViewData["Title"] = "Orders";
 }
 
-<div class="admin-page px-3 pb-4">
+<div class="admin-page px-3 pt-3 pb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="h4 fw-semibold mb-1">Orders</h1>
@@ -75,18 +75,14 @@
         </div>
     </div>
 
-    <ul class="nav nav-pills gap-2 mb-3" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button type="button" class="nav-link active d-flex align-items-center gap-2" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" role="tab" aria-controls="active-pane" aria-selected="true">
-                <i class="fa-solid fa-clipboard-list"></i>Live orders <span class="badge rounded-pill text-bg-light" id="count-active">0</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button type="button" class="nav-link d-flex align-items-center gap-2" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" role="tab" aria-controls="history-pane" aria-selected="false">
-                <i class="fa-solid fa-clock-rotate-left"></i>Order history
-            </button>
-        </li>
-    </ul>
+    <div class="d-inline-flex gap-1 bg-body border rounded-pill p-1 mb-3" role="tablist" id="order-tabs">
+        <button type="button" class="btn btn-sm rounded-pill px-3 btn-dark active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" role="tab" aria-controls="active-pane" aria-selected="true">
+            <i class="fa-solid fa-clipboard-list me-1"></i>Live orders <span class="badge rounded-pill text-bg-light border ms-1" id="count-active">0</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-3" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" role="tab" aria-controls="history-pane" aria-selected="false">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i>Order history
+        </button>
+    </div>
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="active-pane" role="tabpanel" aria-labelledby="active-tab">
@@ -135,13 +131,7 @@
 
         <div class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab">
             <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                <div class="d-flex flex-wrap gap-1 bg-body rounded-pill shadow-sm p-1" id="history-status" role="group" aria-label="Filter by status">
-                    <button type="button" class="btn btn-sm rounded-pill" data-status="All">All</button>
-                    @foreach (var status in RestaurantReservation.Pages.Admin.Orders.OrderModel.HistoryStatuses)
-                    {
-                        <button type="button" class="btn btn-sm rounded-pill" data-status="@status">@status</button>
-                    }
-                </div>
+                <p class="small text-body-secondary mb-0"><i class="fa-solid fa-receipt me-1"></i>Orders that were served and paid for.</p>
 
                 <form id="history-form" class="d-flex flex-wrap align-items-center gap-2 ms-lg-auto">
                     <div class="input-group input-group-sm w-auto">

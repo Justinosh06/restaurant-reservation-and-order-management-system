@@ -6,15 +6,16 @@
     ViewData["Title"] = "Restaurant Settings";
 }
 
-<div class="admin-page px-3 pb-4">
+<div class="admin-page px-3 pt-3 pb-4">
     <form id="settings-form" novalidate>
-        <div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
             <div>
-                <h1 class="page-title">Restaurant Settings</h1>
+                <h1 class="h4 fw-semibold mb-1">Restaurant Settings</h1>
+                <p class="text-body-secondary mb-0">Opening hours and details customers see on the website.</p>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-secondary" id="reset-settings">Discard changes</button>
-                <button type="submit" class="btn btn-primary" id="save-settings"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
+                <button type="submit" class="btn btn-dark" id="save-settings"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
             </div>
         </div>
 
@@ -25,8 +26,8 @@
 
         <div class="row g-3">
             <div class="col-lg-7">
-                <div class="card">
-                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-body fw-semibold d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
                         <span>Operating hours</span>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="copy-monday">
                             <i class="fa-regular fa-copy me-1"></i> Apply Monday to all days
@@ -46,10 +47,10 @@
             </div>
 
             <div class="col-lg-5">
-                <div class="card">
-                    <div class="card-header">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-body fw-semibold py-3">
                         <span>Restaurant details</span>
-                        <small class="text-muted fw-normal" id="settings-updated"></small>
+                        <small class="text-body-secondary fw-normal d-block" id="settings-updated"></small>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">

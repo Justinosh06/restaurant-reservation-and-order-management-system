@@ -6,3 +6,21 @@
 #admin-toast {
     font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+/* Switches, checkboxes and focus rings use the dark admin colour instead of Bootstrap's default blue. */
+.admin-page .form-check-input:checked,
+.modal .form-check-input:checked {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-dark);
+}
+
+.admin-page :is(.form-control, .form-select, .form-check-input, .btn):focus,
+.modal :is(.form-control, .form-select, .form-check-input, .btn):focus {
+    border-color: var(--bs-secondary);
+    box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.15);
+}
+
+.admin-page .form-switch .form-check-input:focus:not(:checked),
+.modal .form-switch .form-check-input:focus:not(:checked) {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2833, 37, 41, 0.25%29'/%3e%3c/svg%3e");
+}

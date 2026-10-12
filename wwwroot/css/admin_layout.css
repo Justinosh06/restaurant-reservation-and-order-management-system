@@ -1,91 +1,133 @@
 body {
     height: 100dvh;
-    padding: 8px;
     overflow: hidden;
+    padding: 8px;
 
     .page-content {
         height: 100%;
-        overflow-y: scroll;
-        background: #ececec;
-        border-radius: 16px;
+        overflow-y: auto;
+        display: flex;
     }
 }
 
-.header {
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 10;
-    padding: 12px;
+.sidebar {
+    width: 340px;
+    display: flex;
+    padding: 24px 8px;
+    padding-bottom: 8px;
+    flex-direction: column;
+    background: #f2f2f3;
+    border-radius: 20px;
 
-    .menu-dropdown {
-        position: absolute;
-        padding: 12px;
-        width: fit-content;
-        border-radius: 12px;
-        background: white;
-        cursor: pointer;
-        min-width: 160px;
-        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
-
+    .header {
         .logo {
             font-size: 1.8rem;
             letter-spacing: -2px;
-            font-weight: 600;
-            margin-bottom: 0;
+            font-weight: 700;
+            margin-left: 16px;
+            margin-bottom: 35px;
             user-select: none;
+            font-family: "Bricolage Grotesque", sans-serif;
         }
+    }
 
-        .menu-dropdown-content {
-            overflow: hidden;
-            max-height: 0;
-            transition: 500ms ease-in-out;
+    .menu-content {
+        overflow-y: auto;
+        max-height: 100%;
 
-            .nav-item-container {
-                list-style: none;
-                margin-bottom: 0;
-                padding-left: 0;
+        .nav-groups-container {
+            list-style: none;
+            padding-left: 0;
 
-                .nav-item {
-                    height: fit-content;
+            .nav-group {
+                margin-bottom: 20px;
 
-                    .nav-button {
-                        color: #888888;
-                        font-weight: 500;
-                        text-decoration: none;
-                        padding: 0 2px;
+                .nav-group-title {
+                    color: #999999;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    margin: 0 0 10px;
+                    margin-left: 16px;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                    text-transform: uppercase;
+                }
+
+                .nav-item-container {
+                    list-style: none;
+                    margin-bottom: 0;
+                    padding-left: 0;
+
+                    .nav-item {
+                        display: flex;
+                        flex-direction: column;
                         width: 100%;
-                        transition: 300ms ease-in-out;
-                    }
 
-                    .nav-button.active {
-                        color: black;
-                    }
+                        .nav-button {
+                            gap: 8px;
+                            display: flex;
+                            color: #888888;
+                            font-weight: 500;
+                            align-items: center;
+                            text-decoration: none;
+                            padding: 8px 16px;
+                            border-radius: 16px;
+                            font-family: "Bricolage Grotesque", sans-serif;
+                            transition: 300ms ease-in-out;
+                        }
 
-                    .nav-button:hover {
-                        color: black;
+                        .nav-button.active {
+                            color: black;
+                            background-color: white;
+                        }
+
+                        .nav-button:hover {
+                            color: black;
+                        }
                     }
                 }
             }
         }
     }
 
-    .menu-dropdown.active {
-        .menu-dropdown-content {
-            max-height: 30dvh;
-            padding-top: 18px;
-        }
-    }
+    .footer {
+        margin-top: auto;
 
-    .profile-avatar {
-        aspect-ratio: 1/1;
-        height: 50px;
-        border-radius: 100%;
-        background: white;
-        margin-left: auto;
-        cursor: pointer;
-        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+        .profile-btn {
+            gap: 12px;
+            display: flex;
+            padding: 8px;
+            align-items: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 300ms ease-in-out;
+
+            .right-container {
+                display: flex;
+                justify-content: center;
+                flex-direction: column;
+
+                .name {
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: black;
+                    margin-bottom: 0;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .email {
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    color: #888888;
+                    margin-bottom: 0;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+            }
+        }
+
+        .profile-btn:hover {
+            background: white;
+            border-radius: 16px;
+        }
     }
 }
 

@@ -8,7 +8,7 @@
     var maxImageMb = PromotionModel.MaxImageBytes / (1024 * 1024);
 }
 
-<div class="admin-page px-3 pb-4">
+<div class="admin-page px-3 pt-3 pb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="h4 fw-semibold mb-1">Promotions</h1>
@@ -69,7 +69,7 @@
                            data-max-bytes="@PromotionModel.MaxImageBytes" />
                     <div class="d-flex justify-content-between align-items-center mt-1">
                         <small class="form-text">JPG, PNG or WebP, up to @maxImageMb MB</small>
-                        <button type="button" class="btn btn-link btn-sm p-0 d-none" id="remove-image">Remove image</button>
+                        <button type="button" class="btn btn-link link-danger btn-sm p-0 d-none" id="remove-image">Remove image</button>
                     </div>
                     <small class="text-danger" id="image-error"></small>
                 </div>

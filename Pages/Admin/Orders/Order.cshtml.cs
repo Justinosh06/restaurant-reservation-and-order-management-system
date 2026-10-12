@@ -11,8 +11,6 @@ public class OrderModel : PageModel
 {
     private static readonly OrderStatus[] ActiveStatuses = [OrderStatus.InQueue, OrderStatus.Preparing, OrderStatus.Served];
 
-    public static readonly string[] HistoryStatuses = Enum.GetValues<OrderStatus>().Select(AdminDisplay.OrderStatusLabel).ToArray();
-
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
 
@@ -66,7 +64,8 @@ public class OrderModel : PageModel
         return new JsonResult(await ToRowsAsync(activeOrders));
     }
 
-    public async Task<IActionResult> OnGetHistoryAsync(string? from, string? to, string? status)
+    // History only lists finished orders: served to the table and paid for (status Completed).
+    public async Task<IActionResult> OnGetHistoryAsync(string? from, string? to)
     {
         var dateError = DateRangeInput.Check(from, to, out var fromDate, out var toDate);
         if (dateError is not null)
@@ -76,18 +75,7 @@ public class OrderModel : PageModel
 
         var startUtc = _clock.StartOfDayUtc(fromDate);
         var endUtc = _clock.StartOfDayUtc(toDate.AddDays(1));
-        var orders = _db.Orders.Where(o => o.CreatedAt >= startUtc && o.CreatedAt < endUtc);
-
-        if (!string.IsNullOrEmpty(status) && status != "All")
-        {
-            var matches = Enum.GetValues<OrderStatus>().Where(s => AdminDisplay.OrderStatusLabel(s) == status).ToList();
-            if (matches.Count == 0)
-            {
-                return BadRequest(new { error = "Please choose a valid status." });
-            }
-            var orderStatus = matches[0];
-            orders = orders.Where(o => o.Status == orderStatus);
-        }
+        var orders = _db.Orders.Where(o => o.Status == OrderStatus.Completed && o.CreatedAt >= startUtc && o.CreatedAt < endUtc);
 
         return new JsonResult(await ToRowsAsync(orders));
     }

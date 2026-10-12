@@ -1,7 +1,7 @@
 (() => {
     const STATUSES = ["Pending", "Preparing", "Served"];
     const NEXT_ACTION = {
-        Pending: { label: "Start preparing", color: "btn-primary" },
+        Pending: { label: "Start preparing", color: "btn-dark" },
         Preparing: { label: "Mark as served", color: "btn-success" }
     };
     const ITEMS_SHOWN = 3;
@@ -171,6 +171,13 @@
     });
 
     refreshButton.addEventListener("click", load);
+
+    // Bootstrap only moves the "active" class between tabs, so the dark pill follows the selected tab here.
+    document.getElementById("order-tabs").addEventListener("shown.bs.tab", () => {
+        for (const tab of document.querySelectorAll("#order-tabs [data-bs-toggle=tab]")) {
+            tab.classList.toggle("btn-dark", tab.classList.contains("active"));
+        }
+    });
 
     load();
 })();

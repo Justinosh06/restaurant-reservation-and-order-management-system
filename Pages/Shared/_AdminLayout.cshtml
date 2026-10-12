@@ -9,7 +9,7 @@
 @inject RestaurantCurrency Currency
 
 @{
-    var navItems = await NavService.GetNavItemsForUserAsync(User);
+    var navGroups = await NavService.GetNavGroupsForUserAsync(User);
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
     var currency = await Currency.GetAsync();
 }
@@ -23,35 +23,54 @@
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/avatar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin_layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-pages.css" asp-append-version="true" />
 </head>
 <body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()">
     @Html.AntiForgeryToken()
     <div class="page-content">
-        <header class="header">
-            <div class="menu-dropdown" id="header-menu-dropdown">
+        <div class="sidebar">
+            <div class="header">
                 <h1 class="logo">Resto</h1>
-
-                <div class="menu-dropdown-content">
-                    <ul class="d-flex flex-column nav-item-container">
-                        @foreach (var item in navItems)
-                        {
-                            var isActive = string.Equals(currentPage, item.Page, StringComparison.OrdinalIgnoreCase);
-                            <li class="nav-item mb-2">
-                                <a asp-page="@item.Page" 
-                                class="nav-button @(isActive ? "active" : "")">
-                                    <i class="@item.Icon"></i>
-                                    @item.Title
-                                </a>
-                            </li>
-                        }
-                    </ul>
-                </div>
             </div>
 
-            <div class="profile-avatar"></div>
-        </header>
+            <div class="menu-content">
+                <ul class="d-flex flex-column nav-groups-container">
+                    @foreach (var group in navGroups)
+                    {
+                        <li class="nav-group">
+                            <h2 class="nav-group-title">@group.Title</h2>
+                            <ul class="d-flex flex-column nav-item-container">
+                                @foreach (var item in group.NavLinks)
+                                {
+                                    var isActive = string.Equals(currentPage, item.Page, StringComparison.OrdinalIgnoreCase);
+                                    <li class="nav-item mb-2">
+                                        <a asp-page="@item.Page"
+                                            class="nav-button @(isActive ? "active" : "")">
+                                            <i class="@item.Icon"></i>
+                                            @item.Title
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div class="footer">
+                <a class="profile-btn">
+                    <div class="avatar male">
+                        <img class="avatar-img" src="~/image/avatar.svg" />
+                    </div>
+                    <div class="right-container">
+                        <h4 class="name">Justin</h4>
+                        <p class="email">justin@gmail.com</p>
+                    </div>
+                </a>
+            </div>
+        </div>
 
         <main role="main" class="content-container">
             @RenderBody()

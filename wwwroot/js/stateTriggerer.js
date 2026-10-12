@@ -1,13 +1,16 @@
 const HeaderMenuDropdown = document.getElementById("header-menu-dropdown");
 
-const events = ['mouseover', 'click'];
+// The sidebar layout has no drop-down menu, so only wire the events when it exists.
+if (HeaderMenuDropdown) {
+    const events = ['mouseover', 'click'];
 
-events.forEach((event) => {
-    HeaderMenuDropdown.addEventListener(event, () => {
-        HeaderMenuDropdown.classList.toggle("active")
+    events.forEach((event) => {
+        HeaderMenuDropdown.addEventListener(event, () => {
+            HeaderMenuDropdown.classList.toggle("active")
+        })
     })
-})
 
-HeaderMenuDropdown.addEventListener('mouseout', () => {
-    HeaderMenuDropdown.classList.remove("active")
-})
+    HeaderMenuDropdown.addEventListener('mouseout', () => {
+        HeaderMenuDropdown.classList.remove("active")
+    })
+}

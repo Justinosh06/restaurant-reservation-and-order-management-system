@@ -1,35 +1,22 @@
 (() => {
     const PAGE_SIZE = 12;
     const ITEMS_SHOWN = 4;
-    const STATUS_STYLES = {
-        Pending: { color: "warning", icon: "fa-hourglass-half" },
-        Preparing: { color: "primary", icon: "fa-fire-burner" },
-        Served: { color: "success", icon: "fa-bell-concierge" },
-        Completed: { color: "secondary", icon: "fa-check-double" },
-        Cancelled: { color: "danger", icon: "fa-ban" }
-    };
 
     let orders = [];
-    let status = "All";
     let shownCount = PAGE_SIZE;
 
     const form = document.getElementById("history-form");
     const fromInput = document.getElementById("history-from");
     const toInput = document.getElementById("history-to");
-    const statusGroup = document.getElementById("history-status");
     const searchInput = document.getElementById("history-search");
     const countEl = document.getElementById("history-count");
     const gridEl = document.getElementById("history-grid");
     const moreButton = document.getElementById("history-more");
     const orderModal = new bootstrap.Modal(document.getElementById("order-modal"));
 
-    const styleOf = (s) => STATUS_STYLES[s] ?? { color: "secondary", icon: "fa-circle" };
-
-    const statusPill = (s) => {
-        const style = styleOf(s);
-        return `<span class="badge rounded-pill border bg-${style.color}-subtle text-${style.color}-emphasis border-${style.color}-subtle">
-            <i class="fa-solid ${style.icon} me-1"></i>${AdminUI.escapeHtml(s)}</span>`;
-    };
+    // Every order in the history has been served and paid for.
+    const paidBadge = `<span class="badge rounded-pill border bg-success-subtle text-success-emphasis border-success-subtle">
+        <i class="fa-solid fa-check me-1"></i>Paid</span>`;
 
     const itemRows = (items) => items.map(item => `
         <tr>
@@ -39,7 +26,6 @@
         </tr>`).join("");
 
     const orderCard = (o) => {
-        const style = styleOf(o.status);
         const more = o.items.length > ITEMS_SHOWN
             ? `<div class="small text-body-secondary text-center">+${o.items.length - ITEMS_SHOWN} more items</div>`
             : "";
@@ -49,12 +35,12 @@
                 <div class="card h-100 border-0 shadow-sm rounded-4">
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex align-items-start gap-3">
-                            <div class="bg-${style.color}-subtle text-${style.color}-emphasis rounded-3 fw-semibold small text-center px-2 py-3">${AdminUI.escapeHtml(o.table ?? "-")}</div>
+                            <div class="bg-success-subtle text-success-emphasis rounded-3 fw-semibold small text-center px-2 py-3">${AdminUI.escapeHtml(o.table ?? "-")}</div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="fw-semibold text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</div>
                                 <div class="small text-body-secondary">Order #${AdminUI.escapeHtml(o.displayId)} &middot; Table ${AdminUI.escapeHtml(o.table ?? "-")}</div>
                             </div>
-                            ${statusPill(o.status)}
+                            ${paidBadge}
                         </div>
 
                         <div class="d-flex justify-content-between small text-body-secondary border-bottom pb-2 my-3">
@@ -89,7 +75,7 @@
         const remarks = o.items.filter(item => item.remarks);
         document.getElementById("order-modal-body").innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-3">
-                ${statusPill(o.status)}
+                ${paidBadge}
                 <span class="small text-body-secondary">${AdminUI.formatDate(o.createdAt)}, ${AdminUI.formatTime(o.createdAt)}</span>
             </div>
             <dl class="row small mb-3">
@@ -123,24 +109,12 @@
         countEl.textContent = `${visible.length} order${visible.length === 1 ? "" : "s"}`;
 
         if (visible.length === 0) {
-            showGridMessage(orders.length ? "No orders match this search." : "No orders found for these dates.");
+            showGridMessage(orders.length ? "No orders match this search." : "No paid orders for these dates.");
             return;
         }
 
         gridEl.innerHTML = visible.slice(0, shownCount).map(orderCard).join("");
         moreButton.classList.toggle("d-none", visible.length <= shownCount);
-    };
-
-    // The selected status is a dark pill; the others are plain text pills.
-    const showSelectedStatus = () => {
-        for (const button of statusGroup.querySelectorAll("[data-status]")) {
-            const selected = button.dataset.status === status;
-            button.classList.toggle("btn-dark", selected);
-            button.classList.toggle("btn-link", !selected);
-            button.classList.toggle("text-body", !selected);
-            button.classList.toggle("text-decoration-none", !selected);
-            button.setAttribute("aria-pressed", String(selected));
-        }
     };
 
     const loadHistory = () => {
@@ -153,7 +127,7 @@
         shownCount = PAGE_SIZE;
         showGridMessage("Loading...");
 
-        AdminUI.get("History", { from: fromInput.value, to: toInput.value, status })
+        AdminUI.get("History", { from: fromInput.value, to: toInput.value })
             .then(data => { orders = data; render(); })
             .catch(error => {
                 showGridMessage(error.message, "text-danger");
@@ -163,14 +137,6 @@
 
     form.addEventListener("submit", (e) => {
         e.preventDefault();
-        loadHistory();
-    });
-
-    statusGroup.addEventListener("click", (e) => {
-        const button = e.target.closest("[data-status]");
-        if (!button) return;
-        status = button.dataset.status;
-        showSelectedStatus();
         loadHistory();
     });
 
@@ -189,6 +155,5 @@
         if (button) showDetails(orders.find(o => o.id === button.dataset.details));
     });
 
-    showSelectedStatus();
     document.getElementById("history-tab").addEventListener("shown.bs.tab", loadHistory, { once: true });
 })();
