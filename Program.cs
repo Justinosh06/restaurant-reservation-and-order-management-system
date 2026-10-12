@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Infrastructure.Navigation;
 using RestaurantReservation.Infrastructure.Stripe;
 
+using RestaurantReservation.Data;
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
 
