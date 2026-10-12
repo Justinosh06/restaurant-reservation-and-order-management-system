@@ -5,13 +5,12 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
+using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Infrastructure.Navigation;
 using RestaurantReservation.Infrastructure.Stripe;
 
 using RestaurantReservation.Models;
-using RestaurantReservation.Data;
 using RestaurantReservation.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,7 +25,7 @@ StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"] ?? stripe
 // Register Stripe Services for Dependency Injection
 builder.Services.AddScoped<SessionService>();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -103,6 +102,8 @@ var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services);
 
+await DbSeeder.SeedAsync(app.Services);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -116,6 +117,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();
+app.UseAuthentication();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -132,3 +135,4 @@ app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
+

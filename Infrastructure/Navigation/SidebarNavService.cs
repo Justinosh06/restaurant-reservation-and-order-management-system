@@ -12,20 +12,24 @@ public class SidebarNavService
         _env = env;
     }
 
-    public async Task<List<SidebarNavItem>> GetNavItemsForUserAsync(ClaimsPrincipal user)
+    public async Task<List<SidebarNavGroup>> GetNavGroupsForUserAsync(ClaimsPrincipal user)
     {
         var filePath = Path.Combine(_env.WebRootPath, "data", "admin-nav.json");
-        if (!File.Exists(filePath)) return new List<SidebarNavItem>();
+        if (!File.Exists(filePath)) return new List<SidebarNavGroup>();
 
         var json = await File.ReadAllTextAsync(filePath);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var allItems = JsonSerializer.Deserialize<List<SidebarNavItem>>(json, options) ?? new();
+        var config = JsonSerializer.Deserialize<SidebarNavConfig>(json, options);
 
-        // Filter items matching the logged-in user's roles
-        /*return allItems.Where(item => 
-            !item.Roles.Any() || item.Roles.Any(role => user.IsInRole(role))
-        ).ToList();*/
-
-        return allItems.ToList();
+        return config?.Groups
+            .Select(group => new SidebarNavGroup
+            {
+                Title = group.Title,
+                NavLinks = (group.NavLinks ?? new List<SidebarNavItem>())
+                    //.Where(item => item.Roles.Count == 0 || item.Roles.Any(user.IsInRole))
+                    .ToList()
+            })
+            .Where(group => group.NavLinks.Count > 0)
+            .ToList() ?? new List<SidebarNavGroup>();
     }
 }
