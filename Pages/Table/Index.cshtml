@@ -1,11 +1,106 @@
 @page "/Table/{tableId}"
+@using RestaurantReservation.Models.Enums
 @model RestaurantReservation.Pages.Table.IndexModel
 @{
     ViewData["Title"] = $"Table {Model.TableId}";
+
+    // Sample data using your C# MenuItemType Enum
+    var menuItems = new[]
+    {
+        new { Id = "SPAG-01", Name = "Spaghetti Bolognaise", Price = "RM 24.90", Type = MenuItemType.Pasta, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
+        new { Id = "PAST-02", Name = "Creamy Carbonara", Price = "RM 22.50", Type = MenuItemType.Pasta, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
+        new { Id = "BEV-01", Name = "Iced Cappuccino", Price = "RM 12.90", Type = MenuItemType.Beverage, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
+        new { Id = "BEV-02", Name = "Matcha Latte", Price = "RM 14.00", Type = MenuItemType.Beverage, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" }
+    };
+
+    // Calculate dynamic counts per Enum value
+    var allEnumTypes = Enum.GetValues<MenuItemType>();
 }
 
-<div class="container py-4">
-    <div class="alert alert-info">
-        📍 Viewing Menu & Ordering for <strong>Table @Model.TableId</strong>
+<link rel="stylesheet" href="~/css/table_page.css" />
+
+<div class="menu-container">
+    <h1 class="title">Menu<span class="content-number" id="menu-total-count">@menuItems.Length</span></h1>
+
+    <div class="pill-filter-row">
+        <!-- All Pill -->
+        <span class="filter-pill active" data-category="all">
+            All<span class="content-number">@menuItems.Length</span>
+        </span>
+
+        <!-- Dynamic Category Pills from MenuItemType Enum -->
+        @foreach (var type in allEnumTypes)
+        {
+            var count = menuItems.Count(i => i.Type == type);
+            <span class="filter-pill" data-category="@type.ToString().ToLower()">
+                @type.ToString()<span class="content-number">@count</span>
+            </span>
+        }
+    </div>
+
+    <div class="menu-grid">
+        @foreach (var item in menuItems)
+        {
+            <a asp-page="/Table/MenuItem/Index" 
+               asp-route-tableId="@Model.TableId" 
+               asp-route-menuItemId="@item.Id" 
+               class="item-card-link text-decoration-none text-reset"
+               data-category="@item.Type.ToString().ToLower()">
+                
+                <div class="item-card">
+                    <div class="thumbnail-container">
+                        <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
+                    </div>
+
+                    <div class="plus-icon">
+                        <i class="fa-solid fa-plus"></i>
+                    </div>
+
+                    <div class="info-container">
+                        <div class="top-section">
+                            <span class="price">@item.Price</span>
+                            <h3 class="item-title">@item.Name</h3>
+                        </div>
+                        <span class="category"><i class="fa-solid fa-utensils me-1"></i> @item.Type.ToString()</span>
+                    </div>
+                </div>
+
+            </a>
+        }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const pills = document.querySelectorAll(".filter-pill");
+            const items = document.querySelectorAll(".item-card-link");
+            const menuTotalCount = document.getElementById("menu-total-count");
+
+            pills.forEach(pill => {
+                pill.addEventListener("click", () => {
+                    pills.forEach(p => p.classList.remove("active"));
+                    pill.classList.add("active");
+
+                    const selectedCategory = pill.getAttribute("data-category");
+                    let visibleCount = 0;
+
+                    items.forEach(item => {
+                        const itemCategory = item.getAttribute("data-category");
+
+                        if (selectedCategory === "all" || itemCategory === selectedCategory) {
+                            item.style.display = "";
+                            visibleCount++;
+                        } else {
+                            item.style.display = "none";
+                        }
+                    });
+
+                    if (menuTotalCount) {
+                        menuTotalCount.textContent = visibleCount;
+                    }
+                });
+            });
+        });
+    </script>
+}

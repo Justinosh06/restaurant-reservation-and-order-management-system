@@ -1,0 +1,33 @@
+@page "/Table/{tableId}/Checkout"
+@model RestaurantReservation.Pages.Table.CheckoutModel
+@{
+    ViewData["Title"] = $"Table {Model.TableId} Checkout";
+}
+
+<link rel="stylesheet" href="~/css/checkout_page.css" asp-append-version="true">
+
+<div class="checkout-container">
+    <div class="order-list">
+        <h2 class="section-title">Your Orders</h2>
+
+        @foreach (var order in Model.SessionOrders)
+        {
+            <button type="button" class="order-btn">
+                <h4 class="title">Order #@order.OrderCode</h4>
+                <span class="detail">@order.FormattedTime - @order.Status</span>
+
+                <i class="fa-solid fa-chevron-right icon"></i>
+            </button>
+        }
+    </div>
+
+    <div class="sticky-bottom-wrapper">
+        <h4 class="total-price">Total: RM @Model.TotalAmount.ToString("F2")</h4>
+
+        <form method="post" asp-page-handler="PayWithStripe" asp-route-tableId="@Model.TableId">
+            <button type="submit" class="pay-btn w-100">
+                Pay with <span class="fa-brands fa-stripe icon"></span>
+            </button>
+        </form>
+    </div>
+</div>
