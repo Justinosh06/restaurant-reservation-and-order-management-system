@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
@@ -18,6 +19,8 @@ public class ProfileModel : PageModel
     {
         _db = db;
     }
+
+    public string RestaurantName { get; private set; } = "Resto";
 
     public string UserId { get; private set; } = string.Empty;
 
@@ -69,6 +72,7 @@ public class ProfileModel : PageModel
             PhoneNumber = customer.PhoneNumber ?? string.Empty
         };
         IsEditing = edit;
+        await LoadRestaurantNameAsync();
         return Page();
     }
 
@@ -87,6 +91,7 @@ public class ProfileModel : PageModel
         if (!ModelState.IsValid)
         {
             IsEditing = true;
+            await LoadRestaurantNameAsync();
             return Page();
         }
 
@@ -104,5 +109,12 @@ public class ProfileModel : PageModel
 
         SuccessMessage = "Profile updated.";
         return RedirectToPage();
+    }
+
+    // Shown as the brand in the page's navigation bar.
+    private async Task LoadRestaurantNameAsync()
+    {
+        var name = await _db.RestaurantSettings.AsNoTracking().Select(s => s.Name).FirstOrDefaultAsync();
+        RestaurantName = name ?? RestaurantName;
     }
 }

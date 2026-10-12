@@ -8,20 +8,6 @@
     var visits = Model.Orders.Where(o => o.Session is not null).Select(o => o.Session!).ToList();
 }
 
-<section class="dash-header">
-    <div>
-        <h1 class="hero-title">Welcome back, @User.Identity?.Name.</h1>
-        <span class="hero-tag">Customer dashboard</span>
-    </div>
-
-    <div class="dash-actions">
-        <a asp-page="/Table/Index" asp-route-tableId="@IndexModel.MenuTableId" class="pill-btn">
-            Menu <i class="fa-solid fa-arrow-right ms-1"></i>
-        </a>
-        <a asp-page="/Reservation/Management" class="pill-btn">Reserve a table</a>
-    </div>
-</section>
-
 <section class="history">
     <h2 class="section-title">Order history</h2>
 
