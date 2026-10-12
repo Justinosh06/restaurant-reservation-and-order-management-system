@@ -43,12 +43,10 @@ builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider("admin"));
 
-var app = builder.Build();
-
 // 2. Configure HTTP Pipeline
 // Login / Register
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
-builder.Services.AddScoped<IPasswordHasher<Customer>, PasswordHasher<Customer>>();
+builder.Services.AddScoped<IPasswordHasher<RestaurantReservation.Models.Customer>, PasswordHasher<RestaurantReservation.Models.Customer>>();
 builder.Services.AddSingleton<CaptchaService>();
 builder.Services.AddSingleton<AdminSignInTicketService>();
 
