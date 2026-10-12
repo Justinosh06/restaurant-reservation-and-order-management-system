@@ -8,8 +8,7 @@
           "Icon": "fa-solid fa-chart-line",
           "Page": "/Admin/Dashboard/Dashboard",
           "Roles": [
-            "Administrator",
-            "Staff"
+            "Administrator"
           ]
         },
         {

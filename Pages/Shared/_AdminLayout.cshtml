@@ -65,10 +65,15 @@
                         <img class="avatar-img" src="~/image/avatar.svg" />
                     </div>
                     <div class="right-container">
-                        <h4 class="name">Justin</h4>
-                        <p class="email">justin@gmail.com</p>
+                        <h4 class="name">@(User.IsInRole("Administrator") ? "Administrator" : "Staff")</h4>
+                        <p class="email">@User.Identity?.Name</p>
                     </div>
                 </a>
+                <form method="post" asp-page="/Admin/Logout" class="px-2">
+                    <button type="submit" class="btn btn-sm btn-light border w-100">
+                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Sign out
+                    </button>
+                </form>
             </div>
         </div>
 

@@ -94,6 +94,7 @@ namespace RestaurantReservation.Data
             modelBuilder.Entity<Customer>(entity =>
             {
                 entity.HasKey(c => c.Id);
+                entity.HasIndex(c => c.Email).IsUnique();
             });
 
             // -------------------------------------------------------------

@@ -20,7 +20,14 @@
         }
         else
         {
-            <a asp-page="/Admin/Settings/Setting" class="small text-body-secondary">Opening hours not set</a>
+            @if (User.IsInRole("Administrator"))
+            {
+                <a asp-page="/Admin/Settings/Setting" class="small text-body-secondary">Opening hours not set</a>
+            }
+            else
+            {
+                <span class="small text-body-secondary">Opening hours not set</span>
+            }
         }
     </div>
 
