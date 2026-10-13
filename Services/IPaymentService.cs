@@ -6,6 +6,7 @@ public interface IPaymentService
 {
     Task<Session> CreateTableSettlementSessionAsync(
         string tableId, 
+        string paymentAttemptId,
         IEnumerable<(string Name, double UnitPrice, int Quantity, string Remark)> items, 
         string domain);
 
