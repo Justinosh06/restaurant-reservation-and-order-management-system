@@ -6,7 +6,7 @@ namespace RestaurantReservation.Models
     {
         [Key]
         [Required(ErrorMessage = "Cart item ID is required.")]
-        public string CartItemId { get; set; } = string.Empty;
+        public string Id { get; set; } = string.Empty;
 
         [Required]
         [Range(1, 20, ErrorMessage = "Value must be between 1 and 20.")]
@@ -14,9 +14,9 @@ namespace RestaurantReservation.Models
 
         // Foreign Keys
         [Required]
-        public string OrderId { get; set; } = string.Empty;
+        public string SessionId { get; set; } = string.Empty;
 
-        public Order? Order { get; set; }
+        public Session? Session { get; set; }
 
         [Required]
         public string MenuItemId { get; set; } = string.Empty;
