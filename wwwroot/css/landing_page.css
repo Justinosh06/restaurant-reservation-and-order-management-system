@@ -1,9 +1,17 @@
-.landing {
-    max-width: 960px;
-    margin: 24px auto;
-    padding: 20px;
-    border-radius: 25px;
+/* The grey fills the whole page on pages that use the landing style, instead of sitting in a box. */
+body:has(.landing) {
     background: #F2F2F3;
+}
+
+/* These pages use the full width of the screen, so the layout's centred container is released. */
+.container:has(.landing) {
+    max-width: none;
+    padding-left: clamp(16px, 4vw, 64px);
+    padding-right: clamp(16px, 4vw, 64px);
+}
+
+.landing {
+    padding: 24px 0;
     color: black;
     display: flex;
     flex-direction: column;
@@ -129,7 +137,7 @@
         align-items: center;
 
         .hero-title {
-            font-size: 4.2rem;
+            font-size: clamp(4.2rem, 5.5vw, 6.5rem);
             line-height: 1;
             font-weight: 600;
             font-family: "Bricolage Grotesque", sans-serif;
@@ -148,7 +156,7 @@
 
         .hero-img {
             width: 100%;
-            aspect-ratio: 3/4;
+            height: clamp(360px, 62vh, 620px);
             object-fit: cover;
             border-radius: 16px;
         }
@@ -156,8 +164,8 @@
 
     .booking-row {
         display: grid;
-        grid-template-columns: 280px 1fr;
-        gap: 24px;
+        grid-template-columns: 340px 1fr;
+        gap: 40px;
         align-items: start;
 
         .reservation-card {
@@ -211,7 +219,7 @@
 
             img {
                 width: 100%;
-                aspect-ratio: 5/3;
+                height: clamp(220px, 30vw, 460px);
                 object-fit: cover;
                 border-radius: 16px;
             }
@@ -675,10 +683,32 @@
     }
 }
 
+/* Profile page: the profile runs across the top, order history and dining history sit side by side below it. */
+.landing.profile-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 32px;
+    align-items: start;
+
+    > * {
+        min-width: 0;
+    }
+
+    > .landing-nav,
+    > .profile {
+        grid-column: 1 / -1;
+    }
+}
+
+@media only screen and (max-width: 992px) {
+    .landing.profile-page {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media only screen and (max-width: 768px) {
     .landing {
-        margin: 12px auto;
-        padding: 16px;
+        padding: 16px 0;
         gap: 32px;
 
         .hero {
@@ -689,6 +719,7 @@
             }
 
             .hero-img {
+                height: auto;
                 aspect-ratio: 4/3;
             }
         }
