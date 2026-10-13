@@ -8,7 +8,7 @@
 }
 
 :root {
-  --primary-color: #02261e;
+  --primary-color: #0e5847;
   --secondary-color: #dafc92;
 }
 
@@ -49,4 +49,9 @@ html {
 button {
   border: none;
   background: none;
+}
+
+::selection {
+  background: var(--primary-color);
+  color: var(--secondary-color);
 }
