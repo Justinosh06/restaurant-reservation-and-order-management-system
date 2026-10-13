@@ -1,0 +1,159 @@
+.menu-container {
+    padding: 16px;
+
+    .content-number {
+        padding: 2px 4px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 1.2rem;
+        margin-top: 8px;
+        color: #444444;
+        background: #F2F2F3;
+    }
+
+    .title {
+        font-size: 5rem;
+        font-weight: 700;
+        font-family: "Bricolage Grotesque", sans-serif;
+        display: flex;
+        align-items: start;
+    }
+
+    .pill-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        column-gap: 24px;
+
+        .filter-pill {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+            display: flex;
+            align-items: start;
+            color: #888888;
+            cursor: pointer;
+            gap: 8px;
+            transition: 300ms ease-in-out;
+        }
+    }
+
+    .filter-pill:hover,
+    .filter-pill.active {
+        color: black;
+    }
+
+    .menu-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 16px;
+
+        .item-card {
+            position: relative;
+            background: #F2F2F3;
+            aspect-ratio: 2/3;
+            width: 100%;
+            border-radius: 25px;
+            cursor: pointer;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+
+            .thumbnail-container {
+                flex-shrink: 0;
+                width: 100%;
+                height: 80%;
+                margin-bottom: auto;
+
+                .thumbnail-img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
+            }
+            
+            .plus-icon {
+                position: absolute;
+                right: 8px;
+                top: 8px;
+                font-size: 1.2rem;
+                background: white;
+                border-radius: 100%;
+                aspect-ratio: 1/1;
+                width: 45px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .info-container {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+
+                .top-section {
+                    .price {
+                        color: #666666;
+                        font-weight: 500;
+                        font-family: "Bricolage Grotesque", sans-serif;
+                    }
+
+                    .item-title {
+                        font-size: 2.2rem;
+                        font-weight: 600;
+                    }
+                }
+
+                .category {
+                    background: white;
+                    border-radius: 100px;
+                    padding: 4px 8px;
+                    width: fit-content;
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (max-width: 1280px) {
+    .menu-container {
+        .menu-grid {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    .menu-container {
+        .menu-grid {
+            grid-template-columns: 1fr;
+
+            .item-card {
+                align-items: center;
+                flex-direction: row;
+                aspect-ratio: 0;
+                height: 150px;
+
+                .thumbnail-container {
+                    width: 126px;
+                    height: 126px;
+                }
+
+                .plus-icon {
+                    top: unset;
+                    bottom: 8px;
+                }
+
+                .info-container {
+                    height: 100%;
+                    
+                    .top-section {
+                        .item-title {
+                            font-size: 1.8rem;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

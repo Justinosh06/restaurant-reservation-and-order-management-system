@@ -1,14 +1,29 @@
+using Stripe;
+using Stripe.Checkout;
+
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Infrastructure.Navigation;
+using RestaurantReservation.Infrastructure.Stripe;
+
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Bind and Register Stripe Settings
+var stripeSettings = builder.Configuration.GetSection("Stripe").Get<StripeSettings>();
+builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+
+// Set global API key for Stripe.net
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"] ?? stripeSettings?.SecretKey;
+
+// Register Stripe Services for Dependency Injection
+builder.Services.AddScoped<SessionService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -18,9 +33,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<SidebarNavService>();
 
+builder.Services.AddScoped<IPaymentService, StripePaymentService>();
+
+// Register Controllers (Required for Stripe Webhook Controller)
+builder.Services.AddControllers();
+
+// Register Razor Pages and the custom subdomain route provider
+builder.Services.AddRazorPages();
+builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider("admin"));
+
+// 2. Configure HTTP Pipeline
 // Login / Register
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
-builder.Services.AddScoped<IPasswordHasher<Customer>, PasswordHasher<Customer>>();
+builder.Services.AddScoped<IPasswordHasher<RestaurantReservation.Models.Customer>, PasswordHasher<RestaurantReservation.Models.Customer>>();
 builder.Services.AddSingleton<CaptchaService>();
 builder.Services.AddSingleton<AdminSignInTicketService>();
 
@@ -77,6 +102,8 @@ var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services);
 
+await DbSeeder.SeedAsync(app.Services);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -85,20 +112,27 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Handles serving CSS, JS, and image files from wwwroot
 app.UseStaticFiles();
 
 app.UseRouting();
 
 app.UseSession();
 app.UseAuthentication();
+app.UseSession();
+app.UseAuthentication();
 app.UseAuthorization();
 
+// 3. Minimal API endpoints filtered by host header
 app.MapGet("/api/info", () => "Main Domain API")
    .RequireHost("localhost");
 
 app.MapGet("/api/info", () => "Admin Domain API")
    .RequireHost("admin.localhost");
 
+// 4. Map API Controllers (For Stripe Webhooks) and Razor Pages
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
+
