@@ -102,8 +102,6 @@ var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services);
 
-await DbSeeder.SeedAsync(app.Services);
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -117,8 +115,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseSession();
-app.UseAuthentication();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
