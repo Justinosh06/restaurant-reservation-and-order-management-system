@@ -56,11 +56,12 @@ public class LoginModel : PageModel
         public string? CaptchaAnswer { get; set; }
     }
 
-    public IActionResult OnGet(string? returnUrl = null)
+    public IActionResult OnGet()
     {
+        // Already logged in (e.g. the Back button after logging in): go to the dashboard, not back to returnUrl.
         if (User.IsInRole(AppRoles.Customer))
         {
-            return RedirectToCustomerPage(returnUrl);
+            return RedirectToPage("/Index");
         }
 
         return Page();

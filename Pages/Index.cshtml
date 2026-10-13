@@ -117,10 +117,23 @@
         }
         else
         {
+            <div class="review-filter" role="group" aria-label="Filter reviews by rating">
+                <button type="button" class="filter-chip active" data-rating="" aria-pressed="true">All</button>
+                @for (var rating = 5; rating >= 1; rating--)
+                {
+                    <button type="button" class="filter-chip" data-rating="@rating" aria-pressed="false"
+                            aria-label="@rating star reviews">
+                        @rating <i class="fa-solid fa-star"></i>
+                    </button>
+                }
+            </div>
+
+            <p class="empty-note review-none" hidden>No reviews with this rating yet.</p>
+
             <ul class="review-list">
                 @foreach (var review in Model.Reviews)
                 {
-                    <li>
+                    <li data-rating="@review.Rating">
                         <div class="review-head">
                             <strong>@(review.Customer?.FirstName ?? "Guest")</strong>
                             <span class="review-rating" aria-label="@review.Rating out of 5">
@@ -144,11 +157,8 @@
         }
     </details>
 
-    @if (isCustomer)
-    {
-        <partial name="_CustomerDashboard" model="Model" />
-    }
-    else
+    @* Customers get the same page without the location section. *@
+    @if (!isCustomer)
     {
         <section class="location">
             <iframe class="map" title="Map to @Model.RestaurantName" src="@mapEmbedUrl"
@@ -199,3 +209,41 @@
         </section>
     }
 </div>
+
+@section Scripts {
+    <script>
+        // A page brought back by the Back button is a snapshot from before login or logout, so load it again.
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) {
+                location.reload();
+            }
+        });
+
+        // Review filter: show only the reviews with the picked star rating ("All" shows every review).
+        (function () {
+            const chips = document.querySelectorAll('.review-filter .filter-chip');
+            const reviews = document.querySelectorAll('.review-list li');
+            const none = document.querySelector('.review-none');
+
+            chips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    const rating = chip.dataset.rating;
+                    let shown = 0;
+
+                    reviews.forEach(function (review) {
+                        const match = !rating || review.dataset.rating === rating;
+                        review.hidden = !match;
+                        if (match) {
+                            shown++;
+                        }
+                    });
+                    chips.forEach(function (other) {
+                        other.classList.toggle('active', other === chip);
+                        other.setAttribute('aria-pressed', other === chip);
+                    });
+                    none.hidden = shown > 0;
+                });
+            });
+        })();
+    </script>
+}

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 
@@ -13,6 +15,8 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 // User ID and Email are shown but can never be changed.
 public class ProfileModel : PageModel
 {
+    private const int HistorySize = 10;
+
     private readonly ApplicationDbContext _db;
 
     public ProfileModel(ApplicationDbContext db)
@@ -21,6 +25,11 @@ public class ProfileModel : PageModel
     }
 
     public string RestaurantName { get; private set; } = "Resto";
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+
+    // The latest orders, each with its dining session and ordered items.
+    public IReadOnlyList<Order> Orders { get; private set; } = [];
+    public ILookup<string, OrderItem> OrderItems { get; private set; } = Enumerable.Empty<OrderItem>().ToLookup(i => i.OrderId);
 
     public string UserId { get; private set; } = string.Empty;
 
@@ -72,7 +81,7 @@ public class ProfileModel : PageModel
             PhoneNumber = customer.PhoneNumber ?? string.Empty
         };
         IsEditing = edit;
-        await LoadRestaurantNameAsync();
+        await LoadPageDataAsync();
         return Page();
     }
 
@@ -91,7 +100,7 @@ public class ProfileModel : PageModel
         if (!ModelState.IsValid)
         {
             IsEditing = true;
-            await LoadRestaurantNameAsync();
+            await LoadPageDataAsync();
             return Page();
         }
 
@@ -111,10 +120,39 @@ public class ProfileModel : PageModel
         return RedirectToPage();
     }
 
-    // Shown as the brand in the page's navigation bar.
-    private async Task LoadRestaurantNameAsync()
+    // Everything on the page besides the profile form: the restaurant name in the navigation bar and the history lists.
+    private async Task LoadPageDataAsync()
     {
-        var name = await _db.RestaurantSettings.AsNoTracking().Select(s => s.Name).FirstOrDefaultAsync();
-        RestaurantName = name ?? RestaurantName;
+        var settings = await _db.RestaurantSettings.AsNoTracking().FirstOrDefaultAsync();
+        if (settings is not null)
+        {
+            RestaurantName = settings.Name;
+            Currency = settings.DefaultCurrency;
+        }
+
+        // Sample history for now; switch to LoadHistoryAsync once order processing saves real orders.
+        Orders = SampleOrders.All;
+        OrderItems = SampleOrders.Items;
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        Orders = await _db.Orders
+            .AsNoTracking()
+            .Include(o => o.Session)
+            .Where(o => o.CustomerId == customerId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(HistorySize)
+            .ToListAsync();
+
+        var orderIds = Orders.Select(o => o.Id).ToList();
+        var items = await _db.OrderItems
+            .AsNoTracking()
+            .Include(i => i.MenuItem)
+            .Where(i => orderIds.Contains(i.OrderId))
+            .ToListAsync();
+        OrderItems = items.ToLookup(i => i.OrderId);
     }
 }
