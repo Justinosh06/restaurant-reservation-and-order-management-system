@@ -8,7 +8,15 @@
         @if (User.IsInRole(AppRoles.Customer))
         {
             <span class="greeting">Hi, @User.Identity?.Name</span>
-            <a asp-page="/Customer/Profile" class="nav-link-plain">My Profile</a>
+            @* On the profile page this link leads back to the dashboard instead. *@
+            @if (ViewContext.RouteData.Values["page"] as string == "/Customer/Profile")
+            {
+                <a asp-page="/Index" class="nav-link-plain">Back to dashboard</a>
+            }
+            else
+            {
+                <a asp-page="/Customer/Profile" class="nav-link-plain">My Profile</a>
+            }
             <form method="post" asp-page="/Logout">
                 <button type="submit" class="pill-btn">Logout</button>
             </form>

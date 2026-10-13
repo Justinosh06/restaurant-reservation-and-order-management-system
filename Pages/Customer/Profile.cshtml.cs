@@ -12,7 +12,7 @@ using RestaurantReservation.Models.Enums;
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 
 // Customer profile. Only customers can open this page (see AuthorizeFolder in Program.cs).
-// User ID and Email are shown but can never be changed.
+// User ID and Email are shown but can never be changed. Gender and date of birth are optional.
 public class ProfileModel : PageModel
 {
     private const int HistorySize = 10;
@@ -60,6 +60,13 @@ public class ProfileModel : PageModel
         [RegularExpression(@"^\+?[0-9\- ]{8,20}$", ErrorMessage = "Please enter a valid phone number.")]
         [Display(Name = "Phone Number")]
         public string PhoneNumber { get; set; } = string.Empty;
+
+        // Gender and date of birth are optional.
+        public Gender? Gender { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "Date of Birth")]
+        public DateOnly? DateOfBirth { get; set; }
     }
 
     // GET /Customer/Profile            -> view mode
@@ -78,7 +85,9 @@ public class ProfileModel : PageModel
         {
             FirstName = customer.FirstName,
             LastName = customer.LastName,
-            PhoneNumber = customer.PhoneNumber ?? string.Empty
+            PhoneNumber = customer.PhoneNumber ?? string.Empty,
+            Gender = customer.Gender,
+            DateOfBirth = customer.DateOfBirth
         };
         IsEditing = edit;
         await LoadPageDataAsync();
@@ -97,6 +106,11 @@ public class ProfileModel : PageModel
         UserId = customer.Id;
         Email = customer.Email;
 
+        if (Input.DateOfBirth > DateOnly.FromDateTime(DateTime.Today))
+        {
+            ModelState.AddModelError("Input.DateOfBirth", "Date of birth cannot be in the future.");
+        }
+
         if (!ModelState.IsValid)
         {
             IsEditing = true;
@@ -107,6 +121,8 @@ public class ProfileModel : PageModel
         customer.FirstName = Input.FirstName.Trim();
         customer.LastName = Input.LastName.Trim();
         customer.PhoneNumber = Input.PhoneNumber.Trim();
+        customer.Gender = Input.Gender;
+        customer.DateOfBirth = Input.DateOfBirth;
         await _db.SaveChangesAsync();
 
         // Refresh the login cookie so the new name shows on other pages straight away.

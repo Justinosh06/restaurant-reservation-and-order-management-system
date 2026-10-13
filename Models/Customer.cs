@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using RestaurantReservation.Models.Enums;
 
 namespace RestaurantReservation.Models
 {
@@ -26,6 +27,12 @@ namespace RestaurantReservation.Models
         [StringLength(20)]
         [DataType(DataType.PhoneNumber)]
         public string? PhoneNumber { get; set; }
+
+        // Optional details the customer can add on the profile page.
+        public Gender? Gender { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateOnly? DateOfBirth { get; set; }
 
         // Stores a hashed password (ASP.NET Core PasswordHasher), never plain text.
         [DataType(DataType.Password)]
