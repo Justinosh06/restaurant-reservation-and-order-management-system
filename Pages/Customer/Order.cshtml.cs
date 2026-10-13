@@ -129,7 +129,13 @@ public class OrderModel : PageModel
             var feedback = existing.FirstOrDefault(f => f.MenuItemId == input.MenuItemId);
             if (feedback is null)
             {
-                feedback = new Feedback { MenuItemId = input.MenuItemId, CustomerId = customerId };
+                // The id is set here: two new rows added with an empty id would clash before they are saved.
+                feedback = new Feedback
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    MenuItemId = input.MenuItemId,
+                    CustomerId = customerId
+                };
                 _db.Feedbacks.Add(feedback);
             }
 

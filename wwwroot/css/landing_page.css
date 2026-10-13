@@ -252,10 +252,38 @@
             margin: 12px 0 0;
         }
 
+        .review-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+
+            .filter-chip {
+                padding: 4px 14px;
+                border: none;
+                border-radius: 100px;
+                background: #DFDFE1;
+                color: black;
+                font-weight: 600;
+            }
+
+            .filter-chip:hover {
+                background: #CCCCCC;
+            }
+
+            .filter-chip.active {
+                background: black;
+                color: white;
+            }
+        }
+
+        /* Every review is in the list; it scrolls inside the box down to the last one. */
         .review-list {
             list-style: none;
             margin: 12px 0 0;
-            padding: 0;
+            padding: 0 12px 0 0;
+            max-height: 420px;
+            overflow-y: auto;
 
             li {
                 padding: 12px 0;
@@ -326,8 +354,8 @@
             text-decoration: none;
         }
 
-        .order-card:hover,
-        .order-card:focus-visible {
+        a.order-card:hover,
+        a.order-card:focus-visible {
             outline: 2px solid black;
         }
 
@@ -588,37 +616,6 @@
             background: #F2F2F3;
             color: black;
         }
-    }
-
-    .history {
-        .history-scroll {
-            overflow-x: auto;
-        }
-
-        .history-table {
-            width: 100%;
-            border-top: 1px solid #CCCCCC;
-
-            th,
-            td {
-                padding: 10px 12px 10px 0;
-                border-bottom: 1px solid #CCCCCC;
-                font-weight: 500;
-                vertical-align: middle;
-            }
-
-            th {
-                color: #666666;
-                font-size: 0.85rem;
-            }
-
-            th:last-child,
-            td:last-child {
-                padding-right: 0;
-                white-space: nowrap;
-            }
-        }
-
     }
 
     .reviews[open] summary i {
