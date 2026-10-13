@@ -30,7 +30,9 @@
                 <a asp-page="/Table/Cart" 
                    asp-route-tableId="@tableId"
                    class="nav-item @(isCartActive ? "active" : "")">
-                    <i class="fa-solid fa-cart-shopping"></i>
+                    <i class="fa-solid fa-bag-shopping"></i>
+
+                    <span class="content-number" data-table-id="@tableId">@(ViewData["CartItemCount"] ?? 0)</span>
                 </a>
             </div>
 
@@ -56,6 +58,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
+    <script src="~/js/tableLayout.js" asp-append-version="true"></script>
     
     @await RenderSectionAsync("Scripts", required: false)
 </body>
