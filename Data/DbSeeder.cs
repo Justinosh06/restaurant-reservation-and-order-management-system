@@ -24,6 +24,7 @@ public static class DbSeeder
         else
         {
             await db.Database.EnsureCreatedAsync();
+            await AddMissingColumnsAsync(db);
         }
 
         await AddAdminIfMissingAsync(db, hasher, "admin@restaurant.com", "Admin@123", AdminRole.Administrator);
@@ -31,6 +32,16 @@ public static class DbSeeder
         await AddSampleMenuIfEmptyAsync(db);
 
         await db.SaveChangesAsync();
+    }
+
+    // EnsureCreated never changes a database that already exists, so columns added to the models
+    // after the database was first created are added here. Each line does nothing once its column exists.
+    private static async Task AddMissingColumnsAsync(ApplicationDbContext db)
+    {
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'Gender') IS NULL ALTER TABLE Customers ADD Gender nvarchar(20) NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'DateOfBirth') IS NULL ALTER TABLE Customers ADD DateOfBirth date NULL");
     }
 
     private static async Task AddAdminIfMissingAsync(ApplicationDbContext db, IPasswordHasher<Admin> hasher,

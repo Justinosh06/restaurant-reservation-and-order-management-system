@@ -1,6 +1,7 @@
 @page
 @using RestaurantReservation.Extensions
 @using RestaurantReservation.Models
+@using RestaurantReservation.Models.Enums
 @model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ProfileModel
 @{
     ViewData["Title"] = "My Profile";
@@ -18,7 +19,7 @@
     <partial name="_LandingNav" model="Model.RestaurantName" />
 
     <section class="profile">
-        <h1 class="hero-title">My profile</h1>
+        <h1 class="section-title">My profile</h1>
 
         @if (!string.IsNullOrEmpty(Model.SuccessMessage))
         {
@@ -29,7 +30,7 @@
         {
             @* View mode *@
             <div class="profile-card">
-                <label class="field locked">
+                <label class="field locked wide">
                     <span class="field-label">User ID</span>
                     <input type="text" value="@Model.UserId" readonly />
                 </label>
@@ -49,9 +50,16 @@
                     <span class="field-label">Phone Number</span>
                     <input type="text" value="@Model.Input.PhoneNumber" readonly />
                 </label>
+                <label class="field locked">
+                    <span class="field-label">Gender</span>
+                    <input type="text" value="@Model.Input.Gender" readonly />
+                </label>
+                <label class="field locked">
+                    <span class="field-label">Date of Birth</span>
+                    <input type="text" value="@Model.Input.DateOfBirth?.ToString("d MMM yyyy")" readonly />
+                </label>
 
                 <form method="get" class="profile-actions">
-                    <a asp-page="/Index" class="pill-btn ghost">Back to dashboard</a>
                     <button type="submit" name="edit" value="true" class="pill-btn">Edit</button>
                 </form>
             </div>
@@ -62,33 +70,55 @@
             <form method="post" class="profile-card">
                 <div asp-validation-summary="ModelOnly" class="field-error"></div>
 
-                <label class="field locked">
+                <label class="field locked wide">
                     <span class="field-label">User ID</span>
                     <input type="text" value="@Model.UserId" disabled />
                 </label>
 
-                <label class="field">
-                    <span class="field-label">First Name</span>
-                    <input asp-for="Input.FirstName" autocomplete="given-name" />
-                </label>
-                <span asp-validation-for="Input.FirstName" class="field-error"></span>
+                <div class="field-group">
+                    <label class="field">
+                        <span class="field-label">First Name</span>
+                        <input asp-for="Input.FirstName" autocomplete="given-name" />
+                    </label>
+                    <span asp-validation-for="Input.FirstName" class="field-error"></span>
+                </div>
 
-                <label class="field">
-                    <span class="field-label">Last Name</span>
-                    <input asp-for="Input.LastName" autocomplete="family-name" />
-                </label>
-                <span asp-validation-for="Input.LastName" class="field-error"></span>
+                <div class="field-group">
+                    <label class="field">
+                        <span class="field-label">Last Name</span>
+                        <input asp-for="Input.LastName" autocomplete="family-name" />
+                    </label>
+                    <span asp-validation-for="Input.LastName" class="field-error"></span>
+                </div>
 
                 <label class="field locked">
                     <span class="field-label">Email</span>
                     <input type="text" value="@Model.Email" disabled />
                 </label>
 
+                <div class="field-group">
+                    <label class="field">
+                        <span class="field-label">Phone Number</span>
+                        <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
+                    </label>
+                    <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
+                </div>
+
                 <label class="field">
-                    <span class="field-label">Phone Number</span>
-                    <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
+                    <span class="field-label">Gender</span>
+                    <select asp-for="Input.Gender" asp-items="Html.GetEnumSelectList<Gender>()" autocomplete="sex">
+                        <option value=""></option>
+                    </select>
                 </label>
-                <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
+
+                <div class="field-group">
+                    <label class="field">
+                        <span class="field-label">Date of Birth</span>
+                        <input asp-for="Input.DateOfBirth" autocomplete="bday" min="1900-01-01"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </label>
+                    <span asp-validation-for="Input.DateOfBirth" class="field-error"></span>
+                </div>
 
                 <div class="profile-actions">
                     <a asp-page="/Customer/Profile" class="pill-btn ghost">Cancel</a>
