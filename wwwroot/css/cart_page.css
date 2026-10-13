@@ -5,7 +5,7 @@
     align-items: center;
 
     .page-title {
-        font-family: "Brand Font", sans-serif;
+        font-family: "Bricolage Grotesque", sans-serif;
         font-weight: 600;
         font-size: 1.5rem;
         text-align: center;
@@ -30,7 +30,7 @@
                 letter-spacing: -1px;
                 font-size: 1.4rem;
                 font-weight: 500;
-                font-family: "Brand Font", sans-serif;
+                font-family: "Bricolage Grotesque", sans-serif;
 
                 .cart-item-count {
                     padding: 2px 4px;
@@ -74,7 +74,7 @@
                             .item-title {
                                 font-size: 2rem;
                                 letter-spacing: -1px;
-                                font-family: "Brand Font", sans-serif;
+                                font-family: "Bricolage Grotesque", sans-serif;
                             }
 
                             .category {
@@ -184,7 +184,7 @@
         .section-title {
             margin-bottom: 20px;
             letter-spacing: -1px;
-            font-family: "Brand Font", sans-serif;
+            font-family: "Bricolage Grotesque", sans-serif;
         }
 
         .item-wrapper {
@@ -221,7 +221,7 @@
 
                 .info-container {
                     .item-title {
-                        font-family: "Brand Font", sans-serif;
+                        font-family: "Bricolage Grotesque", sans-serif;
                         text-align: center;
                     }
 
