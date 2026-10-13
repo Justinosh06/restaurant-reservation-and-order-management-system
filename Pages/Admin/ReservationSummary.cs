@@ -1,0 +1,37 @@
+using RestaurantReservation.Models;
+
+namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
+
+// A reservation as the admin pages show it. Guest details come from the booking itself
+// (taken by staff) or, when it has none, from the customer's account.
+public sealed record ReservationSummary(
+    string Id,
+    string TableId,
+    string CustomerName,
+    string? ContactNumber,
+    int PartySize,
+    DateTime ReservationAt,
+    string? Notes,
+    ReservationStatus Status)
+{
+    // How long a table is held for one booking.
+    public static readonly TimeSpan SlotLength = TimeSpan.FromHours(2);
+
+    public DateTime EndsAt => ReservationAt + SlotLength;
+
+    public bool Overlaps(DateTime start) => ReservationAt < start + SlotLength && start < EndsAt;
+
+    public static ReservationSummary From(Reservation reservation) =>
+        new(
+            reservation.Id,
+            reservation.TableId,
+            FirstNonEmpty(reservation.GuestName, reservation.Customer?.FullName) ?? "Guest",
+            FirstNonEmpty(reservation.ContactNumber, reservation.Customer?.PhoneNumber),
+            reservation.Pax,
+            reservation.Date.ToDateTime(reservation.TimeSlot),
+            reservation.Notes,
+            reservation.Status);
+
+    private static string? FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+}

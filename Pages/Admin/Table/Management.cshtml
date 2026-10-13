@@ -1,20 +1,23 @@
 @page
-@model ManagementModel
+@namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin
+@model TableManagementModel
 @using System.Globalization
 
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Table Management";
     var now = DateTime.Now;
+    // A booking holds its table from its start time until its slot ends.
     var upcomingReservations = Model.Reservations
-        .Where(reservation => reservation.ReservationAt >= now)
+        .Where(reservation => reservation.EndsAt > now)
+        .OrderBy(reservation => reservation.ReservationAt)
         .ToList();
 }
 
 <link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
 
 <div class="service-app" data-selected-table="@Model.SelectedTableId">
-    <main class="service-main">
+    <div class="service-main">
         <div class="floor-toolbar">
             <div>
                 <p class="eyebrow">DINING ROOM</p>
@@ -23,7 +26,7 @@
             </div>
             <div class="floor-toolbar-actions">
                 <a class="new-reservation-button"
-                   href="/Reservation/Management?new=true"
+                   href="/Admin/Reservation/Management?newReservation=true"
                    id="newReservationButton">
                     <span aria-hidden="true">+</span> New reservation
                 </a>
@@ -43,10 +46,8 @@
             <div class="floorplan">
                 @foreach (var table in Model.Tables)
                 {
-                    var nextReservation = Model.Reservations
-                        .Where(reservation => reservation.TableId == table.Id && reservation.ReservationAt >= now)
-                        .OrderBy(reservation => reservation.ReservationAt)
-                        .FirstOrDefault();
+                    var nextReservation = upcomingReservations
+                        .FirstOrDefault(reservation => reservation.TableId == table.Id);
                     var startsSoon = nextReservation is not null
                         && nextReservation.ReservationAt <= now.AddMinutes(60);
 
@@ -56,7 +57,7 @@
                             data-capacity="@table.Capacity"
                             aria-label="Table @table.Id, @(nextReservation is null ? "available" : "reserved")">
                         <span class="table-status-mark" aria-hidden="true"></span>
-                        <span class="table-name">T@(table.Id)</span>
+                        <span class="table-name">@table.Id</span>
                         @if (nextReservation is not null)
                         {
                             <span class="table-booking">
@@ -73,12 +74,12 @@
             </div>
             <div class="floorplan-footer">
                 <span>Tap a table to see its reservations.</span>
-                <a class="floor-status-count" href="/Reservation/Management">
+                <a class="floor-status-count" href="/Admin/Reservation/Management">
                     @upcomingReservations.Count upcoming reservations
                 </a>
             </div>
         </section>
-    </main>
+    </div>
 </div>
 
 <div class="panel-backdrop" id="panelBackdrop"></div>
@@ -102,9 +103,7 @@
                 <span id="tableReservationCount"></span>
             </div>
             <div id="tableReservationList" class="table-reservation-list">
-                @foreach (var reservation in Model.Reservations
-                    .Where(item => item.ReservationAt >= now)
-                    .OrderBy(item => item.ReservationAt))
+                @foreach (var reservation in upcomingReservations)
                 {
                     <article class="table-reservation" data-table-reservation="@reservation.TableId">
                         <div class="reservation-card-heading">
@@ -121,7 +120,7 @@
 
         <a class="submit-reservation-button manage-table-reservations"
            id="manageTableReservations"
-           href="/Reservation/Management">
+           href="/Admin/Reservation/Management">
             Manage reservations
         </a>
     </div>

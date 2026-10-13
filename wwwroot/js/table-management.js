@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function openTable(id) {
         const table = document.querySelector(
-            '.floor-table[data-table-id="' + id + '"]'
+            '.floor-table[data-table-id="' + CSS.escape(id) + '"]'
         );
         if (!table) {
             console.error("Cannot open unknown table:", id);
@@ -27,11 +27,12 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("panelTitle").textContent = "Table " + id;
         document.getElementById("panelCapacity").textContent =
             table.dataset.capacity + " seats";
-        manageLink.href = "/Reservation/Management?tableId=" + id;
+        manageLink.href =
+            "/Admin/Reservation/Management?tableId=" + encodeURIComponent(id);
 
         let visibleCount = 0;
         reservationItems.forEach(function (item) {
-            const visible = Number(item.dataset.tableReservation) === Number(id);
+            const visible = item.dataset.tableReservation === id;
             item.hidden = !visible;
             if (visible) {
                 visibleCount++;

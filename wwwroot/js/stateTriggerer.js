@@ -1,22 +1,16 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const menu = document.getElementById("header-menu-dropdown");
-    if (!menu) {
-        return;
-    }
+const HeaderMenuDropdown = document.getElementById("header-menu-dropdown");
 
-    menu.addEventListener("click", function (event) {
-        if (event.target.closest(".nav-button")) {
-            return;
-        }
+// The sidebar admin layout has no header dropdown, so only wire it up when present.
+if (HeaderMenuDropdown) {
+    const events = ['mouseover', 'click'];
 
-        menu.classList.toggle("active");
-    });
+    events.forEach((event) => {
+        HeaderMenuDropdown.addEventListener(event, () => {
+            HeaderMenuDropdown.classList.toggle("active")
+        })
+    })
 
-    menu.addEventListener("mouseenter", function () {
-        menu.classList.add("active");
-    });
-
-    menu.addEventListener("mouseleave", function () {
-        menu.classList.remove("active");
-    });
-});
+    HeaderMenuDropdown.addEventListener('mouseout', () => {
+        HeaderMenuDropdown.classList.remove("active")
+    })
+}

@@ -1,22 +1,35 @@
-using System.Security.Claims;
+namespace RestaurantReservation.Infrastructure.Navigation;
+
 using System.Text.Json;
+using System.Security.Claims;
 
-namespace Restaurant_Reservation_and_Order_Management_System.Infrastructure.Navigation;
-
-public class SidebarNavService(IWebHostEnvironment environment)
+public class SidebarNavService
 {
-    public async Task<List<SidebarNavItem>> GetNavItemsForUserAsync(ClaimsPrincipal user)
+    private readonly IWebHostEnvironment _env;
+
+    public SidebarNavService(IWebHostEnvironment env)
     {
-        var filePath = Path.Combine(environment.WebRootPath, "data", "admin-nav.json");
-        if (!File.Exists(filePath))
-        {
-            return new List<SidebarNavItem>();
-        }
+        _env = env;
+    }
+
+    public async Task<List<SidebarNavGroup>> GetNavGroupsForUserAsync(ClaimsPrincipal user)
+    {
+        var filePath = Path.Combine(_env.WebRootPath, "data", "admin-nav.json");
+        if (!File.Exists(filePath)) return new List<SidebarNavGroup>();
 
         var json = await File.ReadAllTextAsync(filePath);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var items = JsonSerializer.Deserialize<List<SidebarNavItem>>(json, options) ?? new();
+        var config = JsonSerializer.Deserialize<SidebarNavConfig>(json, options);
 
-        return items.ToList();
+        return config?.Groups
+            .Select(group => new SidebarNavGroup
+            {
+                Title = group.Title,
+                NavLinks = (group.NavLinks ?? new List<SidebarNavItem>())
+                    //.Where(item => item.Roles.Count == 0 || item.Roles.Any(user.IsInRole))
+                    .ToList()
+            })
+            .Where(group => group.NavLinks.Count > 0)
+            .ToList() ?? new List<SidebarNavGroup>();
     }
 }

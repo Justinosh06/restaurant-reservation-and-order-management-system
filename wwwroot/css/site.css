@@ -1,3 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
+
+@font-face {
+  font-family: "Brand Font";
+  src: url('../font/August-Memories.otf');
+  font-weight: normal;
+  font-style: none;
+}
+
+:root {
+  --primary-color: #02261e;
+  --secondary-color: #dafc92;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 html {
   font-size: 14px;
 }
@@ -17,10 +37,6 @@ html {
   min-height: 100%;
 }
 
-body {
-  margin-bottom: 60px;
-}
-
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;
@@ -28,4 +44,9 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+
+button {
+  border: none;
+  background: none;
 }

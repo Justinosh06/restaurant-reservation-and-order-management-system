@@ -1,5 +1,6 @@
 @page
-@model ManagementModel
+@namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin
+@model ReservationManagementModel
 @using System.Globalization
 
 @{
@@ -16,7 +17,7 @@
 <div class="service-app reservation-management-page"
      data-reopen-form="@(Model.IsFormOpen ? "true" : "false")"
      data-form-mode="@Model.FormMode">
-    <main class="service-main">
+    <div class="service-main">
         <div class="floor-toolbar">
             <div>
                 <p class="eyebrow">YOUR SERVICE</p>
@@ -37,7 +38,7 @@
                     </select>
                 </form>
                 <a class="new-reservation-button"
-                   asp-page="/Reservation/Management"
+                   asp-page="/Admin/Reservation/Management"
                    asp-route-newReservation="true"
                    asp-route-tableId="@Model.FilterTableId"
                    id="newReservationButton">
@@ -80,7 +81,7 @@
                             </div>
                             <div class="agenda-details">
                                 <strong>@reservation.CustomerName</strong>
-                                <span>Table @reservation.TableId · @reservation.PartySize guests</span>
+                                <span>Table @reservation.TableId · @reservation.PartySize guests · @reservation.Status</span>
                             </div>
                             <time class="agenda-time" datetime="@reservation.ReservationAt.ToString("yyyy-MM-ddTHH:mm:ss")">
                                 @reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)
@@ -91,7 +92,7 @@
                             }
                             <div class="agenda-actions">
                                 <a class="agenda-manage"
-                                   asp-page="/Reservation/Management"
+                                   asp-page="/Admin/Reservation/Management"
                                    asp-route-edit="@reservation.Id"
                                    asp-route-tableId="@Model.FilterTableId">
                                     Edit
@@ -114,7 +115,7 @@
                 Past reservations are included so you can still review, edit, or remove them.
             </p>
         }
-    </main>
+    </div>
 </div>
 
 <div class="panel-backdrop @(Model.IsFormOpen ? "open" : "")" id="reservationFormBackdrop"></div>
