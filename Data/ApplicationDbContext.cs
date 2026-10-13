@@ -17,6 +17,7 @@ namespace RestaurantReservation.Data
         public DbSet<Table> Tables => Set<Table>();
         public DbSet<Reservation> Reservations => Set<Reservation>();
         public DbSet<Session> Sessions => Set<Session>();
+        public DbSet<CartItem> CartItems => Set<CartItem>();
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<MenuItem> MenuItems => Set<MenuItem>();
@@ -247,6 +248,24 @@ namespace RestaurantReservation.Data
                 // entity.Property(p => p.DiscountType)
                 //       .HasConversion<string>()
                 //       .HasMaxLength(20);
+            });
+
+            // -------------------------------------------------------------
+            // 13. CART ITEM
+            // -------------------------------------------------------------
+            modelBuilder.Entity<CartItem>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+
+                entity.HasOne(c => c.Session)
+                    .WithMany()
+                    .HasForeignKey(c => c.SessionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.MenuItem)
+                    .WithMany()
+                    .HasForeignKey(c => c.MenuItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             ConfigureStringPrimaryKeys(modelBuilder);
