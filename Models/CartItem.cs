@@ -12,6 +12,8 @@ namespace RestaurantReservation.Models
         [Range(1, 20, ErrorMessage = "Value must be between 1 and 20.")]
         public int Quantity { get; set; }
 
+        public Dictionary<string, string> Options { get; set; } = new();
+
         // Foreign Keys
         [Required]
         public string SessionId { get; set; } = string.Empty;
