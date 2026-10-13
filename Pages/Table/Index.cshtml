@@ -7,10 +7,10 @@
     // Sample data using your C# MenuItemType Enum
     var menuItems = new[]
     {
-        new { Id = "SPAG-01", Name = "Spaghetti Bolognaise", Price = "RM 24.90", Type = MenuItemType.Pasta, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
-        new { Id = "PAST-02", Name = "Creamy Carbonara", Price = "RM 22.50", Type = MenuItemType.Pasta, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
-        new { Id = "BEV-01", Name = "Iced Cappuccino", Price = "RM 12.90", Type = MenuItemType.Beverage, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
-        new { Id = "BEV-02", Name = "Matcha Latte", Price = "RM 14.00", Type = MenuItemType.Beverage, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" }
+        new { Id = "SPAG-01", Name = "Spaghetti Bolognaise", Price = "RM 24.90", Type = MenuItemType.Pasta, ImageUrl = "/image/Menu/matcha.png" },
+        new { Id = "PAST-02", Name = "Creamy Carbonara", Price = "RM 22.50", Type = MenuItemType.Pasta, ImageUrl = "/image/Menu/matcha.png" },
+        new { Id = "BEV-01", Name = "Iced Cappuccino", Price = "RM 12.90", Type = MenuItemType.Beverage, ImageUrl = "/image/Menu/matcha.png" },
+        new { Id = "BEV-02", Name = "Matcha Latte", Price = "RM 14.00", Type = MenuItemType.Beverage, ImageUrl = "/image/Menu/matcha.png" }
     };
 
     // Calculate dynamic counts per Enum value
@@ -52,16 +52,23 @@
                         <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
                     </div>
 
-                    <div class="plus-icon">
-                        <i class="fa-solid fa-plus"></i>
-                    </div>
-
                     <div class="info-container">
-                        <div class="top-section">
+                        <h3 class="item-title">@item.Name</h3>
+
+                        <div class="bottom-section">
                             <span class="price">@item.Price</span>
-                            <h3 class="item-title">@item.Name</h3>
+                            <span class="category">
+                                @if(@item.Type.ToString() == "Beverage")
+                                {
+                                    <i class="fa-solid fa-martini-glass-citrus"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-utensils me-1"></i>
+                                }
+                                @item.Type.ToString()
+                            </span>
                         </div>
-                        <span class="category"><i class="fa-solid fa-utensils me-1"></i> @item.Type.ToString()</span>
                     </div>
                 </div>
 
@@ -71,36 +78,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const pills = document.querySelectorAll(".filter-pill");
-            const items = document.querySelectorAll(".item-card-link");
-            const menuTotalCount = document.getElementById("menu-total-count");
-
-            pills.forEach(pill => {
-                pill.addEventListener("click", () => {
-                    pills.forEach(p => p.classList.remove("active"));
-                    pill.classList.add("active");
-
-                    const selectedCategory = pill.getAttribute("data-category");
-                    let visibleCount = 0;
-
-                    items.forEach(item => {
-                        const itemCategory = item.getAttribute("data-category");
-
-                        if (selectedCategory === "all" || itemCategory === selectedCategory) {
-                            item.style.display = "";
-                            visibleCount++;
-                        } else {
-                            item.style.display = "none";
-                        }
-                    });
-
-                    if (menuTotalCount) {
-                        menuTotalCount.textContent = visibleCount;
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="~/js/tableMenu.js" asp-append-version="true"></script>
 }
