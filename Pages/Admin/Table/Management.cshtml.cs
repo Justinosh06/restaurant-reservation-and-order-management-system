@@ -22,6 +22,9 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
 
     public string? SelectedTableId { get; private set; }
 
+    // Every reservation per table, any status, so staff are warned before removing a booked table.
+    public Dictionary<string, int> ReservationCounts { get; private set; } = [];
+
     [TempData]
     public string? StatusMessage { get; set; }
 
@@ -35,6 +38,11 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
                 && reservation.Status != ReservationStatus.Completed)
             .ToListAsync();
         Reservations = reservations.Select(ReservationSummary.From).ToList();
+
+        ReservationCounts = await db.Reservations
+            .GroupBy(reservation => reservation.TableId)
+            .Select(group => new { TableId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.TableId, item => item.Count);
 
         SelectedTableId = Tables.FirstOrDefault(table => table.Id == tableId)?.Id;
     }
@@ -76,17 +84,17 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
             return RedirectToPage();
         }
 
-        // Reservations point at their table, so a booked table cannot be removed.
-        if (await db.Reservations.AnyAsync(reservation => reservation.TableId == table.Id))
-        {
-            StatusMessage = $"Table {table.Id} has reservations. Delete or move them before removing the table.";
-            return RedirectToPage(new { tableId = table.Id });
-        }
-
+        // Reservations point at their table, so they are removed with it (staff confirm this first).
+        var reservations = await db.Reservations
+            .Where(reservation => reservation.TableId == table.Id)
+            .ToListAsync();
+        db.Reservations.RemoveRange(reservations);
         db.Tables.Remove(table);
         await db.SaveChangesAsync();
 
-        StatusMessage = $"Table {table.Id} removed.";
+        StatusMessage = reservations.Count == 0
+            ? $"Table {table.Id} removed."
+            : $"Table {table.Id} removed with its {reservations.Count} reservation{(reservations.Count == 1 ? "" : "s")}.";
         return RedirectToPage();
     }
 

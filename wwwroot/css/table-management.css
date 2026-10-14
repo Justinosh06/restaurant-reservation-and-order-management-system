@@ -993,3 +993,40 @@ body:has(.service-app) {
         font-size: 11px;
     }
 }
+
+.floorplan[hidden] {
+    display: none;
+}
+
+.empty-floorplan {
+    display: grid;
+    min-height: 300px;
+    place-content: center;
+    gap: 6px;
+    padding: 28px;
+    background-color: #fbfcfa;
+    background-image: radial-gradient(#e9ece7 0.8px, transparent 0.8px);
+    background-size: 20px 20px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.empty-floorplan strong {
+    color: var(--ink);
+    font-size: 16px;
+}
+
+.empty-floorplan p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.no-tables-note {
+    margin: 0 0 14px;
+    padding: 11px 13px;
+    border: 1px solid #efc39f;
+    border-radius: 10px;
+    background: var(--amber-soft);
+    color: #6e452c;
+    font-size: 12px;
+}

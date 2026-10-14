@@ -64,7 +64,14 @@
                 <span><i class="floor-indicator"></i> Main floor</span>
                 <span>@Model.Tables.Count tables</span>
             </div>
-            <div class="floorplan">
+            @if (Model.Tables.Count == 0)
+            {
+                <div class="empty-floorplan">
+                    <strong>No tables yet</strong>
+                    <p>Use <b>Add table</b> to put your first table on the floor plan.</p>
+                </div>
+            }
+            <div class="floorplan" hidden="@(Model.Tables.Count == 0)">
                 @foreach (var table in Model.Tables)
                 {
                     var nextReservation = upcomingReservations
@@ -76,6 +83,7 @@
                             class="floor-table @(nextReservation is null ? "available" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
+                            data-reservation-count="@Model.ReservationCounts.GetValueOrDefault(table.Id)"
                             aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">

@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
         manageLink.href =
             "/Admin/Reservation/Management?tableId=" + encodeURIComponent(id);
         removeTableId.value = id;
+        removeTableId.dataset.reservationCount = table.dataset.reservationCount || "0";
 
         let visibleCount = 0;
         reservationItems.forEach(function (item) {
@@ -92,7 +93,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     removeForm.addEventListener("submit", function (event) {
-        if (!window.confirm("Remove table " + removeTableId.value + " from the floor plan?")) {
+        const count = Number(removeTableId.dataset.reservationCount);
+        const warning = count > 0
+            ? "
+
+This also deletes its " + count + (count === 1 ? " reservation." : " reservations.")
+            : "";
+        if (!window.confirm("Remove table " + removeTableId.value + " from the floor plan?" + warning)) {
             event.preventDefault();
         }
     });

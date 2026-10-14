@@ -132,6 +132,12 @@
     </div>
 
     <div class="panel-body">
+        @if (Model.Tables.Count == 0)
+        {
+            <p class="no-tables-note">
+                There are no tables yet. Add one in <a asp-page="/Admin/Table/Management">Table Management</a> first.
+            </p>
+        }
         <form method="post"
               asp-page-handler="Create"
               id="createReservationForm"
