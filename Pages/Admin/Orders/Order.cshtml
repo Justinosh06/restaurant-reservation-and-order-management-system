@@ -135,17 +135,16 @@
                     <span class="small text-body-secondary fw-medium">Served and paid orders <span class="fw-normal" id="history-count"></span></span>
 
                     <form id="history-form" class="d-flex flex-wrap align-items-center gap-2 ms-lg-auto">
-                        <div class="input-group input-group-sm w-auto">
-                            <label class="input-group-text" for="history-from">From</label>
-                            <input type="date" id="history-from" class="form-control" min="2000-01-01" required
-                                   value="@Model.Today.AddDays(-6).ToString("yyyy-MM-dd")" max="@Model.Today.ToString("yyyy-MM-dd")" />
+                        <div class="dropdown" data-date-range>
+                            <input type="hidden" id="history-from" data-range-from min="2000-01-01" max="@Model.Today.ToString("yyyy-MM-dd")"
+                                   value="@Model.Today.AddDays(-6).ToString("yyyy-MM-dd")" />
+                            <input type="hidden" id="history-to" data-range-to max="@Model.Today.ToString("yyyy-MM-dd")"
+                                   value="@Model.Today.ToString("yyyy-MM-dd")" />
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Choose a date range">
+                                <i class="fa-regular fa-calendar me-1"></i><span data-range-label></span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
                         </div>
-                        <div class="input-group input-group-sm w-auto">
-                            <label class="input-group-text" for="history-to">To</label>
-                            <input type="date" id="history-to" class="form-control" required
-                                   value="@Model.Today.ToString("yyyy-MM-dd")" max="@Model.Today.ToString("yyyy-MM-dd")" />
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-dark">Show</button>
                     </form>
 
                     <div class="input-group input-group-sm w-auto">
@@ -177,6 +176,7 @@
 
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
+    <script src="~/js/admin/date-range-picker.js" asp-append-version="true"></script>
     <script src="~/js/admin/orders.js" asp-append-version="true"></script>
     <script src="~/js/admin/order-history.js" asp-append-version="true"></script>
 }

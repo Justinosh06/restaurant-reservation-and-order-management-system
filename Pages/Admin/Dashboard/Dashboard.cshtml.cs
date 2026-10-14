@@ -25,7 +25,8 @@ public class DashboardModel : PageModel
 
     public DateOnly Today => _clock.Today;
 
-    public async Task<IActionResult> OnGetStatsAsync(string? from, string? to)
+    // compare = "month" is sent by the "This month" button: the range is compared with the whole previous month.
+    public async Task<IActionResult> OnGetStatsAsync(string? from, string? to, string? compare)
     {
         var dateError = DateRangeInput.Check(from, to, out var fromDate, out var toDate);
         if (dateError is not null)
@@ -33,9 +34,18 @@ public class DashboardModel : PageModel
             return BadRequest(new { error = dateError });
         }
 
-        // The previous period has the same number of days and ends the day before the chosen range.
+        var compareWholeMonth = compare == "month";
+        if (compareWholeMonth && (fromDate.Day != 1 || toDate.Month != fromDate.Month || toDate.Year != fromDate.Year))
+        {
+            return BadRequest(new { error = "A month comparison must start on the 1st and stay within one month." });
+        }
+
+        // Usually the previous period has the same number of days and ends the day before the chosen range
+        // (e.g. 8-14 Oct is compared with 1-7 Oct). For "This month" it is the whole previous month
+        // (e.g. 1-14 Oct is compared with 1-30 Sep). Either way it ends the day before fromDate.
         var dayCount = toDate.DayNumber - fromDate.DayNumber + 1;
-        var previousFrom = fromDate.AddDays(-dayCount);
+        var previousFrom = compareWholeMonth ? fromDate.AddMonths(-1) : fromDate.AddDays(-dayCount);
+        var previousTo = fromDate.AddDays(-1);
         var days = Enumerable.Range(0, dayCount).Select(i => fromDate.AddDays(i)).ToList();
 
         var startUtc = _clock.StartOfDayUtc(previousFrom);
@@ -147,6 +157,9 @@ public class DashboardModel : PageModel
 
         return new JsonResult(new
         {
+            previousFrom = previousFrom.ToString("yyyy-MM-dd"),
+            previousTo = previousTo.ToString("yyyy-MM-dd"),
+            compareWholeMonth,
             revenue,
             previousRevenue,
             orders = orders.Count,

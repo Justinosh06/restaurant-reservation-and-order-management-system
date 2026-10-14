@@ -24,3 +24,24 @@
 .modal .form-switch .form-check-input:focus:not(:checked) {
     --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2833, 37, 41, 0.25%29'/%3e%3c/svg%3e");
 }
+
+/* Date range calendar (js/admin/date-range-picker.js): 7 equal columns, square day buttons. */
+.date-range-calendar {
+    width: 19rem;
+    padding: 0.75rem;
+}
+
+.date-range-calendar .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.125rem;
+}
+
+.date-range-calendar .calendar-day {
+    aspect-ratio: 1 / 1;
+}
+
+.date-range-calendar .calendar-years {
+    max-height: 15rem;
+    overflow-y: auto;
+}

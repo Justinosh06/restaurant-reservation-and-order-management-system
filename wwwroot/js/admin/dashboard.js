@@ -18,6 +18,7 @@
     let ordersByDay = { labels: [], counts: [] };
     let ordersByHour = { labels: [], counts: [] };
     let latestRequest = 0;
+    let selectedRange = null; // "today", "week", "month" or null for dates picked in the calendar
 
     document.getElementById("revenue-currency").textContent = AdminUI.currencyCode;
 
@@ -41,17 +42,19 @@
         foreColor: MUTED
     });
 
-    const setDelta = (id, current, previous, format) => {
+    // comparison = { word: "previous" or "last month", dates: "1 Sept 2026 - 30 Sept 2026" }
+    const setDelta = (id, current, previous, format, comparison) => {
         const el = document.getElementById(id);
         const diff = current - previous;
+        el.title = `Compared with ${comparison.dates}`;
         if (diff === 0) {
             el.className = "text-body-secondary";
-            el.textContent = "Same as previous period";
+            el.textContent = `Same as ${comparison.word}`;
             return;
         }
         el.className = diff > 0 ? "text-success fw-semibold" : "text-danger fw-semibold";
         el.innerHTML = `<i class="fa-solid ${diff > 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down"} me-1"></i>`
-            + `${diff > 0 ? "+" : "-"}${AdminUI.escapeHtml(format(Math.abs(diff)))} <span class="fw-normal text-body-secondary">vs previous</span>`;
+            + `${diff > 0 ? "+" : "-"}${AdminUI.escapeHtml(format(Math.abs(diff)))} <span class="fw-normal text-body-secondary">vs ${comparison.word}</span>`;
     };
 
     // Small bar charts inside the KPI cards, one bar per day. A single day has no trend, so nothing is drawn.
@@ -75,10 +78,14 @@
         document.getElementById("kpi-aov").textContent = AdminUI.formatCurrency(data.averageOrderValue);
         document.getElementById("revenue-total").textContent = AdminUI.formatCurrency(data.revenue);
 
-        setDelta("kpi-revenue-delta", data.revenue, data.previousRevenue, AdminUI.formatCurrency);
-        setDelta("kpi-orders-delta", data.orders, data.previousOrders, String);
-        setDelta("kpi-reservations-delta", data.reservations, data.previousReservations, String);
-        setDelta("kpi-aov-delta", data.averageOrderValue, data.previousAverageOrderValue, AdminUI.formatCurrency);
+        const comparison = {
+            word: data.compareWholeMonth ? "last month" : "previous",
+            dates: `${AdminUI.formatDate(`${data.previousFrom}T00:00:00`)} - ${AdminUI.formatDate(`${data.previousTo}T00:00:00`)}`
+        };
+        setDelta("kpi-revenue-delta", data.revenue, data.previousRevenue, AdminUI.formatCurrency, comparison);
+        setDelta("kpi-orders-delta", data.orders, data.previousOrders, String, comparison);
+        setDelta("kpi-reservations-delta", data.reservations, data.previousReservations, String, comparison);
+        setDelta("kpi-aov-delta", data.averageOrderValue, data.previousAverageOrderValue, AdminUI.formatCurrency, comparison);
 
         sparklines.forEach(chart => chart.destroy());
         sparklines = [];
@@ -182,6 +189,7 @@
 
     // The quick range that matches the dates is shown as a dark pill.
     const showSelectedRange = (range) => {
+        selectedRange = range;
         for (const button of rangeForm.querySelectorAll("[data-range]")) {
             button.classList.toggle("btn-dark", button.dataset.range === range);
         }
@@ -200,7 +208,11 @@
         latestRequest++;
         const thisRequest = latestRequest;
 
-        AdminUI.get("Stats", { from: fromInput.value, to: toInput.value })
+        // "This month" is compared with the whole previous month; every other range with the days just before it.
+        const query = { from: fromInput.value, to: toInput.value };
+        if (selectedRange === "month") query.compare = "month";
+
+        AdminUI.get("Stats", query)
             .then(data => {
                 if (thisRequest !== latestRequest) return;
                 showSummary(data);
@@ -246,6 +258,8 @@
             fromInput.value = `${today.slice(0, 8)}01`;
         }
         toInput.value = today;
+        fromInput.dispatchEvent(new Event("change"));
+        toInput.dispatchEvent(new Event("change"));
         showSelectedRange(button.dataset.range);
         loadDashboard();
     });

@@ -18,12 +18,13 @@
                 <button type="button" class="btn btn-sm rounded-pill" data-range="week">Last 7 days</button>
                 <button type="button" class="btn btn-sm rounded-pill" data-range="month">This month</button>
             </div>
-            <div class="input-group input-group-sm w-auto">
-                <label class="input-group-text bg-body" for="range-from"><i class="fa-regular fa-calendar"></i></label>
-                <input type="date" id="range-from" class="form-control" min="2000-01-01" value="@weekAgo" max="@today" required aria-label="From date" />
-                <span class="input-group-text bg-body">to</span>
-                <input type="date" id="range-to" class="form-control" value="@today" max="@today" required aria-label="To date" />
-                <button type="submit" class="btn btn-outline-secondary">Apply</button>
+            <div class="dropdown" data-date-range>
+                <input type="hidden" id="range-from" data-range-from min="2000-01-01" max="@today" value="@weekAgo" />
+                <input type="hidden" id="range-to" data-range-to max="@today" value="@today" />
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Choose a date range">
+                    <i class="fa-regular fa-calendar me-1"></i><span data-range-label></span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
             </div>
         </form>
     </div>
@@ -175,5 +176,6 @@
 @section Scripts {
     <script src="~/lib/apexcharts/apexcharts.min.js"></script>
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
+    <script src="~/js/admin/date-range-picker.js" asp-append-version="true"></script>
     <script src="~/js/admin/dashboard.js" asp-append-version="true"></script>
 }
