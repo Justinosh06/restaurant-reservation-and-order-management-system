@@ -337,15 +337,6 @@ body:has(.landing) {
         font-size: 0.85rem;
     }
 
-    .order-detail .hero-title {
-        font-size: 3.4rem;
-        line-height: 1;
-        font-weight: 600;
-        font-family: "Bricolage Grotesque", sans-serif;
-        letter-spacing: -2px;
-        margin-bottom: 24px;
-    }
-
     .order-list {
         display: flex;
         flex-direction: column;
@@ -400,10 +391,8 @@ body:has(.landing) {
         }
     }
 
-    .order-detail {
-        width: 100%;
-        max-width: 640px;
-        margin: 0 auto;
+    .detail-page {
+        max-width: 960px;
 
         .back-link {
             display: inline-block;
@@ -423,11 +412,18 @@ body:has(.landing) {
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
 
-            .hero-title {
+            .section-title {
                 margin-bottom: 0;
             }
+        }
+
+        .sub-title {
+            margin: 24px 0 12px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
         }
 
         .order-meta {
@@ -592,6 +588,16 @@ body:has(.landing) {
             gap: 4px;
         }
 
+        /* One field per line, e.g. the Password page. */
+        .profile-card.single {
+            grid-template-columns: 1fr;
+            max-width: 640px;
+
+            .field .field-label {
+                width: 150px;
+            }
+        }
+
         .field .field-label {
             width: 120px;
         }
@@ -683,26 +689,105 @@ body:has(.landing) {
     }
 }
 
-/* Profile page: the profile runs across the top, order history and dining history sit side by side below it. */
-.landing.profile-page {
+/* Customer account pages: sidebar on the left, the chosen page on the right (see _AccountLayout). */
+.account {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px 32px;
+    grid-template-columns: 260px 1fr;
+    gap: 32px;
     align-items: start;
 
-    > * {
+    .account-content {
         min-width: 0;
     }
+}
 
-    > .landing-nav,
-    > .profile {
-        grid-column: 1 / -1;
+.account-sidebar {
+    position: sticky;
+    top: 24px;
+    padding: 16px 12px;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+    .sidebar-title {
+        padding: 0 12px;
+        margin-bottom: 12px;
+        font-size: 1.4rem;
+        font-weight: 600;
+        font-family: "Bricolage Grotesque", sans-serif;
+        letter-spacing: -1px;
+    }
+
+    .sidebar-links {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: #888888;
+        font-weight: 500;
+        text-align: left;
+        text-decoration: none;
+        transition: 300ms ease-in-out;
+
+        i {
+            width: 18px;
+            text-align: center;
+        }
+    }
+
+    .sidebar-link:hover,
+    .sidebar-link.active {
+        background: #F2F2F3;
+        color: black;
+    }
+
+    .sidebar-link.active {
+        font-weight: 600;
+    }
+
+    .sidebar-logout {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #ECECEC;
     }
 }
 
 @media only screen and (max-width: 992px) {
-    .landing.profile-page {
+    .account {
         grid-template-columns: 1fr;
+    }
+
+    /* On small screens the sidebar becomes a row of links above the page. */
+    .account-sidebar {
+        position: static;
+
+        .sidebar-links {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        .sidebar-link {
+            width: auto;
+        }
+
+        .sidebar-logout {
+            margin: 0 0 0 auto;
+            padding: 0;
+            border: none;
+        }
     }
 }
 
@@ -731,10 +816,6 @@ body:has(.landing) {
 
         .specials-grid {
             grid-template-columns: 1fr;
-        }
-
-        .order-detail .hero-title {
-            font-size: 2.6rem;
         }
 
         .profile .profile-card {
