@@ -117,8 +117,7 @@
 
         for (const [button, active] of [[byDayButton, view === "day"], [byHourButton, view === "hour"]]) {
             button.classList.toggle("active", active);
-            button.classList.toggle("btn-light", active);
-            button.classList.toggle("shadow-sm", active);
+            button.classList.toggle("btn-dark", active);
         }
     };
 

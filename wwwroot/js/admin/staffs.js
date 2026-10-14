@@ -40,7 +40,7 @@
 
         return `
             <div class="col-sm-6 col-lg-4 col-xxl-3">
-                <div class="card h-100 border-0 border-bottom border-4 border-${color} shadow-sm">
+                <div class="card h-100 bg-body border-0 rounded-4">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="badge rounded-pill bg-${color}-subtle text-${color}-emphasis">
@@ -65,10 +65,10 @@
                             <div class="small text-body-secondary">${AdminUI.escapeHtml(s.role)}</div>
                         </div>
 
-                        <div class="bg-body-tertiary border rounded-3 p-3 small d-flex flex-column gap-2">
+                        <div class="bg-body-tertiary rounded-3 p-3 small d-flex flex-column gap-2">
                             <div><i class="fa-solid fa-hashtag fa-fw text-body-secondary me-1"></i>${AdminUI.escapeHtml(s.displayId)}</div>
                             <div><i class="fa-solid ${avatar.icon} fa-fw text-body-secondary me-1"></i>${gender}</div>
-                            <div><i class="fa-solid fa-user-tag fa-fw text-body-secondary me-1"></i>${s.role === "Administrator" ? "Full access" : "Dashboard, orders, tables and reservations"}</div>
+                            <div><i class="fa-solid fa-user-tag fa-fw text-body-secondary me-1"></i>${s.role === "Administrator" ? "Full access" : "Orders, tables and reservations"}</div>
                         </div>
                     </div>
                     <div class="card-footer bg-body border-0 pt-0 pb-3">
@@ -79,7 +79,7 @@
     };
 
     const showGridMessage = (text, tone = "text-body-secondary") => {
-        gridEl.innerHTML = `<div class="col-12"><div class="bg-body-tertiary rounded-3 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div></div>`;
+        gridEl.innerHTML = `<div class="col-12"><div class="bg-body rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div></div>`;
     };
 
     const render = () => {
@@ -101,7 +101,7 @@
             (!roleFilterEl.value || s.role === roleFilterEl.value) &&
             (!genderFilterEl.value || s.gender === genderFilterEl.value));
 
-        countEl.textContent = visible.length === staffs.length ? "" : `${visible.length} of ${staffs.length} shown`;
+        countEl.textContent = visible.length === staffs.length ? "" : `· ${visible.length} of ${staffs.length} shown`;
         if (visible.length === 0) {
             showGridMessage("No staff accounts match these filters.");
             return;

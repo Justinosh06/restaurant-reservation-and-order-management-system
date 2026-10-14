@@ -45,7 +45,7 @@
         const color = STATUS_COLORS[status];
         const title = AdminUI.escapeHtml(a.title);
         return `
-            <div class="card border-0 shadow-sm rounded-4">
+            <div class="card bg-body border-0 rounded-4">
                 <div class="card-body d-flex gap-3">
                     <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-${color}-subtle text-${color}-emphasis flex-shrink-0 align-self-start p-3">
                         <i class="${AdminUI.escapeHtml(a.icon)} fa-fw" aria-hidden="true"></i>
@@ -100,7 +100,7 @@
     };
 
     const showListMessage = (text, tone = "text-body-secondary") => {
-        listEl.innerHTML = `<div class="bg-body-tertiary rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div>`;
+        listEl.innerHTML = `<div class="bg-body rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div>`;
     };
 
     const render = () => {

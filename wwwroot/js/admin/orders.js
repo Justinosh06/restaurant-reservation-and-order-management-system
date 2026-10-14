@@ -49,7 +49,7 @@
     const orderCard = (o) => {
         const next = NEXT_ACTION[o.status];
         return `
-            <div class="card border-0 shadow-sm rounded-4">
+            <div class="card bg-body border-0 rounded-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                         <div class="overflow-hidden">
@@ -72,14 +72,16 @@
     };
 
     const servedRow = (o) => `
-        <div class="d-flex align-items-center gap-2 border-top py-2">
-            <i class="fa-solid fa-circle-check text-success"></i>
-            <span class="small fw-medium">Order #${AdminUI.escapeHtml(o.displayId)}</span>
-            <span class="small text-body-secondary ms-auto">Table ${AdminUI.escapeHtml(o.table ?? "-")} &middot; ordered ${durationText(minutesSince(o.createdAt))} ago</span>
+        <div class="card bg-body border-0 rounded-4">
+            <div class="card-body d-flex align-items-center gap-2 py-2">
+                <i class="fa-solid fa-circle-check text-success"></i>
+                <span class="small fw-medium">Order #${AdminUI.escapeHtml(o.displayId)}</span>
+                <span class="small text-body-secondary ms-auto">Table ${AdminUI.escapeHtml(o.table ?? "-")} &middot; ordered ${durationText(minutesSince(o.createdAt))} ago</span>
+            </div>
         </div>`;
 
     const emptyMessage = (text, tone = "text-body-secondary") => `
-        <div class="text-center ${tone} bg-body rounded-3 py-4 small">${AdminUI.escapeHtml(text)}</div>`;
+        <div class="text-center ${tone} bg-body rounded-4 py-4 small">${AdminUI.escapeHtml(text)}</div>`;
 
     const matchesSearch = (o) => {
         const term = searchTerm.toLowerCase();
@@ -90,12 +92,12 @@
         const columnEl = document.getElementById("column-Served");
 
         if (visible.length === 0) {
-            columnEl.innerHTML = `<p class="small text-body-secondary border-top pt-2 mb-0">${searchTerm ? "No matching orders." : "No orders served yet."}</p>`;
+            columnEl.innerHTML = emptyMessage(searchTerm ? "No matching orders." : "No orders served yet.");
             return;
         }
 
         const more = visible.length > SERVED_SHOWN
-            ? `<p class="small text-body-secondary border-top pt-2 mb-0">and ${visible.length - SERVED_SHOWN} more</p>`
+            ? `<p class="small text-body-secondary text-center mb-0 py-1">and ${visible.length - SERVED_SHOWN} more</p>`
             : "";
         columnEl.innerHTML = visible.slice(0, SERVED_SHOWN).map(servedRow).join("") + more;
     };

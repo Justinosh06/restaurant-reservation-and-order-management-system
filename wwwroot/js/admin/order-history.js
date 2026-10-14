@@ -32,7 +32,7 @@
 
         return `
             <div class="col-md-6 col-xxl-4">
-                <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card h-100 bg-body border-0 rounded-4">
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex align-items-start gap-3">
                             <div class="bg-success-subtle text-success-emphasis rounded-3 fw-semibold small text-center px-2 py-3">${AdminUI.escapeHtml(o.table ?? "-")}</div>
@@ -95,7 +95,7 @@
     };
 
     const showGridMessage = (text, tone = "text-body-secondary") => {
-        gridEl.innerHTML = `<div class="col-12"><div class="bg-body-tertiary rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div></div>`;
+        gridEl.innerHTML = `<div class="col-12"><div class="bg-body rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div></div>`;
         moreButton.classList.add("d-none");
     };
 
@@ -106,7 +106,7 @@
 
     const render = () => {
         const visible = orders.filter(matchesSearch);
-        countEl.textContent = `${visible.length} order${visible.length === 1 ? "" : "s"}`;
+        countEl.textContent = `· ${visible.length}`;
 
         if (visible.length === 0) {
             showGridMessage(orders.length ? "No orders match this search." : "No paid orders for these dates.");

@@ -46,7 +46,7 @@
     const promotionRow = (p) => {
         const title = AdminUI.escapeHtml(p.title);
         return `
-            <div class="card border-0 shadow-sm rounded-4">
+            <div class="card bg-body border-0 rounded-4">
                 <div class="card-body d-flex flex-wrap flex-sm-nowrap gap-3">
                     ${thumbnail(p)}
                     <div class="flex-grow-1 overflow-hidden">
@@ -95,7 +95,7 @@
     };
 
     const showListMessage = (text, tone = "text-body-secondary") => {
-        listEl.innerHTML = `<div class="bg-body-tertiary rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div>`;
+        listEl.innerHTML = `<div class="bg-body rounded-4 text-center ${tone} py-5">${AdminUI.escapeHtml(text)}</div>`;
     };
 
     const render = () => {
