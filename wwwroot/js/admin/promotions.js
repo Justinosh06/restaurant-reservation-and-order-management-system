@@ -81,14 +81,12 @@
         const count = (status) => promotions.filter(p => p.status === status).length;
         const endingSoon = promotions.filter(p => p.status === "Active"
             && new Date(`${p.endDate}T23:59:59`) - now <= 7 * DAY_MS).length;
-        const withoutImage = promotions.filter(p => !p.imageUrl).length;
 
         statsEl.innerHTML = [
             statRow("Active", "Running today", count("Active"), "success"),
             statRow("Ending soon", "Active, ends within 7 days", endingSoon, "danger"),
             statRow("Scheduled", "Starts on a later date", count("Scheduled"), "warning"),
             statRow("Ended", "Past their end date", count("Ended"), "secondary"),
-            statRow("Without image", "Add one so it stands out", withoutImage, "info"),
             statRow("Total", "All promotions", promotions.length, "dark")
         ].join("");
         document.getElementById("promo-updated").textContent = `Last updated ${AdminUI.formatTime(new Date())}`;
