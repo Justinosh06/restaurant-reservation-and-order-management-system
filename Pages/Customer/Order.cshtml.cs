@@ -21,7 +21,6 @@ public class OrderModel : PageModel
         _db = db;
     }
 
-    public string RestaurantName { get; private set; } = "Resto";
     public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
     public Order Order { get; private set; } = new();
     public IReadOnlyList<OrderItem> Items { get; private set; } = [];
@@ -160,12 +159,8 @@ public class OrderModel : PageModel
         Order = order;
         Items = SampleOrders.Items[id].ToList();
 
-        var settings = await _db.RestaurantSettings.AsNoTracking().FirstOrDefaultAsync();
-        if (settings is not null)
-        {
-            RestaurantName = settings.Name;
-            Currency = settings.DefaultCurrency;
-        }
+        Currency = await _db.RestaurantSettings.AsNoTracking().Select(s => (CurrencyType?)s.DefaultCurrency).FirstOrDefaultAsync()
+            ?? CurrencyType.MYR;
         return true;
     }
 

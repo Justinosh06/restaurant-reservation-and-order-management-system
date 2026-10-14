@@ -1,204 +1,119 @@
 @page
-@using RestaurantReservation.Extensions
-@using RestaurantReservation.Models
 @using RestaurantReservation.Models.Enums
 @model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ProfileModel
 @{
     ViewData["Title"] = "My Profile";
-
-    // Order and session times are stored in UTC.
-    DateTime ToLocal(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
-
-    var visits = Model.Orders.Where(o => o.Session is not null).Select(o => o.Session!).ToList();
 }
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
-<link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
+<section class="profile">
+    <h1 class="section-title">My profile</h1>
 
-@* profile-page lays the two history sections out side by side below the profile. *@
-<div class="landing profile-page">
-    <partial name="_LandingNav" model="Model.RestaurantName" />
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <p class="notice">@Model.SuccessMessage</p>
+    }
 
-    <section class="profile">
-        <h1 class="section-title">My profile</h1>
+    @if (!Model.IsEditing)
+    {
+        @* View mode *@
+        <div class="profile-card">
+            <label class="field locked wide">
+                <span class="field-label">User ID</span>
+                <input type="text" value="@Model.UserId" readonly />
+            </label>
+            <label class="field locked">
+                <span class="field-label">First Name</span>
+                <input type="text" value="@Model.Input.FirstName" readonly />
+            </label>
+            <label class="field locked">
+                <span class="field-label">Last Name</span>
+                <input type="text" value="@Model.Input.LastName" readonly />
+            </label>
+            <label class="field locked">
+                <span class="field-label">Email</span>
+                <input type="text" value="@Model.Email" readonly />
+            </label>
+            <label class="field locked">
+                <span class="field-label">Phone Number</span>
+                <input type="text" value="@Model.Input.PhoneNumber" readonly />
+            </label>
+            <label class="field locked">
+                <span class="field-label">Gender</span>
+                <input type="text" value="@Model.Input.Gender" readonly />
+            </label>
+            <label class="field locked">
+                <span class="field-label">Date of Birth</span>
+                <input type="text" value="@Model.Input.DateOfBirth?.ToString("d MMM yyyy")" readonly />
+            </label>
 
-        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-        {
-            <p class="notice">@Model.SuccessMessage</p>
-        }
-
-        @if (!Model.IsEditing)
-        {
-            @* View mode *@
-            <div class="profile-card">
-                <label class="field locked wide">
-                    <span class="field-label">User ID</span>
-                    <input type="text" value="@Model.UserId" readonly />
-                </label>
-                <label class="field locked">
-                    <span class="field-label">First Name</span>
-                    <input type="text" value="@Model.Input.FirstName" readonly />
-                </label>
-                <label class="field locked">
-                    <span class="field-label">Last Name</span>
-                    <input type="text" value="@Model.Input.LastName" readonly />
-                </label>
-                <label class="field locked">
-                    <span class="field-label">Email</span>
-                    <input type="text" value="@Model.Email" readonly />
-                </label>
-                <label class="field locked">
-                    <span class="field-label">Phone Number</span>
-                    <input type="text" value="@Model.Input.PhoneNumber" readonly />
-                </label>
-                <label class="field locked">
-                    <span class="field-label">Gender</span>
-                    <input type="text" value="@Model.Input.Gender" readonly />
-                </label>
-                <label class="field locked">
-                    <span class="field-label">Date of Birth</span>
-                    <input type="text" value="@Model.Input.DateOfBirth?.ToString("d MMM yyyy")" readonly />
-                </label>
-
-                <form method="get" class="profile-actions">
-                    <button type="submit" name="edit" value="true" class="pill-btn">Edit</button>
-                </form>
-            </div>
-        }
-        else
-        {
-            @* Edit mode: User ID and Email stay locked *@
-            <form method="post" class="profile-card">
-                <div asp-validation-summary="ModelOnly" class="field-error"></div>
-
-                <label class="field locked wide">
-                    <span class="field-label">User ID</span>
-                    <input type="text" value="@Model.UserId" disabled />
-                </label>
-
-                <div class="field-group">
-                    <label class="field">
-                        <span class="field-label">First Name</span>
-                        <input asp-for="Input.FirstName" autocomplete="given-name" />
-                    </label>
-                    <span asp-validation-for="Input.FirstName" class="field-error"></span>
-                </div>
-
-                <div class="field-group">
-                    <label class="field">
-                        <span class="field-label">Last Name</span>
-                        <input asp-for="Input.LastName" autocomplete="family-name" />
-                    </label>
-                    <span asp-validation-for="Input.LastName" class="field-error"></span>
-                </div>
-
-                <label class="field locked">
-                    <span class="field-label">Email</span>
-                    <input type="text" value="@Model.Email" disabled />
-                </label>
-
-                <div class="field-group">
-                    <label class="field">
-                        <span class="field-label">Phone Number</span>
-                        <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
-                    </label>
-                    <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
-                </div>
-
-                <label class="field">
-                    <span class="field-label">Gender</span>
-                    <select asp-for="Input.Gender" asp-items="Html.GetEnumSelectList<Gender>()" autocomplete="sex">
-                        <option value=""></option>
-                    </select>
-                </label>
-
-                <div class="field-group">
-                    <label class="field">
-                        <span class="field-label">Date of Birth</span>
-                        <input asp-for="Input.DateOfBirth" autocomplete="bday" min="1900-01-01"
-                               max="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                    </label>
-                    <span asp-validation-for="Input.DateOfBirth" class="field-error"></span>
-                </div>
-
-                <div class="profile-actions">
-                    <a asp-page="/Customer/Profile" class="pill-btn ghost">Cancel</a>
-                    <button type="submit" class="pill-btn">Save</button>
-                </div>
+            <form method="get" class="profile-actions">
+                <button type="submit" name="edit" value="true" class="pill-btn">Edit</button>
             </form>
-        }
-    </section>
+        </div>
+    }
+    else
+    {
+        @* Edit mode: User ID and Email stay locked *@
+        <form method="post" class="profile-card">
+            <div asp-validation-summary="ModelOnly" class="field-error"></div>
 
-    <section>
-        <h2 class="section-title">Order history</h2>
+            <label class="field locked wide">
+                <span class="field-label">User ID</span>
+                <input type="text" value="@Model.UserId" disabled />
+            </label>
 
-        @if (Model.Orders.Count == 0)
-        {
-            <p class="empty-note">You have not placed any orders yet.</p>
-        }
-        else
-        {
-            <div class="order-list">
-                @foreach (var order in Model.Orders)
-                {
-                    <a class="order-card" asp-page="/Customer/Order" asp-route-id="@order.Id">
-                        <div>
-                            <span class="order-code">Order #@order.Id</span>
-                            <span class="hint">Qty: @Model.OrderItems[order.Id].Sum(i => i.Quantity)</span>
-                        </div>
-                        <div class="order-side">
-                            <span class="hint">@ToLocal(order.CreatedAt).ToString("d MMM yyyy, HH:mm")</span>
-                            <div class="order-total-row">
-                                <span class="order-total">@Model.Currency.FormatCents(order.TotalAmount)</span>
-                                <span class="status-pill @(order.Status == OrderStatus.Cancelled ? "muted" : "")">@order.Status</span>
-                            </div>
-                        </div>
-                    </a>
-                }
+            <div class="field-group">
+                <label class="field">
+                    <span class="field-label">First Name</span>
+                    <input asp-for="Input.FirstName" autocomplete="given-name" />
+                </label>
+                <span asp-validation-for="Input.FirstName" class="field-error"></span>
             </div>
-        }
-    </section>
 
-    <section>
-        <h2 class="section-title">Dining history</h2>
-
-        @if (visits.Count == 0)
-        {
-            <p class="empty-note">You have not dined with us yet.</p>
-        }
-        else
-        {
-            <div class="order-list">
-                @foreach (var visit in visits)
-                {
-                    <div class="order-card">
-                        <div>
-                            <span class="order-code">@ToLocal(visit.StartingTime).ToString("d MMM yyyy")</span>
-                            <span class="hint">
-                                Arrived @ToLocal(visit.StartingTime).ToString("HH:mm")
-                                @if (visit.EndingTime is { } left)
-                                {
-                                    <text>&middot; Left @ToLocal(left).ToString("HH:mm")</text>
-                                }
-                            </span>
-                        </div>
-                        <div class="order-side">
-                            <span class="hint">Time at table</span>
-                            @if (visit.EndingTime is { } end)
-                            {
-                                <span class="order-total">@((int)(end - visit.StartingTime).TotalMinutes) min</span>
-                            }
-                            else
-                            {
-                                <span class="status-pill">Dining now</span>
-                            }
-                        </div>
-                    </div>
-                }
+            <div class="field-group">
+                <label class="field">
+                    <span class="field-label">Last Name</span>
+                    <input asp-for="Input.LastName" autocomplete="family-name" />
+                </label>
+                <span asp-validation-for="Input.LastName" class="field-error"></span>
             </div>
-        }
-    </section>
-</div>
+
+            <label class="field locked">
+                <span class="field-label">Email</span>
+                <input type="text" value="@Model.Email" disabled />
+            </label>
+
+            <div class="field-group">
+                <label class="field">
+                    <span class="field-label">Phone Number</span>
+                    <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
+                </label>
+                <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
+            </div>
+
+            <label class="field">
+                <span class="field-label">Gender</span>
+                <select asp-for="Input.Gender" asp-items="Html.GetEnumSelectList<Gender>()" autocomplete="sex">
+                    <option value=""></option>
+                </select>
+            </label>
+
+            <div class="field-group">
+                <label class="field">
+                    <span class="field-label">Date of Birth</span>
+                    <input asp-for="Input.DateOfBirth" autocomplete="bday" min="1900-01-01"
+                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </label>
+                <span asp-validation-for="Input.DateOfBirth" class="field-error"></span>
+            </div>
+
+            <div class="profile-actions">
+                <a asp-page="/Customer/Profile" class="pill-btn ghost">Cancel</a>
+                <button type="submit" class="pill-btn">Save</button>
+            </div>
+        </form>
+    }
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -7,19 +7,16 @@
     <div class="nav-actions">
         @if (User.IsInRole(AppRoles.Customer))
         {
+            @* Logout lives in the account sidebar. On the account pages this link leads back to the dashboard instead. *@
             <span class="greeting">Hi, @User.Identity?.Name</span>
-            @* On the profile page this link leads back to the dashboard instead. *@
-            @if (ViewContext.RouteData.Values["page"] as string == "/Customer/Profile")
+            @if ((ViewContext.RouteData.Values["page"] as string ?? "").StartsWith("/Customer/"))
             {
-                <a asp-page="/Index" class="nav-link-plain">Back to dashboard</a>
+                <a asp-page="/Index" class="pill-btn">Back to dashboard</a>
             }
             else
             {
-                <a asp-page="/Customer/Profile" class="nav-link-plain">My Profile</a>
+                <a asp-page="/Customer/Profile" class="pill-btn">My Profile</a>
             }
-            <form method="post" asp-page="/Logout">
-                <button type="submit" class="pill-btn">Logout</button>
-            </form>
         }
         else
         {
