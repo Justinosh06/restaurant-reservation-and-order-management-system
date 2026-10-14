@@ -9,8 +9,14 @@ document.addEventListener("DOMContentLoaded", function () {
     );
     const noReservations = document.getElementById("noTableReservations");
     const reservationCount = document.getElementById("tableReservationCount");
+    const removeForm = document.getElementById("removeTableForm");
+    const removeTableId = document.getElementById("removeTableId");
+    const addPanel = document.getElementById("addTablePanel");
+    const addButton = document.getElementById("addTableButton");
+    const closeAddButton = document.getElementById("closeAddTableButton");
 
-    if (!app || !panel || !backdrop || !closeButton || !manageLink) {
+    if (!app || !panel || !backdrop || !closeButton || !manageLink
+        || !removeForm || !addPanel || !addButton || !closeAddButton) {
         console.error("Table management page is missing required elements.");
         return;
     }
@@ -29,6 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
             table.dataset.capacity + " seats";
         manageLink.href =
             "/Admin/Reservation/Management?tableId=" + encodeURIComponent(id);
+        removeTableId.value = id;
 
         let visibleCount = 0;
         reservationItems.forEach(function (item) {
@@ -49,10 +56,23 @@ document.addEventListener("DOMContentLoaded", function () {
         closeButton.focus();
     }
 
+    function openAddPanel() {
+        addPanel.classList.add("open");
+        backdrop.classList.add("open");
+        addPanel.setAttribute("aria-hidden", "false");
+        const checked = addPanel.querySelector("input[name=seats]:checked");
+        if (checked) {
+            checked.focus();
+        }
+    }
+
+    // Closes whichever side panel is open.
     function closePanel() {
-        panel.classList.remove("open");
+        [panel, addPanel].forEach(function (item) {
+            item.classList.remove("open");
+            item.setAttribute("aria-hidden", "true");
+        });
         backdrop.classList.remove("open");
-        panel.setAttribute("aria-hidden", "true");
     }
 
     document.querySelectorAll(".floor-table").forEach(function (button) {
@@ -62,10 +82,18 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     closeButton.addEventListener("click", closePanel);
+    closeAddButton.addEventListener("click", closePanel);
+    addButton.addEventListener("click", openAddPanel);
     backdrop.addEventListener("click", closePanel);
     document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape" && panel.classList.contains("open")) {
+        if (event.key === "Escape" && backdrop.classList.contains("open")) {
             closePanel();
+        }
+    });
+
+    removeForm.addEventListener("submit", function (event) {
+        if (!window.confirm("Remove table " + removeTableId.value + " from the floor plan?")) {
+            event.preventDefault();
         }
     });
 

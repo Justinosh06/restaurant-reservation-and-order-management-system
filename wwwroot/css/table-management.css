@@ -181,10 +181,10 @@ body:has(.service-app) {
 
 .floorplan {
     display: grid;
-    grid-template-columns: repeat(6, minmax(82px, 1fr));
-    grid-template-rows: repeat(3, minmax(150px, 1fr));
+    grid-template-columns: repeat(6, minmax(96px, 1fr));
+    align-items: center;
     gap: clamp(12px, 2.5vw, 28px);
-    min-height: 490px;
+    min-height: 300px;
     padding: 28px clamp(20px, 5vw, 65px);
     background-color: #fbfcfa;
     background-image: radial-gradient(#e9ece7 0.8px, transparent 0.8px);
@@ -192,11 +192,38 @@ body:has(.service-app) {
     background-size: 20px 20px;
 }
 
+/* A table on the floor plan: chairs above, the table top, chairs below. */
 .floor-table {
-    position: relative;
     display: flex;
     min-width: 0;
-    min-height: 108px;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border: 0;
+    background: none;
+    color: #3e433d;
+    cursor: pointer;
+    transition: transform .16s ease;
+}
+
+/* Tables with more than 6 seats take two spaces on the floor plan. */
+.floor-table.wide {
+    grid-column: span 2;
+}
+
+.floor-table:hover,
+.floor-table:focus-visible {
+    z-index: 1;
+    transform: translateY(-3px);
+    outline: none;
+}
+
+.table-top {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 92px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -206,53 +233,48 @@ body:has(.service-app) {
     border-radius: 17px;
     background: #fff;
     box-shadow: 0 5px 14px rgb(37 39 35 / 5%);
-    color: #3e433d;
-    cursor: pointer;
-    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    transition: box-shadow .16s ease, border-color .16s ease;
 }
 
-.floor-table:hover,
-.floor-table:focus-visible {
-    z-index: 1;
-    transform: translateY(-3px);
+.floor-table:hover .table-top,
+.floor-table:focus-visible .table-top {
     border-color: #a9c5b0;
     box-shadow: 0 9px 22px rgb(37 39 35 / 12%);
-    outline: none;
 }
 
-.floor-table:nth-child(1) { grid-area: 1 / 1; }
-.floor-table:nth-child(2) { grid-area: 1 / 2; }
-.floor-table:nth-child(3) { grid-area: 1 / 3; }
-.floor-table:nth-child(4) { grid-area: 1 / 4; }
-.floor-table:nth-child(5) { grid-area: 1 / 5; }
-.floor-table:nth-child(6) { grid-area: 1 / 6 / span 2 / span 1; }
-.floor-table:nth-child(7) { grid-area: 2 / 1; }
-.floor-table:nth-child(8) { grid-area: 2 / 2; }
-.floor-table:nth-child(9) { grid-area: 2 / 3; }
-.floor-table:nth-child(10) { grid-area: 2 / 4; }
-.floor-table:nth-child(11) { grid-area: 2 / 5; }
-.floor-table:nth-child(12) { grid-area: 3 / 1; }
-.floor-table:nth-child(13) { grid-area: 3 / 2; }
-.floor-table:nth-child(14) { grid-area: 3 / 3; }
-.floor-table:nth-child(15) { grid-area: 3 / 4; }
-.floor-table:nth-child(16) { grid-area: 3 / 5; }
-
-.floor-table:nth-child(6),
-.floor-table:nth-child(12),
-.floor-table:nth-child(14) {
-    border-radius: 42px;
-}
-
-.floor-table.reserved {
+.floor-table.reserved .table-top {
     border-color: #efc39f;
     background: var(--amber-soft);
     color: #6e452c;
 }
 
-.floor-table.soon {
+.floor-table.soon .table-top {
     border-color: #f0a395;
     background: var(--red-soft);
     color: #803b31;
+}
+
+.chair-row {
+    display: flex;
+    width: 100%;
+    min-height: 10px;
+    justify-content: center;
+    gap: 8px;
+}
+
+.chair {
+    flex: 0 1 22px;
+    height: 10px;
+    border-radius: 6px;
+    background: #d6dbd3;
+}
+
+.floor-table.reserved .chair {
+    background: #efc39f;
+}
+
+.floor-table.soon .chair {
+    background: #f0a395;
 }
 
 .table-status-mark {
@@ -783,26 +805,18 @@ body:has(.service-app) {
 
     .floorplan {
         grid-template-columns: repeat(4, minmax(58px, 1fr));
-        grid-template-rows: none;
-        grid-auto-rows: minmax(105px, auto);
         gap: 11px;
         min-height: 0;
         padding: 18px 14px;
     }
 
-    .floor-table:nth-child(n) {
-        grid-area: auto;
-    }
-
-    .floor-table {
-        min-height: 95px;
+    .table-top {
+        min-height: 80px;
         border-radius: 14px;
     }
 
-    .floor-table:nth-child(6),
-    .floor-table:nth-child(12),
-    .floor-table:nth-child(14) {
-        border-radius: 28px;
+    .chair-row {
+        gap: 5px;
     }
 
     .floorplan-footer {
@@ -838,5 +852,144 @@ body:has(.service-app) {
 
     .agenda-time {
         display: none;
+    }
+}
+
+/* Add-table button and panel */
+.floor-toolbar-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.add-table-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 15px;
+    border: 1px solid #cfe0d4;
+    border-radius: 9px;
+    background: #fff;
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.add-table-button:hover {
+    border-color: var(--green);
+}
+
+.add-table-button span {
+    font-size: 19px;
+    line-height: 1;
+}
+
+.seat-options {
+    margin: 0 0 18px;
+    padding: 0;
+    border: 0;
+}
+
+.seat-option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.seat-options legend {
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.seat-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 8px 10px;
+    border: 1px solid #ecefea;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.seat-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.seat-option:has(input:checked) {
+    border-color: var(--green);
+    background: var(--green-soft);
+}
+
+.seat-option:has(input:focus-visible) {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+}
+
+.seat-preview {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.seat-preview .chair-row {
+    gap: 4px;
+}
+
+.seat-preview .chair {
+    flex-basis: 12px;
+    height: 6px;
+}
+
+.seat-preview .table-top {
+    min-height: 22px;
+    padding: 0;
+    border-radius: 6px;
+    box-shadow: none;
+}
+
+.seat-label {
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.remove-table-form {
+    margin-top: 12px;
+}
+
+.remove-table-button {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid #f0c4bc;
+    border-radius: 9px;
+    background: #fff;
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.remove-table-button:hover {
+    background: var(--red-soft);
+}
+
+@media (max-width: 760px) {
+    .floor-toolbar-buttons {
+        justify-content: flex-start;
+    }
+
+    .add-table-button {
+        min-height: 36px;
+        padding: 0 10px;
+        font-size: 11px;
     }
 }

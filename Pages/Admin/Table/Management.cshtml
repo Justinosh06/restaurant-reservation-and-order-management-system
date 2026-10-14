@@ -12,6 +12,17 @@
         .Where(reservation => reservation.EndsAt > now)
         .OrderBy(reservation => reservation.ReservationAt)
         .ToList();
+
+    // Draws a row of chairs; a table's chairs are split between the rows above and below it.
+    void Chairs(int count)
+    {
+        <span class="chair-row" aria-hidden="true">
+            @for (var i = 0; i < count; i++)
+            {
+                <span class="chair"></span>
+            }
+        </span>
+    }
 }
 
 <link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
@@ -25,11 +36,16 @@
                 <p class="subheading">Choose a table to view its availability and bookings.</p>
             </div>
             <div class="floor-toolbar-actions">
+                <div class="floor-toolbar-buttons">
+                    <button type="button" class="add-table-button" id="addTableButton">
+                        <span aria-hidden="true">+</span> Add table
+                    </button>
                 <a class="new-reservation-button"
                    href="/Admin/Reservation/Management?newReservation=true"
                    id="newReservationButton">
                     <span aria-hidden="true">+</span> New reservation
                 </a>
+                </div>
                 <div class="legend" aria-label="Table availability">
                     <span><i class="legend-dot available"></i>Available</span>
                     <span><i class="legend-dot reserved"></i>Reserved</span>
@@ -37,6 +53,11 @@
                 </div>
             </div>
         </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="status-message" role="status">@Model.StatusMessage</div>
+        }
 
         <section class="floorplan-shell" id="floorplan" aria-label="Restaurant floor plan">
             <div class="floorplan-label">
@@ -52,23 +73,27 @@
                         && nextReservation.ReservationAt <= now.AddMinutes(60);
 
                     <button type="button"
-                            class="floor-table @(nextReservation is null ? "available" : startsSoon ? "soon" : "reserved")"
+                            class="floor-table @(nextReservation is null ? "available" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
-                            aria-label="Table @table.Id, @(nextReservation is null ? "available" : "reserved")">
-                        <span class="table-status-mark" aria-hidden="true"></span>
-                        <span class="table-name">@table.Id</span>
-                        @if (nextReservation is not null)
-                        {
-                            <span class="table-booking">
-                                <span>@nextReservation.PartySize guests</span>
-                                <span>@nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="table-seats">@table.Capacity seats</span>
-                        }
+                            aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : "reserved")">
+                        @{ Chairs((table.Capacity + 1) / 2); }
+                        <span class="table-top">
+                            <span class="table-status-mark" aria-hidden="true"></span>
+                            <span class="table-name">@table.Id</span>
+                            @if (nextReservation is not null)
+                            {
+                                <span class="table-booking">
+                                    <span>@nextReservation.PartySize guests</span>
+                                    <span>@nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="table-seats">@table.Capacity seats</span>
+                            }
+                        </span>
+                        @{ Chairs(table.Capacity / 2); }
                     </button>
                 }
             </div>
@@ -123,6 +148,48 @@
            href="/Admin/Reservation/Management">
             Manage reservations
         </a>
+
+        <form method="post" asp-page-handler="RemoveTable" class="remove-table-form" id="removeTableForm">
+            <input type="hidden" name="tableId" id="removeTableId" />
+            <button type="submit" class="remove-table-button">Remove table</button>
+        </form>
+    </div>
+</aside>
+
+<aside class="reservation-panel add-table-panel"
+       id="addTablePanel"
+       aria-labelledby="addTableTitle"
+       aria-hidden="true">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">NEW TABLE</p>
+            <h2 id="addTableTitle">Add a table</h2>
+            <span class="panel-capacity">Choose how many people it seats.</span>
+        </div>
+        <button type="button" class="panel-close" id="closeAddTableButton" aria-label="Close panel">×</button>
+    </div>
+
+    <div class="panel-body">
+        <form method="post" asp-page-handler="AddTable" class="reservation-form">
+            <fieldset class="seat-options">
+                <legend>Seats</legend>
+                <div class="seat-option-grid">
+                @foreach (var seats in TableManagementModel.SeatOptions)
+                {
+                    <label class="seat-option">
+                        <input type="radio" name="seats" value="@seats" checked="@(seats == 4)" />
+                        <span class="seat-preview" aria-hidden="true">
+                            @{ Chairs((seats + 1) / 2); }
+                            <span class="table-top"></span>
+                            @{ Chairs(seats / 2); }
+                        </span>
+                        <span class="seat-label">@seats seats</span>
+                    </label>
+                }
+                </div>
+            </fieldset>
+            <button type="submit" class="submit-reservation-button">Add table</button>
+        </form>
     </div>
 </aside>
 
