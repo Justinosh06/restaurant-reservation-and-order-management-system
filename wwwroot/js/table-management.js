@@ -95,9 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
     removeForm.addEventListener("submit", function (event) {
         const count = Number(removeTableId.dataset.reservationCount);
         const warning = count > 0
-            ? "
-
-This also deletes its " + count + (count === 1 ? " reservation." : " reservations.")
+            ? "\n\nThis also deletes its " + count + (count === 1 ? " reservation." : " reservations.")
             : "";
         if (!window.confirm("Remove table " + removeTableId.value + " from the floor plan?" + warning)) {
             event.preventDefault();
