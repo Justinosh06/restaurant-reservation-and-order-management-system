@@ -69,16 +69,15 @@
                         <p class="email">@User.Identity?.Name</p>
                     </div>
                 </button>
-                <ul class="dropdown-menu w-100">
+                <ul class="dropdown-menu w-100 profile-menu">
                     <li>
                         <a class="dropdown-item" asp-page="/Admin/Profile/Profile">
                             <i class="fa-regular fa-user fa-fw me-2"></i>Profile
                         </a>
                     </li>
-                    <li><hr class="dropdown-divider" /></li>
                     <li>
                         <form method="post" asp-page="/Admin/Logout">
-                            <button type="submit" class="dropdown-item text-danger">
+                            <button type="submit" class="dropdown-item logout-item">
                                 <i class="fa-solid fa-arrow-right-from-bracket fa-fw me-2"></i>Logout
                             </button>
                         </form>
