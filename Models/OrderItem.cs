@@ -15,6 +15,8 @@ namespace RestaurantReservation.Models
 
         public string? Remarks { get; set; }
 
+        public Dictionary<string, string> Options { get; set; } = new();
+
         // Foreign Keys
         [Required]
         public string OrderId { get; set; } = string.Empty;

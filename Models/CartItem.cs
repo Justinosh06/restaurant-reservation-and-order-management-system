@@ -1,0 +1,31 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RestaurantReservation.Models
+{
+    public class CartItem
+    {
+        [Key]
+        [Required(ErrorMessage = "Cart item ID is required.")]
+        public string Id { get; set; } = string.Empty;
+
+        [Required]
+        [Range(1, 20, ErrorMessage = "Value must be between 1 and 20.")]
+        public int Quantity { get; set; }
+
+        public Dictionary<string, string> Options { get; set; } = new();
+
+        // Foreign Keys
+        [Required]
+        public string SessionId { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(SessionId))]
+        public Session? Session { get; set; }
+
+        [Required]
+        public string MenuItemId { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(MenuItemId))]
+        public MenuItem? MenuItem { get; set; }
+    }
+}

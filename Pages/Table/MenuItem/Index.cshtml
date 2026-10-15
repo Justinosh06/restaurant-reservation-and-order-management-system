@@ -6,26 +6,33 @@
 
 <link rel="stylesheet" href="~/css/menu_item.css" />
 
+<header class="header">
+    <a onclick="window.history.back()"
+        class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i>
+    </a>
+</header>
+
 <div class="d-flex menu-item-container">
     <div class="display-container">
-        <a asp-page="/Table/Index" 
-           asp-route-tableId="@Model.TableId" 
-           class="back-btn">
-            <i class="fa-solid fa-arrow-left"></i>
-        </a>
+
     </div>
 
     <div class="info-container">
-        <div class="center-container">
-            <h1 class="title">Spaghetti Bolognaise</h1>
-            <p class="description">lorem ipsum dolor sit amet consectetur adipiscing elit similique aute dolore non id aute deserunt ullamco quis aliquip placeat sed ut maxime minus est exercitation id id esse dolores harum temporibus optio incididunt veniam imperdiet irure libero cum pariatur et et similique fugiat odio in quod libero lorem et reprehenderit</p>
+        <h1 class="title">Spaghetti Bolognaise</h1>
 
-            <label class="input-label">Remark</label>
-            <textarea class="remark-input"></textarea>
+        <label class="input-label">Remark</label>
+        <textarea class="remark-input" maxlength="300"></textarea>
+        <span class="character-counter">0/300</span>
 
-            <button class="add-to-cart-btn">
-                Add to Cart
-            </button>
-        </div>
+        <button class="add-to-cart-btn">
+            Add to Cart
+        </button>
+
+        <p class="description">lorem ipsum dolor sit amet consectetur adipiscing elit similique aute dolore non id aute deserunt ullamco quis aliquip placeat sed ut maxime minus est exercitation id id esse dolores harum temporibus optio incididunt veniam imperdiet irure libero cum pariatur et et similique fugiat odio in quod libero lorem et reprehenderit</p>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/menuItem.js" asp-append-version="true"></script>
+}

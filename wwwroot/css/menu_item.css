@@ -7,8 +7,6 @@
         flex: 1;
         position: relative;
         height: 100%;
-        background-color: #F2F2F3;
-        border-radius: 25px;
 
         .back-btn {
             position: absolute;
@@ -30,52 +28,56 @@
     .info-container {
         flex: 1;
         display: flex;
+        flex-direction: column;
         padding: 16px;
-        align-items: center;
-        justify-content: center;
         overflow-y: auto;
 
-        .center-container {
+        .title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .description {
+            margin-bottom: 32px;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .input-label {
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .remark-input {
+            padding: 12px;
+            margin-bottom: 8px;
+            resize: none;
+            height: 200px;
             width: 100%;
+            border: none;
+            border-radius: 20px;
+            background: #F2F2F3;
+        }
 
-            .title {
-                font-size: 2.5rem;
-                font-weight: 600;
-                letter-spacing: -2px;
-                text-transform: uppercase;
-            }
+        .remark-input:focus {
+            outline: none;
+        }
 
-            .description {
-                margin-bottom: 16px;
-            }
+        .character-counter {
+            text-align: right;
+            margin-bottom: 20px;
+        }
 
-            .input-label {
-                font-weight: 700;
-            }
-
-            .remark-input {
-                padding: 12px;
-                margin-bottom: 8px;
-                resize: none;
-                height: 200px;
-                width: 100%;
-                border: none;
-                border-radius: 20px;
-                background: #F2F2F3;
-            }
-
-            .remark-input:focus {
-                outline: none;
-            }
-
-            .add-to-cart-btn {
-                color: white;
-                background: black;
-                border-radius: 100px;
-                font-weight: 600;
-                padding: 8px;
-                width: 100%;
-            }
+        .add-to-cart-btn {
+            color: var(--primary-color);
+            background: var(--secondary-color);
+            font-family: "Bricolage Grotesque", sans-serif;
+            border-radius: 100px;
+            font-weight: 800;
+            padding: 12px;
+            width: 100%;
         }
     }
 }
