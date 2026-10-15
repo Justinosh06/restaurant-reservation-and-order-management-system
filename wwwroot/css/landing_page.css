@@ -188,6 +188,124 @@ body:has(.landing) {
             }
         }
 
+        /* Customer's next booking, beside the reservation form. */
+        .upcoming-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+            .card-title {
+                font-size: 1.5rem;
+                font-weight: 600;
+                font-family: "Bricolage Grotesque", sans-serif;
+                margin-bottom: 0;
+            }
+
+            .empty-note {
+                margin: 0;
+            }
+
+            .status-pill {
+                margin-left: auto;
+                background: black;
+                color: white;
+            }
+
+            .status-pill.muted {
+                background: #DFDFE1;
+                color: #444444;
+            }
+        }
+
+        .upcoming-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            .upcoming-date {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 56px;
+                height: 56px;
+                flex-shrink: 0;
+                border-radius: 12px;
+                background: #F2F2F3;
+                line-height: 1.1;
+
+                strong {
+                    font-size: 1.4rem;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                span {
+                    color: #666666;
+                    font-size: 0.8rem;
+                    text-transform: uppercase;
+                }
+            }
+
+            .upcoming-day {
+                display: block;
+                color: #666666;
+                font-size: 0.85rem;
+            }
+
+            .upcoming-time {
+                font-size: 1.25rem;
+                font-weight: 700;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+        }
+
+        .upcoming-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 16px;
+            margin: 0;
+
+            .wide {
+                grid-column: 1 / -1;
+            }
+
+            dt {
+                color: #666666;
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            dd {
+                margin: 0;
+                font-weight: 600;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        .upcoming-more {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border-top: 1px solid #ECECEC;
+
+            li {
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 4px 12px;
+                padding: 8px 0 0;
+                font-weight: 500;
+            }
+
+            .hint {
+                margin: 0;
+            }
+        }
+
         .menu-list {
             list-style: none;
             margin: 0 0 16px;
@@ -209,10 +327,31 @@ body:has(.landing) {
         }
     }
 
+    /* Customers see the reservation form, their upcoming booking and today's menu side by side. */
+    .booking-row.with-upcoming {
+        grid-template-columns: 320px 320px 1fr;
+        gap: 32px;
+    }
+
+    .specials > .hint {
+        margin: 12px 0 0;
+    }
+
     .specials-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 16px;
+
+        .special-link {
+            color: black;
+            text-decoration: none;
+        }
+
+        .special-link:focus-visible {
+            outline: 2px solid black;
+            outline-offset: 4px;
+            border-radius: 16px;
+        }
 
         .special-card {
             margin: 0;
@@ -222,6 +361,7 @@ body:has(.landing) {
                 height: clamp(220px, 30vw, 460px);
                 object-fit: cover;
                 border-radius: 16px;
+                transition: 300ms ease-in-out;
             }
 
             figcaption {
@@ -572,42 +712,92 @@ body:has(.landing) {
     }
 
     .profile {
-        .profile-card {
+        /* My profile: no box behind the fields; each field name sits above its value. */
+        .profile-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px 32px;
             align-items: start;
-            padding: 16px 20px;
-            border-radius: 16px;
-            background: #DFDFE1;
+            max-width: 960px;
         }
 
-        .field-group {
+        .profile-field {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-        }
+            gap: 6px;
+            min-width: 0;
+            margin: 0;
 
-        /* One field per line, e.g. the Password page. */
-        .profile-card.single {
-            grid-template-columns: 1fr;
-            max-width: 640px;
+            .field-label {
+                color: #666666;
+                font-size: 0.85rem;
+                font-weight: 500;
+            }
 
-            .field .field-label {
-                width: 150px;
+            .field-value {
+                padding-bottom: 8px;
+                border-bottom: 1px solid #CCCCCC;
+                font-size: 1.05rem;
+                font-weight: 600;
+                overflow-wrap: anywhere;
+            }
+
+            input,
+            select {
+                width: 100%;
+                padding: 10px 12px;
+                border: 1px solid #CCCCCC;
+                border-radius: 8px;
+                background: white;
+                color: #444444;
+            }
+
+            input:focus,
+            select:focus {
+                outline: 2px solid black;
+                border-color: transparent;
             }
         }
 
-        .field .field-label {
-            width: 120px;
+        .profile-field.locked input {
+            background: transparent;
+            color: #666666;
         }
 
-        .field.locked {
-            background: transparent;
-            outline: 1px solid #CCCCCC;
+        .profile-field.wide {
+            grid-column: 1 / -1;
+        }
+
+        /* One field per line, e.g. the Password page. */
+        .profile-grid.single {
+            grid-template-columns: minmax(0, 1fr);
+            max-width: 520px;
+        }
+
+        /* Password box with the show/hide eye button inside it on the right. */
+        .password-input {
+            position: relative;
 
             input {
+                padding-right: 44px;
+            }
+
+            .password-toggle {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 44px;
+                height: 100%;
+                border-radius: 0 8px 8px 0;
                 color: #666666;
+            }
+
+            .password-toggle:hover {
+                color: black;
+            }
+
+            .password-toggle:focus-visible {
+                outline: 2px solid black;
             }
         }
 
@@ -616,7 +806,6 @@ body:has(.landing) {
             display: none;
         }
 
-        .field.wide,
         .profile-actions,
         .validation-summary-errors {
             grid-column: 1 / -1;
@@ -640,6 +829,10 @@ body:has(.landing) {
             background: #F2F2F3;
             color: black;
         }
+    }
+
+    .special-link:hover img {
+        opacity: 0.85;
     }
 
     .reviews[open] summary i {
@@ -765,14 +958,27 @@ body:has(.landing) {
     }
 }
 
+/* Narrower screens: the two booking cards share the first row and the menu moves below them. */
+@media only screen and (max-width: 1200px) {
+    .landing .booking-row.with-upcoming {
+        grid-template-columns: 1fr 1fr;
+
+        .today-menu {
+            grid-column: 1 / -1;
+        }
+    }
+}
+
 @media only screen and (max-width: 992px) {
+    /* minmax(0, 1fr) keeps the column at the screen width; a plain 1fr would grow to fit the widest content. */
     .account {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     /* On small screens the sidebar becomes a row of links above the page. */
     .account-sidebar {
         position: static;
+        min-width: 0;
 
         .sidebar-links {
             flex-direction: row;
@@ -788,6 +994,59 @@ body:has(.landing) {
             padding: 0;
             border: none;
         }
+    }
+}
+
+/* Phones: the sidebar becomes one row of four tabs, each with its icon above a short label. */
+@media only screen and (max-width: 576px) {
+    .account {
+        gap: 16px;
+    }
+
+    .account-sidebar {
+        padding: 6px;
+
+        .sidebar-title {
+            display: none;
+        }
+
+        .sidebar-links {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px;
+        }
+
+        .sidebar-link {
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            padding: 8px 4px;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            text-align: center;
+
+            i {
+                width: auto;
+                font-size: 1.1rem;
+            }
+        }
+
+        .sidebar-logout {
+            margin: 0;
+
+            form {
+                height: 100%;
+            }
+
+            .sidebar-link {
+                height: 100%;
+            }
+        }
+    }
+
+    /* The greeting is dropped so the brand and the dashboard button fit on one line. */
+    .landing .landing-nav .greeting {
+        display: none;
     }
 }
 
@@ -810,6 +1069,7 @@ body:has(.landing) {
         }
 
         .booking-row,
+        .booking-row.with-upcoming,
         .location {
             grid-template-columns: 1fr;
         }
@@ -818,8 +1078,37 @@ body:has(.landing) {
             grid-template-columns: 1fr;
         }
 
-        .profile .profile-card {
-            grid-template-columns: 1fr;
+        .section-title {
+            font-size: 1.8rem;
+        }
+
+        .landing-nav {
+            .brand {
+                font-size: 1.6rem;
+            }
+
+            .nav-actions {
+                gap: 12px;
+            }
+
+            .pill-btn {
+                padding: 8px 16px;
+            }
+        }
+
+        .profile .profile-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .profile .profile-grid {
+            gap: 16px;
+        }
+
+        /* Buttons fill the width so they are easy to tap. */
+        .profile .profile-actions {
+            .pill-btn {
+                flex: 1;
+            }
         }
 
         .location {

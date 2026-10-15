@@ -15,36 +15,36 @@
 
     @if (!Model.IsEditing)
     {
-        @* View mode *@
-        <div class="profile-card">
-            <label class="field locked wide">
+        @* View mode: each field name with its value below it *@
+        <div class="profile-grid">
+            <div class="profile-field wide">
                 <span class="field-label">User ID</span>
-                <input type="text" value="@Model.UserId" readonly />
-            </label>
-            <label class="field locked">
+                <span class="field-value">@Model.UserId</span>
+            </div>
+            <div class="profile-field">
                 <span class="field-label">First Name</span>
-                <input type="text" value="@Model.Input.FirstName" readonly />
-            </label>
-            <label class="field locked">
+                <span class="field-value">@Model.Input.FirstName</span>
+            </div>
+            <div class="profile-field">
                 <span class="field-label">Last Name</span>
-                <input type="text" value="@Model.Input.LastName" readonly />
-            </label>
-            <label class="field locked">
+                <span class="field-value">@Model.Input.LastName</span>
+            </div>
+            <div class="profile-field">
                 <span class="field-label">Email</span>
-                <input type="text" value="@Model.Email" readonly />
-            </label>
-            <label class="field locked">
+                <span class="field-value">@Model.Email</span>
+            </div>
+            <div class="profile-field">
                 <span class="field-label">Phone Number</span>
-                <input type="text" value="@Model.Input.PhoneNumber" readonly />
-            </label>
-            <label class="field locked">
+                <span class="field-value">@Model.Input.PhoneNumber</span>
+            </div>
+            <div class="profile-field">
                 <span class="field-label">Gender</span>
-                <input type="text" value="@Model.Input.Gender" readonly />
-            </label>
-            <label class="field locked">
+                <span class="field-value">@(Model.Input.Gender?.ToString() ?? "-")</span>
+            </div>
+            <div class="profile-field">
                 <span class="field-label">Date of Birth</span>
-                <input type="text" value="@Model.Input.DateOfBirth?.ToString("d MMM yyyy")" readonly />
-            </label>
+                <span class="field-value">@(Model.Input.DateOfBirth?.ToString("d MMM yyyy") ?? "-")</span>
+            </div>
 
             <form method="get" class="profile-actions">
                 <button type="submit" name="edit" value="true" class="pill-btn">Edit</button>
@@ -54,58 +54,50 @@
     else
     {
         @* Edit mode: User ID and Email stay locked *@
-        <form method="post" class="profile-card">
+        <form method="post" class="profile-grid">
             <div asp-validation-summary="ModelOnly" class="field-error"></div>
 
-            <label class="field locked wide">
+            <label class="profile-field locked wide">
                 <span class="field-label">User ID</span>
                 <input type="text" value="@Model.UserId" disabled />
             </label>
 
-            <div class="field-group">
-                <label class="field">
-                    <span class="field-label">First Name</span>
-                    <input asp-for="Input.FirstName" autocomplete="given-name" />
-                </label>
+            <label class="profile-field">
+                <span class="field-label">First Name</span>
+                <input asp-for="Input.FirstName" autocomplete="given-name" />
                 <span asp-validation-for="Input.FirstName" class="field-error"></span>
-            </div>
+            </label>
 
-            <div class="field-group">
-                <label class="field">
-                    <span class="field-label">Last Name</span>
-                    <input asp-for="Input.LastName" autocomplete="family-name" />
-                </label>
+            <label class="profile-field">
+                <span class="field-label">Last Name</span>
+                <input asp-for="Input.LastName" autocomplete="family-name" />
                 <span asp-validation-for="Input.LastName" class="field-error"></span>
-            </div>
+            </label>
 
-            <label class="field locked">
+            <label class="profile-field locked">
                 <span class="field-label">Email</span>
                 <input type="text" value="@Model.Email" disabled />
             </label>
 
-            <div class="field-group">
-                <label class="field">
-                    <span class="field-label">Phone Number</span>
-                    <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
-                </label>
+            <label class="profile-field">
+                <span class="field-label">Phone Number</span>
+                <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
                 <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
-            </div>
+            </label>
 
-            <label class="field">
+            <label class="profile-field">
                 <span class="field-label">Gender</span>
                 <select asp-for="Input.Gender" asp-items="Html.GetEnumSelectList<Gender>()" autocomplete="sex">
                     <option value=""></option>
                 </select>
             </label>
 
-            <div class="field-group">
-                <label class="field">
-                    <span class="field-label">Date of Birth</span>
-                    <input asp-for="Input.DateOfBirth" autocomplete="bday" min="1900-01-01"
-                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                </label>
+            <label class="profile-field">
+                <span class="field-label">Date of Birth</span>
+                <input asp-for="Input.DateOfBirth" autocomplete="bday" min="1900-01-01"
+                       max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                 <span asp-validation-for="Input.DateOfBirth" class="field-error"></span>
-            </div>
+            </label>
 
             <div class="profile-actions">
                 <a asp-page="/Customer/Profile" class="pill-btn ghost">Cancel</a>
