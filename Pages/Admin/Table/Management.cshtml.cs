@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,12 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
     // Every reservation per table, any status, so staff are warned before removing a booked table.
     public Dictionary<string, int> ReservationCounts { get; private set; } = [];
 
+    // Upcoming reservations for the sidebar: ones still needing a table first, then by time.
+    public List<ReservationSummary> Queue { get; private set; } = [];
+
+    // For each reservation in the queue, the tables it can be moved to (big enough and free then).
+    public Dictionary<string, List<string>> FittingTables { get; private set; } = [];
+
     [TempData]
     public string? StatusMessage { get; set; }
 
@@ -40,9 +47,25 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         Reservations = reservations.Select(ReservationSummary.From).ToList();
 
         ReservationCounts = await db.Reservations
-            .GroupBy(reservation => reservation.TableId)
+            .Where(reservation => reservation.TableId != null)
+            .GroupBy(reservation => reservation.TableId!)
             .Select(group => new { TableId = group.Key, Count = group.Count() })
             .ToDictionaryAsync(item => item.TableId, item => item.Count);
+
+        var now = DateTime.Now;
+        Queue = Reservations
+            .Where(reservation => reservation.EndsAt > now)
+            .OrderBy(reservation => reservation.TableId is not null)
+            .ThenBy(reservation => reservation.ReservationAt)
+            .ToList();
+        FittingTables = Queue.ToDictionary(
+            reservation => reservation.Id,
+            reservation => Tables
+                .Where(table => table.Id != reservation.TableId
+                    && table.Capacity >= reservation.PartySize
+                    && ReservationSummary.FindClash(Reservations, table.Id, reservation.ReservationAt, reservation.Id) is null)
+                .Select(table => table.Id)
+                .ToList());
 
         SelectedTableId = Tables.FirstOrDefault(table => table.Id == tableId)?.Id;
     }
@@ -95,6 +118,61 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         StatusMessage = reservations.Count == 0
             ? $"Table {table.Id} removed."
             : $"Table {table.Id} removed with its {reservations.Count} reservation{(reservations.Count == 1 ? "" : "s")}.";
+        return RedirectToPage();
+    }
+
+    // Puts a reservation on a table, or takes it off its table when tableId is empty.
+    public async Task<IActionResult> OnPostAssignAsync(string? reservationId, string? tableId)
+    {
+        var reservation = reservationId is null ? null : await db.Reservations.FindAsync(reservationId);
+        if (reservation is null)
+        {
+            StatusMessage = "That reservation no longer exists.";
+            return RedirectToPage();
+        }
+
+        await db.Entry(reservation).Reference(item => item.Customer).LoadAsync();
+        var summary = ReservationSummary.From(reservation);
+        var label = $"{summary.CustomerName} ({summary.PartySize} guests, "
+            + $"{summary.ReservationAt.ToString("ddd d MMM, h:mm tt", CultureInfo.CurrentCulture)})";
+
+        if (string.IsNullOrEmpty(tableId))
+        {
+            reservation.TableId = null;
+            await db.SaveChangesAsync();
+            StatusMessage = $"{label} no longer has a table.";
+            return RedirectToPage();
+        }
+
+        var table = await db.Tables.FindAsync(tableId);
+        if (table is null)
+        {
+            StatusMessage = "That table no longer exists.";
+            return RedirectToPage();
+        }
+
+        if (reservation.Pax > table.Capacity)
+        {
+            StatusMessage = $"Table {table.Id} only seats {table.Capacity}, so it can't take {label}.";
+            return RedirectToPage();
+        }
+
+        var others = (await db.Reservations.AsNoTracking()
+                .Include(item => item.Customer)
+                .Where(item => item.TableId == table.Id)
+                .ToListAsync())
+            .Select(ReservationSummary.From);
+        var clash = ReservationSummary.FindClash(others, table.Id, summary.ReservationAt, reservation.Id);
+        if (clash is not null)
+        {
+            StatusMessage = $"Table {table.Id} is already booked by {clash.CustomerName} at "
+                + $"{clash.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)}.";
+            return RedirectToPage();
+        }
+
+        reservation.TableId = table.Id;
+        await db.SaveChangesAsync();
+        StatusMessage = $"{label} is now at table {table.Id}.";
         return RedirectToPage();
     }
 

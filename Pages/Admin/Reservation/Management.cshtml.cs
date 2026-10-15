@@ -148,12 +148,13 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
     // existing is the reservation being edited, or null when creating one.
     private bool ValidateReservation(Reservation? existing)
     {
+        // The table is optional here; staff can assign it later on Table Management.
         var table = Tables.FirstOrDefault(item => item.Id == Input.TableId);
-        if (table is null)
+        if (table is null && !string.IsNullOrEmpty(Input.TableId))
         {
             ModelState.AddModelError("Input.TableId", "Select a valid table.");
         }
-        else if (Input.PartySize > table.Capacity)
+        else if (table is not null && Input.PartySize > table.Capacity)
         {
             ModelState.AddModelError("Input.PartySize", $"Table {table.Id} seats up to {table.Capacity} guests.");
         }
@@ -170,10 +171,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
 
         var clash = table is null
             ? null
-            : Reservations.FirstOrDefault(item => item.Id != existing?.Id
-                && item.TableId == table.Id
-                && item.Status != ReservationStatus.Cancelled
-                && item.Overlaps(Input.ReservationAt));
+            : ReservationSummary.FindClash(Reservations, table.Id, Input.ReservationAt, existing?.Id);
         if (clash is not null)
         {
             ModelState.AddModelError("Input.ReservationAt",
@@ -186,7 +184,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
 
     private void ApplyInput(Reservation reservation)
     {
-        reservation.TableId = Input.TableId;
+        reservation.TableId = string.IsNullOrEmpty(Input.TableId) ? null : Input.TableId;
         reservation.GuestName = Input.CustomerName.Trim();
         reservation.ContactNumber = NormalizeOptional(Input.ContactNumber);
         reservation.Pax = Input.PartySize;
@@ -200,8 +198,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
 
     public sealed class ReservationInput
     {
-        [Required]
-        public string TableId { get; set; } = string.Empty;
+        public string? TableId { get; set; }
 
         [Required]
         [StringLength(80)]

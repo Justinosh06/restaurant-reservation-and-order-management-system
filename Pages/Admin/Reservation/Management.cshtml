@@ -81,7 +81,7 @@
                             </div>
                             <div class="agenda-details">
                                 <strong>@reservation.CustomerName</strong>
-                                <span>Table @reservation.TableId · @reservation.PartySize guests · @reservation.Status</span>
+                                <span>@(reservation.TableId is null ? "No table yet" : $"Table {reservation.TableId}") · @reservation.PartySize guests · @reservation.Status</span>
                             </div>
                             <time class="agenda-time" datetime="@reservation.ReservationAt.ToString("yyyy-MM-ddTHH:mm:ss")">
                                 @reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)
@@ -132,12 +132,6 @@
     </div>
 
     <div class="panel-body">
-        @if (Model.Tables.Count == 0)
-        {
-            <p class="no-tables-note">
-                There are no tables yet. Add one in <a asp-page="/Admin/Table/Management">Table Management</a> first.
-            </p>
-        }
         <form method="post"
               asp-page-handler="Create"
               id="createReservationForm"
@@ -148,6 +142,7 @@
 
             <label for="createTableId">Table</label>
             <select asp-for="Input.TableId" id="createTableId" class="reservation-select">
+                <option value="">Assign later on Table Management</option>
                 @foreach (var table in Model.Tables)
                 {
                     <option value="@table.Id">Table @table.Id · @table.Capacity seats</option>
@@ -192,6 +187,7 @@
 
             <label for="editTableId">Table</label>
             <select asp-for="Input.TableId" id="editTableId" class="reservation-select">
+                <option value="">Assign later on Table Management</option>
                 @foreach (var table in Model.Tables)
                 {
                     <option value="@table.Id">Table @table.Id · @table.Capacity seats</option>

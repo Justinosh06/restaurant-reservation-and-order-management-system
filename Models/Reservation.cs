@@ -34,8 +34,8 @@ namespace RestaurantReservation.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Foreign Keys
-        [Required]
-        public string TableId { get; set; } = string.Empty;
+        // Empty until staff assign the booking to a table on Table Management.
+        public string? TableId { get; set; }
 
         [ForeignKey(nameof(TableId))]
         public Table? Table { get; set; }

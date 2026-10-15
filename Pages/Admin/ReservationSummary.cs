@@ -6,7 +6,7 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 // (taken by staff) or, when it has none, from the customer's account.
 public sealed record ReservationSummary(
     string Id,
-    string TableId,
+    string? TableId,
     string CustomerName,
     string? ContactNumber,
     int PartySize,
@@ -20,6 +20,14 @@ public sealed record ReservationSummary(
     public DateTime EndsAt => ReservationAt + SlotLength;
 
     public bool Overlaps(DateTime start) => ReservationAt < start + SlotLength && start < EndsAt;
+
+    // The booking already holding tableId around start, if any. ignoreId is the reservation being placed.
+    public static ReservationSummary? FindClash(
+        IEnumerable<ReservationSummary> reservations, string tableId, DateTime start, string? ignoreId) =>
+        reservations.FirstOrDefault(item => item.Id != ignoreId
+            && item.TableId == tableId
+            && item.Status != ReservationStatus.Cancelled
+            && item.Overlaps(start));
 
     public static ReservationSummary From(Reservation reservation) =>
         new(

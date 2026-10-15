@@ -181,7 +181,7 @@ body:has(.service-app) {
 
 .floorplan {
     display: grid;
-    grid-template-columns: repeat(6, minmax(96px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
     align-items: center;
     gap: clamp(12px, 2.5vw, 28px);
     min-height: 300px;
@@ -1029,4 +1029,210 @@ body:has(.service-app) {
     background: var(--amber-soft);
     color: #6e452c;
     font-size: 12px;
+}
+
+/* Floor plan with the reservations sidebar on the right */
+.service-app:has(.table-workspace) .service-main {
+    width: min(1440px, calc(100% - 48px));
+}
+
+.table-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 310px;
+    align-items: start;
+    gap: 20px;
+}
+
+.reservation-queue {
+    position: sticky;
+    top: 16px;
+    display: flex;
+    max-height: calc(100dvh - 32px);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e9eae6;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 10px 35px rgb(32 40 32 / 3%);
+}
+
+.queue-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 17px 18px;
+    border-bottom: 1px solid #f0f1ee;
+}
+
+.queue-heading h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.queue-heading span {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.queue-hint {
+    margin: 0;
+    padding: 12px 18px 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.queue-list {
+    display: grid;
+    gap: 8px;
+    overflow-y: auto;
+    padding: 10px 14px 16px;
+}
+
+.queue-item {
+    display: grid;
+    gap: 3px;
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #ecefea;
+    border-left: 4px solid #cfd9d1;
+    border-radius: 11px;
+    background: #fff;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .16s ease, background .16s ease;
+}
+
+.queue-item.unassigned {
+    border-left-color: var(--amber);
+}
+
+.queue-item:hover {
+    border-color: #a9c5b0;
+}
+
+.queue-item.selected {
+    border-color: var(--green);
+    border-left-color: var(--green);
+    background: var(--green-soft);
+}
+
+.queue-time {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.queue-name {
+    font-size: 13px;
+}
+
+.queue-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #5e685e;
+    font-size: 12px;
+}
+
+.queue-table {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f1f3ef;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.queue-item.unassigned .queue-table {
+    background: var(--amber-soft);
+    color: #9b623a;
+}
+
+.queue-empty {
+    padding: 28px 18px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+.queue-empty strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--ink);
+    font-size: 13px;
+}
+
+.queue-empty p {
+    margin: 0;
+}
+
+/* While a reservation is selected: tables it fits are outlined, the rest fade. */
+.assign-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid #cbe3d2;
+    background: var(--green-soft);
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.assign-banner[hidden] {
+    display: none;
+}
+
+.assign-banner.warning {
+    border-bottom-color: #efc39f;
+    background: var(--amber-soft);
+    color: #9b623a;
+}
+
+.assign-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+.assign-cancel,
+.assign-unassign {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid currentColor;
+    border-radius: 8px;
+    background: #fff;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.assign-unassign {
+    color: var(--red);
+}
+
+.assigning .floor-table.no-fit {
+    opacity: .35;
+}
+
+.assigning .floor-table.fits .table-top {
+    border: 2px solid var(--green);
+    box-shadow: 0 0 0 4px rgb(39 108 75 / 12%);
+}
+
+.assigning .floor-table.current .table-top {
+    border: 2px dashed var(--green);
+}
+
+@media (max-width: 1100px) {
+    .table-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-queue {
+        position: static;
+        max-height: none;
+    }
 }

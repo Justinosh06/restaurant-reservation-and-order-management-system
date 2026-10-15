@@ -33,18 +33,13 @@
             <div>
                 <p class="eyebrow">DINING ROOM</p>
                 <h1>Table Management</h1>
-                <p class="subheading">Choose a table to view its availability and bookings.</p>
+                <p class="subheading">Pick a reservation on the right, then tap a table to seat it there.</p>
             </div>
             <div class="floor-toolbar-actions">
                 <div class="floor-toolbar-buttons">
                     <button type="button" class="add-table-button" id="addTableButton">
                         <span aria-hidden="true">+</span> Add table
                     </button>
-                <a class="new-reservation-button"
-                   href="/Admin/Reservation/Management?newReservation=true"
-                   id="newReservationButton">
-                    <span aria-hidden="true">+</span> New reservation
-                </a>
                 </div>
                 <div class="legend" aria-label="Table availability">
                     <span><i class="legend-dot available"></i>Available</span>
@@ -59,7 +54,15 @@
             <div class="status-message" role="status">@Model.StatusMessage</div>
         }
 
+        <div class="table-workspace">
         <section class="floorplan-shell" id="floorplan" aria-label="Restaurant floor plan">
+            <div class="assign-banner" id="assignBanner" role="status" hidden>
+                <span id="assignText"></span>
+                <span class="assign-actions">
+                    <button type="button" class="assign-unassign" id="unassignButton" hidden>Remove from table</button>
+                    <button type="button" class="assign-cancel" id="cancelAssignButton">Cancel</button>
+                </span>
+            </div>
             <div class="floorplan-label">
                 <span><i class="floor-indicator"></i> Main floor</span>
                 <span>@Model.Tables.Count tables</span>
@@ -112,8 +115,57 @@
                 </a>
             </div>
         </section>
+
+        <aside class="reservation-queue" aria-labelledby="queueTitle">
+            <div class="queue-heading">
+                <h2 id="queueTitle">Reservations</h2>
+                <span>@Model.Queue.Count upcoming</span>
+            </div>
+            @if (Model.Queue.Count == 0)
+            {
+                <div class="queue-empty">
+                    <strong>No upcoming reservations</strong>
+                    <p>Create them in <a asp-page="/Admin/Reservation/Management">Reservation Management</a>.</p>
+                </div>
+            }
+            else
+            {
+                var unassignedCount = Model.Queue.Count(reservation => reservation.TableId is null);
+                <p class="queue-hint">
+                    @(unassignedCount == 0 ? "Every booking has a table." : $"{unassignedCount} still need a table.")
+                    Select one to seat or move it.
+                </p>
+                <div class="queue-list">
+                    @foreach (var reservation in Model.Queue)
+                    {
+                        var time = reservation.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture);
+                        <button type="button"
+                                class="queue-item @(reservation.TableId is null ? "unassigned" : "")"
+                                data-reservation-id="@reservation.Id"
+                                data-name="@reservation.CustomerName"
+                                data-party="@reservation.PartySize"
+                                data-time="@time"
+                                data-table="@reservation.TableId"
+                                data-fits="@string.Join(' ', Model.FittingTables[reservation.Id])">
+                            <span class="queue-time">@time</span>
+                            <strong class="queue-name">@reservation.CustomerName</strong>
+                            <span class="queue-meta">
+                                @reservation.PartySize guests
+                                <span class="queue-table">@(reservation.TableId is null ? "No table" : reservation.TableId)</span>
+                            </span>
+                        </button>
+                    }
+                </div>
+            }
+        </aside>
+        </div>
     </div>
 </div>
+
+<form method="post" asp-page-handler="Assign" id="assignForm" hidden>
+    <input type="hidden" name="reservationId" id="assignReservationId" />
+    <input type="hidden" name="tableId" id="assignTableId" />
+</form>
 
 <div class="panel-backdrop" id="panelBackdrop"></div>
 <aside class="reservation-panel table-details-panel"
