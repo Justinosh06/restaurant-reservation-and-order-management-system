@@ -38,6 +38,11 @@ builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 // Register Controllers (Required for Stripe Webhook Controller)
 builder.Services.AddControllers();
 
+// Register Razor Pages and the custom subdomain route provider
+builder.Services.AddRazorPages();
+builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider("admin"));
+
+// 2. Configure HTTP Pipeline
 // Login / Register
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddScoped<IPasswordHasher<RestaurantReservation.Models.Customer>, PasswordHasher<RestaurantReservation.Models.Customer>>();
