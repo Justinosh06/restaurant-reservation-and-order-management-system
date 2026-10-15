@@ -38,10 +38,6 @@ builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 // Register Controllers (Required for Stripe Webhook Controller)
 builder.Services.AddControllers();
 
-// Register Razor Pages and the custom subdomain route provider
-builder.Services.AddRazorPages();
-builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider("admin"));
-
 // 2. Configure HTTP Pipeline
 // Login / Register
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
@@ -90,6 +86,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CustomerOnly", policy => policy.RequireRole(AppRoles.Customer));
 });
 
+// Razor Pages, plus the route provider that keeps /Admin pages on the admin subdomain (registered once only:
+// a second copy adds a second "/" route to Admin/Index and every request to it fails as ambiguous).
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin", "AdminPortal");
@@ -99,8 +97,6 @@ builder.Services.AddRazorPages(options =>
 builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider(SiteHosts.AdminSubdomain));
 
 var app = builder.Build();
-
-await DbSeeder.SeedAsync(app.Services);
 
 await DbSeeder.SeedAsync(app.Services);
 
@@ -117,8 +113,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseSession();
-app.UseAuthentication();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
