@@ -42,6 +42,32 @@ public static class DbSeeder
             "IF COL_LENGTH('Customers', 'Gender') IS NULL ALTER TABLE Customers ADD Gender nvarchar(20) NULL");
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Customers', 'DateOfBirth') IS NULL ALTER TABLE Customers ADD DateOfBirth date NULL");
+
+        // Options is stored as JSON; existing rows get an empty set of options.
+        // EF formats raw SQL like string.Format, so the braces of {} are written doubled.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('MenuItems', 'Options') IS NULL ALTER TABLE MenuItems ADD Options nvarchar(max) NOT NULL DEFAULT '{{}}'");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('OrderItems', 'Options') IS NULL ALTER TABLE OrderItems ADD Options nvarchar(max) NOT NULL DEFAULT '{{}}'");
+
+        // Same table, keys and indexes as EnsureCreated would make for CartItem.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID('CartItems') IS NULL
+            BEGIN
+                CREATE TABLE CartItems (
+                    Id nvarchar(450) NOT NULL,
+                    Quantity int NOT NULL,
+                    Options nvarchar(max) NOT NULL,
+                    SessionId nvarchar(450) NOT NULL,
+                    MenuItemId nvarchar(450) NOT NULL,
+                    CONSTRAINT PK_CartItems PRIMARY KEY (Id),
+                    CONSTRAINT FK_CartItems_Sessions_SessionId FOREIGN KEY (SessionId) REFERENCES Sessions (Id) ON DELETE CASCADE,
+                    CONSTRAINT FK_CartItems_MenuItems_MenuItemId FOREIGN KEY (MenuItemId) REFERENCES MenuItems (Id)
+                );
+                CREATE INDEX IX_CartItems_SessionId ON CartItems (SessionId);
+                CREATE INDEX IX_CartItems_MenuItemId ON CartItems (MenuItemId);
+            END
+            """);
     }
 
     private static async Task AddAdminIfMissingAsync(ApplicationDbContext db, IPasswordHasher<Admin> hasher,
