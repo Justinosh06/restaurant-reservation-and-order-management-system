@@ -725,6 +725,51 @@ body:has(.service-app) {
     font-weight: 700;
 }
 
+.table-choices {
+    margin: 5px 0 0;
+    padding: 0;
+    border: 0;
+}
+
+.table-choices legend {
+    margin-bottom: 7px;
+    color: #4a4f48;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.table-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+}
+
+.reservation-form .table-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid #e1e5df;
+    border-radius: 8px;
+    background: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.reservation-form .table-choice input {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    accent-color: var(--green);
+}
+
+.table-choice:has(input:checked) {
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green);
+}
+
 .optional-label {
     color: #a0a49d;
     font-size: 10px;
@@ -1166,7 +1211,7 @@ body:has(.service-app) {
     margin: 0;
 }
 
-/* While a reservation is selected: tables it fits are outlined, the rest fade. */
+/* While a reservation is selected: picked tables are filled, free ones outlined, the rest fade. */
 .assign-banner {
     display: flex;
     align-items: center;
@@ -1197,6 +1242,7 @@ body:has(.service-app) {
 }
 
 .assign-cancel,
+.assign-save,
 .assign-unassign {
     min-height: 32px;
     padding: 0 12px;
@@ -1213,6 +1259,17 @@ body:has(.service-app) {
     color: var(--red);
 }
 
+.assign-save {
+    border-color: var(--green);
+    background: var(--green);
+    color: #fff;
+}
+
+.assign-save:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
 .assigning .floor-table.no-fit {
     opacity: .35;
 }
@@ -1222,8 +1279,10 @@ body:has(.service-app) {
     box-shadow: 0 0 0 4px rgb(39 108 75 / 12%);
 }
 
-.assigning .floor-table.current .table-top {
-    border: 2px dashed var(--green);
+.assigning .floor-table.picked .table-top {
+    border: 2px solid var(--green);
+    background: var(--green-soft);
+    box-shadow: 0 0 0 4px rgb(39 108 75 / 22%);
 }
 
 @media (max-width: 1100px) {

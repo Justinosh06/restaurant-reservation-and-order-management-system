@@ -23,14 +23,19 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
 
     public string? SelectedTableId { get; private set; }
 
-    // Every reservation per table, any status, so staff are warned before removing a booked table.
+    // Reservations (any status) that would be deleted with each table because it is their only table,
+    // so staff are warned before removing a booked table.
     public Dictionary<string, int> ReservationCounts { get; private set; } = [];
+
+    // Reservations that also use other tables; removing the table only takes it off them.
+    public Dictionary<string, int> SharedReservationCounts { get; private set; } = [];
 
     // Upcoming reservations for the sidebar: ones still needing a table first, then by time.
     public List<ReservationSummary> Queue { get; private set; } = [];
 
-    // For each reservation in the queue, the tables it can be moved to (big enough and free then).
-    public Dictionary<string, List<string>> FittingTables { get; private set; } = [];
+    // For each reservation in the queue, the tables free at its time (its own tables included).
+    // Staff can combine several of them when one table is too small.
+    public Dictionary<string, List<string>> FreeTables { get; private set; } = [];
 
     [TempData]
     public string? StatusMessage { get; set; }
@@ -41,29 +46,37 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
 
         var reservations = await db.Reservations.AsNoTracking()
             .Include(reservation => reservation.Customer)
+            .Include(reservation => reservation.ReservationTables)
             .Where(reservation => reservation.Status != ReservationStatus.Cancelled
                 && reservation.Status != ReservationStatus.Completed)
             .ToListAsync();
         Reservations = reservations.Select(ReservationSummary.From).ToList();
 
-        ReservationCounts = await db.Reservations
-            .Where(reservation => reservation.TableId != null)
-            .GroupBy(reservation => reservation.TableId!)
-            .Select(group => new { TableId = group.Key, Count = group.Count() })
-            .ToDictionaryAsync(item => item.TableId, item => item.Count);
+        var links = await db.ReservationTables.AsNoTracking()
+            .Select(link => new { link.TableId, link.ReservationId })
+            .ToListAsync();
+        var tablesPerReservation = links
+            .GroupBy(link => link.ReservationId)
+            .ToDictionary(group => group.Key, group => group.Count());
+        ReservationCounts = links
+            .Where(link => tablesPerReservation[link.ReservationId] == 1)
+            .GroupBy(link => link.TableId)
+            .ToDictionary(group => group.Key, group => group.Count());
+        SharedReservationCounts = links
+            .Where(link => tablesPerReservation[link.ReservationId] > 1)
+            .GroupBy(link => link.TableId)
+            .ToDictionary(group => group.Key, group => group.Count());
 
         var now = DateTime.Now;
         Queue = Reservations
             .Where(reservation => reservation.EndsAt > now)
-            .OrderBy(reservation => reservation.TableId is not null)
+            .OrderBy(reservation => reservation.HasTable)
             .ThenBy(reservation => reservation.ReservationAt)
             .ToList();
-        FittingTables = Queue.ToDictionary(
+        FreeTables = Queue.ToDictionary(
             reservation => reservation.Id,
             reservation => Tables
-                .Where(table => table.Id != reservation.TableId
-                    && table.Capacity >= reservation.PartySize
-                    && ReservationSummary.FindClash(Reservations, table.Id, reservation.ReservationAt, reservation.Id) is null)
+                .Where(table => ReservationSummary.FindClash(Reservations, table.Id, reservation.ReservationAt, reservation.Id) is null)
                 .Select(table => table.Id)
                 .ToList());
 
@@ -107,74 +120,102 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
             return RedirectToPage();
         }
 
-        // Reservations point at their table, so they are removed with it (staff confirm this first).
+        // A reservation with only this table is removed with it (staff confirm this first);
+        // one spread over several tables keeps its other tables.
         var reservations = await db.Reservations
-            .Where(reservation => reservation.TableId == table.Id)
+            .Include(reservation => reservation.ReservationTables)
+            .Where(reservation => reservation.ReservationTables.Any(link => link.TableId == table.Id))
             .ToListAsync();
-        db.Reservations.RemoveRange(reservations);
+        var deleted = reservations.Where(reservation => reservation.ReservationTables.Count == 1).ToList();
+        db.Reservations.RemoveRange(deleted);
+        db.ReservationTables.RemoveRange(reservations
+            .Except(deleted)
+            .SelectMany(reservation => reservation.ReservationTables)
+            .Where(link => link.TableId == table.Id));
         db.Tables.Remove(table);
         await db.SaveChangesAsync();
 
-        StatusMessage = reservations.Count == 0
-            ? $"Table {table.Id} removed."
-            : $"Table {table.Id} removed with its {reservations.Count} reservation{(reservations.Count == 1 ? "" : "s")}.";
+        var shared = reservations.Count - deleted.Count;
+        StatusMessage = $"Table {table.Id} removed"
+            + (deleted.Count == 0 ? "" : $" with its {deleted.Count} reservation{(deleted.Count == 1 ? "" : "s")}")
+            + (shared == 0 ? "" : $"; {shared} reservation{(shared == 1 ? " keeps its" : "s keep their")} other tables")
+            + ".";
         return RedirectToPage();
     }
 
-    // Puts a reservation on a table, or takes it off its table when tableId is empty.
-    public async Task<IActionResult> OnPostAssignAsync(string? reservationId, string? tableId)
+    // Seats a reservation at the given tables (several for a large party), or takes it off its tables
+    // when tableIds is empty.
+    public async Task<IActionResult> OnPostAssignAsync(string? reservationId, string[] tableIds)
     {
-        var reservation = reservationId is null ? null : await db.Reservations.FindAsync(reservationId);
+        var reservation = reservationId is null ? null : await db.Reservations
+            .Include(item => item.Customer)
+            .Include(item => item.ReservationTables)
+            .FirstOrDefaultAsync(item => item.Id == reservationId);
         if (reservation is null)
         {
             StatusMessage = "That reservation no longer exists.";
             return RedirectToPage();
         }
 
-        await db.Entry(reservation).Reference(item => item.Customer).LoadAsync();
         var summary = ReservationSummary.From(reservation);
         var label = $"{summary.CustomerName} ({summary.PartySize} guests, "
             + $"{summary.ReservationAt.ToString("ddd d MMM, h:mm tt", CultureInfo.CurrentCulture)})";
 
-        if (string.IsNullOrEmpty(tableId))
+        var wanted = tableIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+        if (wanted.Count == 0)
         {
-            reservation.TableId = null;
+            reservation.ReservationTables.Clear();
             await db.SaveChangesAsync();
             StatusMessage = $"{label} no longer has a table.";
             return RedirectToPage();
         }
 
-        var table = await db.Tables.FindAsync(tableId);
-        if (table is null)
+        var tables = await db.Tables.Where(table => wanted.Contains(table.Id)).ToListAsync();
+        if (tables.Count != wanted.Count)
         {
-            StatusMessage = "That table no longer exists.";
+            StatusMessage = "One of those tables no longer exists.";
             return RedirectToPage();
         }
 
-        if (reservation.Pax > table.Capacity)
+        var seats = tables.Sum(table => table.Capacity);
+        if (reservation.Pax > seats)
         {
-            StatusMessage = $"Table {table.Id} only seats {table.Capacity}, so it can't take {label}.";
+            StatusMessage = $"{label} needs {reservation.Pax} seats, but {TablesLabel(wanted)} only seat{(wanted.Count == 1 ? "s" : "")} {seats}.";
             return RedirectToPage();
         }
 
         var others = (await db.Reservations.AsNoTracking()
                 .Include(item => item.Customer)
-                .Where(item => item.TableId == table.Id)
+                .Include(item => item.ReservationTables)
+                .Where(item => item.Id != reservation.Id
+                    && item.ReservationTables.Any(link => wanted.Contains(link.TableId)))
                 .ToListAsync())
-            .Select(ReservationSummary.From);
-        var clash = ReservationSummary.FindClash(others, table.Id, summary.ReservationAt, reservation.Id);
-        if (clash is not null)
+            .Select(ReservationSummary.From)
+            .ToList();
+        foreach (var tableId in wanted)
         {
-            StatusMessage = $"Table {table.Id} is already booked by {clash.CustomerName} at "
-                + $"{clash.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)}.";
-            return RedirectToPage();
+            var clash = ReservationSummary.FindClash(others, tableId, summary.ReservationAt, reservation.Id);
+            if (clash is not null)
+            {
+                StatusMessage = $"Table {tableId} is already booked by {clash.CustomerName} at "
+                    + $"{clash.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)}.";
+                return RedirectToPage();
+            }
         }
 
-        reservation.TableId = table.Id;
+        reservation.ReservationTables.RemoveAll(link => !wanted.Contains(link.TableId));
+        foreach (var tableId in wanted.Where(id => reservation.ReservationTables.All(link => link.TableId != id)))
+        {
+            // Id is set here, not on save: EF cannot track two new links that both have an empty Id.
+            reservation.ReservationTables.Add(new ReservationTable { Id = Guid.NewGuid().ToString("N"), TableId = tableId });
+        }
         await db.SaveChangesAsync();
-        StatusMessage = $"{label} is now at table {table.Id}.";
+        StatusMessage = $"{label} is now at {TablesLabel(wanted)}.";
         return RedirectToPage();
     }
+
+    private static string TablesLabel(IReadOnlyCollection<string> tableIds) =>
+        (tableIds.Count == 1 ? "table " : "tables ") + string.Join(" + ", tableIds);
 
     private Task<List<DiningTable>> LoadTablesAsync() =>
         db.Tables.AsNoTracking()

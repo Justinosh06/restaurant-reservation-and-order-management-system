@@ -19,6 +19,7 @@ namespace RestaurantReservation.Data
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Table> Tables => Set<Table>();
         public DbSet<Reservation> Reservations => Set<Reservation>();
+        public DbSet<ReservationTable> ReservationTables => Set<ReservationTable>();
         public DbSet<Session> Sessions => Set<Session>();
         public DbSet<CartItem> CartItems => Set<CartItem>();
         public DbSet<Order> Orders => Set<Order>();
@@ -110,14 +111,26 @@ namespace RestaurantReservation.Data
                       .HasConversion<string>()
                       .HasMaxLength(20);
 
-                entity.HasOne(r => r.Table)
-                      .WithMany()
-                      .HasForeignKey(r => r.TableId)
-                      .OnDelete(DeleteBehavior.Restrict);
-
                 entity.HasOne(r => r.Customer)
                       .WithMany()
                       .HasForeignKey(r => r.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Links a reservation to each table it uses (a large party can take several).
+            modelBuilder.Entity<ReservationTable>(entity =>
+            {
+                entity.HasKey(rt => rt.Id);
+                entity.HasIndex(rt => new { rt.ReservationId, rt.TableId }).IsUnique();
+
+                entity.HasOne(rt => rt.Reservation)
+                      .WithMany(r => r.ReservationTables)
+                      .HasForeignKey(rt => rt.ReservationId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(rt => rt.Table)
+                      .WithMany()
+                      .HasForeignKey(rt => rt.TableId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
 

@@ -46,7 +46,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
                 ReservationId = reservation.Id;
                 Input = new ReservationInput
                 {
-                    TableId = reservation.TableId,
+                    TableIds = reservation.TableIds.ToList(),
                     CustomerName = reservation.CustomerName,
                     ContactNumber = reservation.ContactNumber,
                     PartySize = reservation.PartySize,
@@ -63,7 +63,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
         }
         else if (newReservation)
         {
-            Input.TableId = FilterTableId ?? Tables.FirstOrDefault()?.Id ?? string.Empty;
+            Input.TableIds = FilterTableId is null ? [] : [FilterTableId];
             Input.ReservationAt = DateTime.Now.AddHours(1);
             IsFormOpen = true;
         }
@@ -95,7 +95,9 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
         IsFormOpen = true;
         await LoadPageAsync();
 
-        var reservation = ReservationId is null ? null : await db.Reservations.FindAsync(ReservationId);
+        var reservation = ReservationId is null ? null : await db.Reservations
+            .Include(item => item.ReservationTables)
+            .FirstOrDefaultAsync(item => item.Id == ReservationId);
         if (reservation is null)
         {
             ModelState.AddModelError(string.Empty, "This reservation no longer exists. Refresh and try again.");
@@ -141,6 +143,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
 
         var reservations = await db.Reservations.AsNoTracking()
             .Include(reservation => reservation.Customer)
+            .Include(reservation => reservation.ReservationTables)
             .ToListAsync();
         Reservations = reservations.Select(ReservationSummary.From).ToList();
     }
@@ -148,15 +151,20 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
     // existing is the reservation being edited, or null when creating one.
     private bool ValidateReservation(Reservation? existing)
     {
-        // The table is optional here; staff can assign it later on Table Management.
-        var table = Tables.FirstOrDefault(item => item.Id == Input.TableId);
-        if (table is null && !string.IsNullOrEmpty(Input.TableId))
+        // Tables are optional here; staff can assign them later on Table Management.
+        // A large party can take several tables as long as they seat everyone together.
+        Input.TableIds = Input.TableIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+        var tables = Tables.Where(item => Input.TableIds.Contains(item.Id)).ToList();
+        var seats = tables.Sum(item => item.Capacity);
+        if (tables.Count != Input.TableIds.Count)
         {
-            ModelState.AddModelError("Input.TableId", "Select a valid table.");
+            ModelState.AddModelError("Input.TableIds", "Select valid tables.");
         }
-        else if (table is not null && Input.PartySize > table.Capacity)
+        else if (tables.Count > 0 && Input.PartySize > seats)
         {
-            ModelState.AddModelError("Input.PartySize", $"Table {table.Id} seats up to {table.Capacity} guests.");
+            ModelState.AddModelError("Input.PartySize", tables.Count == 1
+                ? $"Table {tables[0].Id} seats up to {seats} guests."
+                : $"Tables {string.Join(" + ", Input.TableIds)} seat up to {seats} guests together.");
         }
 
         // A past reservation can still be edited as long as its date and time are left alone.
@@ -169,14 +177,16 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
             ModelState.AddModelError("Input.ReservationAt", "Choose a future date and time.");
         }
 
-        var clash = table is null
-            ? null
-            : ReservationSummary.FindClash(Reservations, table.Id, Input.ReservationAt, existing?.Id);
-        if (clash is not null)
+        foreach (var table in tables)
         {
-            ModelState.AddModelError("Input.ReservationAt",
-                $"Table {clash.TableId} is already booked at {clash.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)}. "
-                + $"Bookings on the same table must be {ReservationSummary.SlotLength.TotalHours:0} hours apart.");
+            var clash = ReservationSummary.FindClash(Reservations, table.Id, Input.ReservationAt, existing?.Id);
+            if (clash is not null)
+            {
+                ModelState.AddModelError("Input.ReservationAt",
+                    $"Table {table.Id} is already booked at {clash.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)}. "
+                    + $"Bookings on the same table must be {ReservationSummary.SlotLength.TotalHours:0} hours apart.");
+                break;
+            }
         }
 
         return ModelState.IsValid;
@@ -184,7 +194,12 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
 
     private void ApplyInput(Reservation reservation)
     {
-        reservation.TableId = string.IsNullOrEmpty(Input.TableId) ? null : Input.TableId;
+        reservation.ReservationTables.RemoveAll(link => !Input.TableIds.Contains(link.TableId));
+        foreach (var tableId in Input.TableIds.Where(id => reservation.ReservationTables.All(link => link.TableId != id)))
+        {
+            // Id is set here, not on save: EF cannot track two new links that both have an empty Id.
+            reservation.ReservationTables.Add(new ReservationTable { Id = Guid.NewGuid().ToString("N"), TableId = tableId });
+        }
         reservation.GuestName = Input.CustomerName.Trim();
         reservation.ContactNumber = NormalizeOptional(Input.ContactNumber);
         reservation.Pax = Input.PartySize;
@@ -198,7 +213,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
 
     public sealed class ReservationInput
     {
-        public string? TableId { get; set; }
+        public List<string> TableIds { get; set; } = [];
 
         [Required]
         [StringLength(80)]

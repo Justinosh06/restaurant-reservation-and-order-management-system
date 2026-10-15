@@ -7,7 +7,7 @@
     Layout = "_AdminLayout";
     ViewData["Title"] = "Reservation Management";
     var reservations = Model.Reservations
-        .Where(reservation => Model.FilterTableId is null || reservation.TableId == Model.FilterTableId)
+        .Where(reservation => Model.FilterTableId is null || reservation.TableIds.Contains(Model.FilterTableId))
         .OrderBy(reservation => reservation.ReservationAt)
         .ToList();
 }
@@ -81,7 +81,7 @@
                             </div>
                             <div class="agenda-details">
                                 <strong>@reservation.CustomerName</strong>
-                                <span>@(reservation.TableId is null ? "No table yet" : $"Table {reservation.TableId}") · @reservation.PartySize guests · @reservation.Status</span>
+                                <span>@(!reservation.HasTable ? "No table yet" : reservation.TableIds.Count == 1 ? $"Table {reservation.TableLabel}" : $"Tables {reservation.TableLabel}") · @reservation.PartySize guests · @reservation.Status</span>
                             </div>
                             <time class="agenda-time" datetime="@reservation.ReservationAt.ToString("yyyy-MM-ddTHH:mm:ss")">
                                 @reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)
@@ -140,15 +140,19 @@
             <input type="hidden" asp-for="FilterTableId" />
             <div asp-validation-summary="All" class="validation-summary"></div>
 
-            <label for="createTableId">Table</label>
-            <select asp-for="Input.TableId" id="createTableId" class="reservation-select">
-                <option value="">Assign later on Table Management</option>
-                @foreach (var table in Model.Tables)
-                {
-                    <option value="@table.Id">Table @table.Id · @table.Capacity seats</option>
-                }
-            </select>
-            <span asp-validation-for="Input.TableId" class="field-error"></span>
+            <fieldset class="table-choices">
+                <legend>Tables <span class="optional-label">pick several for a large party, or none to assign later</span></legend>
+                <div class="table-choice-grid">
+                    @foreach (var table in Model.Tables)
+                    {
+                        <label class="table-choice">
+                            <input type="checkbox" name="Input.TableIds" value="@table.Id" checked="@Model.Input.TableIds.Contains(table.Id)" />
+                            <span>@table.Id · @table.Capacity seats</span>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+            <span asp-validation-for="Input.TableIds" class="field-error"></span>
 
             <label for="createCustomerName">Customer name</label>
             <input asp-for="Input.CustomerName" id="createCustomerName" autocomplete="name" maxlength="80" placeholder="Name for the booking" />
@@ -185,15 +189,19 @@
             <input type="hidden" asp-for="FilterTableId" />
             <div asp-validation-summary="All" class="validation-summary"></div>
 
-            <label for="editTableId">Table</label>
-            <select asp-for="Input.TableId" id="editTableId" class="reservation-select">
-                <option value="">Assign later on Table Management</option>
-                @foreach (var table in Model.Tables)
-                {
-                    <option value="@table.Id">Table @table.Id · @table.Capacity seats</option>
-                }
-            </select>
-            <span asp-validation-for="Input.TableId" class="field-error"></span>
+            <fieldset class="table-choices">
+                <legend>Tables <span class="optional-label">pick several for a large party, or none to assign later</span></legend>
+                <div class="table-choice-grid">
+                    @foreach (var table in Model.Tables)
+                    {
+                        <label class="table-choice">
+                            <input type="checkbox" name="Input.TableIds" value="@table.Id" checked="@Model.Input.TableIds.Contains(table.Id)" />
+                            <span>@table.Id · @table.Capacity seats</span>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+            <span asp-validation-for="Input.TableIds" class="field-error"></span>
 
             <label for="editCustomerName">Customer name</label>
             <input asp-for="Input.CustomerName" id="editCustomerName" autocomplete="name" maxlength="80" placeholder="Name for the booking" />

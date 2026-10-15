@@ -33,7 +33,7 @@
             <div>
                 <p class="eyebrow">DINING ROOM</p>
                 <h1>Table Management</h1>
-                <p class="subheading">Pick a reservation on the right, then tap a table to seat it there.</p>
+                <p class="subheading">Pick a reservation on the right, tap one or more tables, then save.</p>
             </div>
             <div class="floor-toolbar-actions">
                 <div class="floor-toolbar-buttons">
@@ -59,7 +59,8 @@
             <div class="assign-banner" id="assignBanner" role="status" hidden>
                 <span id="assignText"></span>
                 <span class="assign-actions">
-                    <button type="button" class="assign-unassign" id="unassignButton" hidden>Remove from table</button>
+                    <button type="button" class="assign-save" id="saveAssignButton" disabled>Save</button>
+                    <button type="button" class="assign-unassign" id="unassignButton" hidden>Remove from tables</button>
                     <button type="button" class="assign-cancel" id="cancelAssignButton">Cancel</button>
                 </span>
             </div>
@@ -78,7 +79,7 @@
                 @foreach (var table in Model.Tables)
                 {
                     var nextReservation = upcomingReservations
-                        .FirstOrDefault(reservation => reservation.TableId == table.Id);
+                        .FirstOrDefault(reservation => reservation.TableIds.Contains(table.Id));
                     var startsSoon = nextReservation is not null
                         && nextReservation.ReservationAt <= now.AddMinutes(60);
 
@@ -87,6 +88,7 @@
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
                             data-reservation-count="@Model.ReservationCounts.GetValueOrDefault(table.Id)"
+                            data-shared-count="@Model.SharedReservationCounts.GetValueOrDefault(table.Id)"
                             aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">
@@ -130,7 +132,7 @@
             }
             else
             {
-                var unassignedCount = Model.Queue.Count(reservation => reservation.TableId is null);
+                var unassignedCount = Model.Queue.Count(reservation => !reservation.HasTable);
                 <p class="queue-hint">
                     @(unassignedCount == 0 ? "Every booking has a table." : $"{unassignedCount} still need a table.")
                     Select one to seat or move it.
@@ -140,18 +142,18 @@
                     {
                         var time = reservation.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture);
                         <button type="button"
-                                class="queue-item @(reservation.TableId is null ? "unassigned" : "")"
+                                class="queue-item @(reservation.HasTable ? "" : "unassigned")"
                                 data-reservation-id="@reservation.Id"
                                 data-name="@reservation.CustomerName"
                                 data-party="@reservation.PartySize"
                                 data-time="@time"
-                                data-table="@reservation.TableId"
-                                data-fits="@string.Join(' ', Model.FittingTables[reservation.Id])">
+                                data-tables="@string.Join(' ', reservation.TableIds)"
+                                data-free="@string.Join(' ', Model.FreeTables[reservation.Id])">
                             <span class="queue-time">@time</span>
                             <strong class="queue-name">@reservation.CustomerName</strong>
                             <span class="queue-meta">
                                 @reservation.PartySize guests
-                                <span class="queue-table">@(reservation.TableId is null ? "No table" : reservation.TableId)</span>
+                                <span class="queue-table">@(reservation.HasTable ? reservation.TableLabel : "No table")</span>
                             </span>
                         </button>
                     }
@@ -164,7 +166,7 @@
 
 <form method="post" asp-page-handler="Assign" id="assignForm" hidden>
     <input type="hidden" name="reservationId" id="assignReservationId" />
-    <input type="hidden" name="tableId" id="assignTableId" />
+    <span id="assignTableIds"></span>
 </form>
 
 <div class="panel-backdrop" id="panelBackdrop"></div>
@@ -190,11 +192,15 @@
             <div id="tableReservationList" class="table-reservation-list">
                 @foreach (var reservation in upcomingReservations)
                 {
-                    <article class="table-reservation" data-table-reservation="@reservation.TableId">
+                    <article class="table-reservation" data-table-reservation="@string.Join(' ', reservation.TableIds)">
                         <div class="reservation-card-heading">
                             <div>
                                 <strong>@reservation.CustomerName</strong>
                                 <span>@reservation.PartySize guests · @reservation.ReservationAt.ToString("ddd, MMM d · h:mm tt", CultureInfo.CurrentCulture)</span>
+                                @if (reservation.TableIds.Count > 1)
+                                {
+                                    <span>Shares tables @reservation.TableLabel</span>
+                                }
                             </div>
                         </div>
                     </article>
