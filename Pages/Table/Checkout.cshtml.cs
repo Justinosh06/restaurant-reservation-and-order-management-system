@@ -57,11 +57,14 @@ public class CheckoutModel : PageModel
         var items = SessionOrders
             .SelectMany(o => o.Items)
             .Select(i => (i.Name, i.UnitPrice, i.Quantity, i.Remark));
+        var paymentAttemptId = string.Join("-", SessionOrders
+            .Select(order => order.OrderCode)
+            .OrderBy(orderCode => orderCode, StringComparer.Ordinal));
 
         var domain = $"{Request.Scheme}://{Request.Host}";
 
         // Delegate session creation to centralized service
-        var session = await _paymentService.CreateTableSettlementSessionAsync(TableId, items, domain);
+        var session = await _paymentService.CreateTableSettlementSessionAsync(TableId, paymentAttemptId, items, domain);
 
         return Redirect(session.Url);
     }
