@@ -116,6 +116,35 @@ namespace Restaurant_Reservation_and_Order_Management_System.Migrations
                     b.ToTable("BusinessHours");
                 });
 
+            modelBuilder.Entity("RestaurantReservation.Models.CartItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("MenuItemId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MenuItemId");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("CartItems");
+                });
+
             modelBuilder.Entity("RestaurantReservation.Models.Customer", b =>
                 {
                     b.Property<string>("Id")
@@ -195,6 +224,10 @@ namespace Restaurant_Reservation_and_Order_Management_System.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Price")
                         .HasColumnType("int");
 
@@ -251,6 +284,10 @@ namespace Restaurant_Reservation_and_Order_Management_System.Migrations
                     b.Property<string>("MenuItemId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OrderId")
                         .IsRequired()
@@ -467,6 +504,25 @@ namespace Restaurant_Reservation_and_Order_Management_System.Migrations
                         .IsRequired();
 
                     b.Navigation("RestaurantSettings");
+                });
+
+            modelBuilder.Entity("RestaurantReservation.Models.CartItem", b =>
+                {
+                    b.HasOne("RestaurantReservation.Models.MenuItem", "MenuItem")
+                        .WithMany()
+                        .HasForeignKey("MenuItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantReservation.Models.Session", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MenuItem");
+
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("RestaurantReservation.Models.Feedback", b =>

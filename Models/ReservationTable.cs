@@ -1,0 +1,25 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RestaurantReservation.Models
+{
+    public class ReservationTable
+    {
+        [Key]
+        [Required(ErrorMessage = "Reservation table ID is required.")]
+        public string Id { get; set; } = string.Empty;
+
+        // Foreign Keys
+        [Required]
+        public string TableId { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(TableId))]
+        public Table? Table { get; set; }
+
+        [Required]
+        public string ReservationId { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(ReservationId))]
+        public Reservation? Reservation { get; set; }
+    }
+}

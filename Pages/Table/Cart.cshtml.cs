@@ -40,7 +40,7 @@ public class CartModel : PageModel
                 UnitPrice = 24.90, 
                 Quantity = 2, 
                 Type = MenuItemType.Pasta, 
-                ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png",
+                ImageUrl = "/image/Menu/matcha.png",
                 Remark = "Extra cheese, less spicy"
             },
             new CartItemViewModel 
@@ -50,7 +50,7 @@ public class CartModel : PageModel
                 UnitPrice = 12.90, 
                 Quantity = 1, 
                 Type = MenuItemType.Beverage, 
-                ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png",
+                ImageUrl = "/image/Menu/matcha.png",
                 Remark = "Less ice"
             }
         };
