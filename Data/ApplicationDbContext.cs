@@ -1,5 +1,8 @@
 using System.Linq;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Data
@@ -17,6 +20,7 @@ namespace RestaurantReservation.Data
         public DbSet<Table> Tables => Set<Table>();
         public DbSet<Reservation> Reservations => Set<Reservation>();
         public DbSet<Session> Sessions => Set<Session>();
+        public DbSet<CartItem> CartItems => Set<CartItem>();
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<MenuItem> MenuItems => Set<MenuItem>();
@@ -150,6 +154,7 @@ namespace RestaurantReservation.Data
             modelBuilder.Entity<OrderItem>(entity =>
             {
                 entity.HasKey(oi => oi.Id);
+                ConfigureOptions(entity.Property(oi => oi.Options));
                 entity.HasOne(oi => oi.Order)
                       .WithMany()
                       .HasForeignKey(oi => oi.OrderId)
@@ -170,6 +175,7 @@ namespace RestaurantReservation.Data
                 entity.Property(m => m.MenuItemType)
                       .HasConversion<string>()
                       .HasMaxLength(30);
+                ConfigureOptions(entity.Property(m => m.Options));
             });
 
             // -------------------------------------------------------------
@@ -249,8 +255,44 @@ namespace RestaurantReservation.Data
                 //       .HasMaxLength(20);
             });
 
+            // -------------------------------------------------------------
+            // 13. CART ITEM
+            // -------------------------------------------------------------
+            modelBuilder.Entity<CartItem>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                ConfigureOptions(entity.Property(c => c.Options));
+
+                entity.HasOne(c => c.Session)
+                    .WithMany()
+                    .HasForeignKey(c => c.SessionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.MenuItem)
+                    .WithMany()
+                    .HasForeignKey(c => c.MenuItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
             ConfigureStringPrimaryKeys(modelBuilder);
         }
+
+        private static void ConfigureOptions(PropertyBuilder<Dictionary<string, string>> property)
+        {
+            property.HasConversion(
+                options => SerializeOptions(options),
+                json => DeserializeOptions(json));
+            property.Metadata.SetValueComparer(new ValueComparer<Dictionary<string, string>>(
+                (left, right) => SerializeOptions(left) == SerializeOptions(right),
+                options => SerializeOptions(options).GetHashCode(),
+                options => DeserializeOptions(SerializeOptions(options))));
+        }
+
+        private static string SerializeOptions(Dictionary<string, string> options) =>
+            JsonSerializer.Serialize(options);
+
+        private static Dictionary<string, string> DeserializeOptions(string json) =>
+            JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
 
         private static void ConfigureStringPrimaryKeys(ModelBuilder modelBuilder)
         {
