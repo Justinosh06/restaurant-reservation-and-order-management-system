@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/table_layout.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var currentPath = Context.Request.Path.Value ?? "";
+        var tableId = ViewContext.RouteData.Values["tableId"]?.ToString();
+
+        var isCheckoutActive = currentPath.EndsWith("/Checkout", StringComparison.OrdinalIgnoreCase);
+        var isCartActive = currentPath.EndsWith("/Cart", StringComparison.OrdinalIgnoreCase);
+        var isMenuHomeActive = !string.IsNullOrEmpty(tableId) && !isCartActive && !isCheckoutActive;
+    }
+
+    <div class="page-content">
+        <header class="header">
+            <div class="nav-group">
+                <a asp-page="/Table/Index" 
+                   asp-route-tableId="@tableId"
+                   class="nav-item @(isMenuHomeActive ? "active" : "")">
+                    <i class="fa-solid fa-burger"></i>
+                </a>
+                <a asp-page="/Table/Cart" 
+                   asp-route-tableId="@tableId"
+                   class="nav-item @(isCartActive ? "active" : "")">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </a>
+            </div>
+
+            <a asp-page="/Table/Checkout"
+               asp-route-tableId="@tableId"
+               class="checkout-btn @(isCheckoutActive ? "active" : "")">
+                Checkout   
+            </a>
+        </header>
+
+        <main role="main" class="content-container">
+            @RenderBody()
+        </main>
+
+        <footer class="footer">
+            <h3 class="title">Resto</h3>
+
+            <span class="copyright">&copy; 2026. Resto Limited.</span>
+        </footer>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

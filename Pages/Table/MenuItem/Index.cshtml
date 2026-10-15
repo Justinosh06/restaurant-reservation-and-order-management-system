@@ -1,0 +1,31 @@
+@page "/Table/{tableId}/MenuItem/{menuItemId}"
+@model RestaurantReservation.Pages.Table.MenuItem.MenuItemModel
+@{
+    ViewData["Title"] = $"{Model.MenuItemId}";
+}
+
+<link rel="stylesheet" href="~/css/menu_item.css" />
+
+<div class="d-flex menu-item-container">
+    <div class="display-container">
+        <a asp-page="/Table/Index" 
+           asp-route-tableId="@Model.TableId" 
+           class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+    </div>
+
+    <div class="info-container">
+        <div class="center-container">
+            <h1 class="title">Spaghetti Bolognaise</h1>
+            <p class="description">lorem ipsum dolor sit amet consectetur adipiscing elit similique aute dolore non id aute deserunt ullamco quis aliquip placeat sed ut maxime minus est exercitation id id esse dolores harum temporibus optio incididunt veniam imperdiet irure libero cum pariatur et et similique fugiat odio in quod libero lorem et reprehenderit</p>
+
+            <label class="input-label">Remark</label>
+            <textarea class="remark-input"></textarea>
+
+            <button class="add-to-cart-btn">
+                Add to Cart
+            </button>
+        </div>
+    </div>
+</div>
