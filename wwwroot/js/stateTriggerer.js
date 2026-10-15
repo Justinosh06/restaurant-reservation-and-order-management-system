@@ -10,6 +10,7 @@ if (HeaderMenuDropdown) {
         })
     })
 
-HeaderMenuDropdown.addEventListener('mouseout', () => {
-    HeaderMenuDropdown.classList.remove("active")
-})
+    HeaderMenuDropdown.addEventListener('mouseout', () => {
+        HeaderMenuDropdown.classList.remove("active")
+    })
+}
