@@ -45,3 +45,29 @@
     max-height: 15rem;
     overflow-y: auto;
 }
+
+/* Sidebar profile menu (Profile / Logout): styled like the sidebar's nav buttons in admin_layout.css. */
+.sidebar .profile-menu {
+    --bs-dropdown-border-width: 0;
+    --bs-dropdown-border-radius: 16px;
+    --bs-dropdown-padding-x: 0.375rem;
+    --bs-dropdown-padding-y: 0.375rem;
+    --bs-dropdown-link-color: #888888;
+    --bs-dropdown-link-hover-color: black;
+    --bs-dropdown-link-hover-bg: #f2f2f3;
+    --bs-dropdown-link-active-color: black;
+    --bs-dropdown-link-active-bg: #f2f2f3;
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 500;
+}
+
+.sidebar .profile-menu .dropdown-item {
+    border-radius: 12px;
+    padding: 8px 12px;
+    transition: 300ms ease-in-out;
+}
+
+.sidebar .profile-menu .logout-item:hover,
+.sidebar .profile-menu .logout-item:focus-visible {
+    color: var(--bs-danger);
+}
