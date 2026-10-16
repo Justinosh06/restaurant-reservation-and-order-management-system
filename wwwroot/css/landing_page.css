@@ -188,124 +188,6 @@ body:has(.landing) {
             }
         }
 
-        /* Customer's next booking, beside the reservation form. */
-        .upcoming-card {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            padding: 16px;
-            border-radius: 16px;
-            background: white;
-            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
-
-            .card-title {
-                font-size: 1.5rem;
-                font-weight: 600;
-                font-family: "Bricolage Grotesque", sans-serif;
-                margin-bottom: 0;
-            }
-
-            .empty-note {
-                margin: 0;
-            }
-
-            .status-pill {
-                margin-left: auto;
-                background: black;
-                color: white;
-            }
-
-            .status-pill.muted {
-                background: #DFDFE1;
-                color: #444444;
-            }
-        }
-
-        .upcoming-head {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-
-            .upcoming-date {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                width: 56px;
-                height: 56px;
-                flex-shrink: 0;
-                border-radius: 12px;
-                background: #F2F2F3;
-                line-height: 1.1;
-
-                strong {
-                    font-size: 1.4rem;
-                    font-family: "Bricolage Grotesque", sans-serif;
-                }
-
-                span {
-                    color: #666666;
-                    font-size: 0.8rem;
-                    text-transform: uppercase;
-                }
-            }
-
-            .upcoming-day {
-                display: block;
-                color: #666666;
-                font-size: 0.85rem;
-            }
-
-            .upcoming-time {
-                font-size: 1.25rem;
-                font-weight: 700;
-                font-family: "Bricolage Grotesque", sans-serif;
-            }
-        }
-
-        .upcoming-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px 16px;
-            margin: 0;
-
-            .wide {
-                grid-column: 1 / -1;
-            }
-
-            dt {
-                color: #666666;
-                font-size: 0.8rem;
-                font-weight: 500;
-            }
-
-            dd {
-                margin: 0;
-                font-weight: 600;
-                overflow-wrap: anywhere;
-            }
-        }
-
-        .upcoming-more {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            border-top: 1px solid #ECECEC;
-
-            li {
-                display: flex;
-                justify-content: space-between;
-                flex-wrap: wrap;
-                gap: 4px 12px;
-                padding: 8px 0 0;
-                font-weight: 500;
-            }
-
-            .hint {
-                margin: 0;
-            }
-        }
-
         .menu-list {
             list-style: none;
             margin: 0 0 16px;
@@ -327,10 +209,122 @@ body:has(.landing) {
         }
     }
 
-    /* Customers see the reservation form, their upcoming booking and today's menu side by side. */
-    .booking-row.with-upcoming {
-        grid-template-columns: 320px 320px 1fr;
-        gap: 32px;
+    /* One upcoming booking on the Upcoming reservations page. */
+    .upcoming-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            margin-bottom: 0;
+        }
+
+        .empty-note {
+            margin: 0;
+        }
+
+        .status-pill {
+            margin-left: auto;
+            background: black;
+            color: white;
+        }
+
+        .status-pill.muted {
+            background: #DFDFE1;
+            color: #444444;
+        }
+    }
+
+    .upcoming-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .upcoming-date {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: #F2F2F3;
+            line-height: 1.1;
+
+            strong {
+                font-size: 1.4rem;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            span {
+                color: #666666;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+        }
+
+        .upcoming-day {
+            display: block;
+            color: #666666;
+            font-size: 0.85rem;
+        }
+
+        .upcoming-time {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+    }
+
+    .upcoming-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 16px;
+        margin: 0;
+
+        .wide {
+            grid-column: 1 / -1;
+        }
+
+        dt {
+            color: #666666;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        dd {
+            margin: 0;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    /* Upcoming reservations page: title with the booking button beside it, then one card per booking. */
+    .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .section-title {
+            margin-bottom: 0;
+        }
+    }
+
+    .reservation-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+        gap: 16px;
     }
 
     .specials > .hint {
@@ -882,7 +876,8 @@ body:has(.landing) {
     }
 }
 
-/* Customer account pages: sidebar on the left, the chosen page on the right (see _AccountLayout). */
+/* Customer account pages: sidebar on the left, the chosen page on the right (see _AccountLayout).
+   On phones the sidebar moves to a navigation bar at the bottom of the screen (see the 768px rules below). */
 .account {
     display: grid;
     grid-template-columns: 260px 1fr;
@@ -951,6 +946,11 @@ body:has(.landing) {
         font-weight: 600;
     }
 
+    /* The short label is only for the phone tab bar. */
+    .label-short {
+        display: none;
+    }
+
     .sidebar-logout {
         margin-top: 8px;
         padding-top: 8px;
@@ -958,53 +958,34 @@ body:has(.landing) {
     }
 }
 
-/* Narrower screens: the two booking cards share the first row and the menu moves below them. */
-@media only screen and (max-width: 1200px) {
-    .landing .booking-row.with-upcoming {
-        grid-template-columns: 1fr 1fr;
-
-        .today-menu {
-            grid-column: 1 / -1;
-        }
+/* Smaller laptops and tablets: the sidebar stays on the left but takes less room. */
+@media only screen and (max-width: 992px) {
+    .account {
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 24px;
     }
 }
 
-@media only screen and (max-width: 992px) {
-    /* minmax(0, 1fr) keeps the column at the screen width; a plain 1fr would grow to fit the widest content. */
+/* Phones: the sidebar becomes a navigation bar fixed to the bottom of the screen,
+   with five tabs that each show an icon above a short label. */
+@media only screen and (max-width: 768px) {
+    /* minmax(0, 1fr) keeps the column at the screen width; a plain 1fr would grow to fit the widest content.
+       The bottom padding keeps the end of the page clear of the navigation bar. */
     .account {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    /* On small screens the sidebar becomes a row of links above the page. */
-    .account-sidebar {
-        position: static;
-        min-width: 0;
-
-        .sidebar-links {
-            flex-direction: row;
-            flex-wrap: wrap;
-        }
-
-        .sidebar-link {
-            width: auto;
-        }
-
-        .sidebar-logout {
-            margin: 0 0 0 auto;
-            padding: 0;
-            border: none;
-        }
-    }
-}
-
-/* Phones: the sidebar becomes one row of four tabs, each with its icon above a short label. */
-@media only screen and (max-width: 576px) {
-    .account {
-        gap: 16px;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom));
     }
 
     .account-sidebar {
-        padding: 6px;
+        position: fixed;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
 
         .sidebar-title {
             display: none;
@@ -1012,39 +993,50 @@ body:has(.landing) {
 
         .sidebar-links {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 4px;
+            max-width: 560px;
+            margin: 0 auto;
         }
 
         .sidebar-link {
             flex-direction: column;
+            justify-content: center;
             gap: 4px;
-            width: 100%;
+            height: 100%;
             padding: 8px 4px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             line-height: 1.2;
             text-align: center;
 
             i {
                 width: auto;
-                font-size: 1.1rem;
+                font-size: 1.15rem;
             }
+        }
+
+        .label-long {
+            display: none;
+        }
+
+        .label-short {
+            display: inline;
         }
 
         .sidebar-logout {
             margin: 0;
+            padding: 0;
+            border: none;
 
             form {
                 height: 100%;
             }
-
-            .sidebar-link {
-                height: 100%;
-            }
         }
     }
+}
 
-    /* The greeting is dropped so the brand and the dashboard button fit on one line. */
+/* The greeting is dropped so the brand and the dashboard button fit on one line. */
+@media only screen and (max-width: 576px) {
     .landing .landing-nav .greeting {
         display: none;
     }
@@ -1069,7 +1061,6 @@ body:has(.landing) {
         }
 
         .booking-row,
-        .booking-row.with-upcoming,
         .location {
             grid-template-columns: 1fr;
         }

@@ -1,0 +1,28 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ReservationsModel
+@{
+    ViewData["Title"] = "Upcoming Reservations";
+}
+
+<section class="profile">
+    <div class="page-head">
+        <h1 class="section-title">Upcoming reservations</h1>
+        <a asp-page="/Reservation/Management" class="pill-btn">Reserve a table</a>
+    </div>
+
+    @if (Model.Reservations.Count == 0)
+    {
+        <p class="empty-note">You have no upcoming reservations. Book a table and it will show up here.</p>
+    }
+    else
+    {
+        <div class="reservation-list">
+            @foreach (var reservation in Model.Reservations)
+            {
+                <article class="upcoming-card">
+                    <partial name="_UpcomingReservation" model="reservation" />
+                </article>
+            }
+        </div>
+    }
+</section>

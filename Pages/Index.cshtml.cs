@@ -1,9 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
-using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 
@@ -16,7 +14,6 @@ public class IndexModel : PageModel
 {
     private const int ShortMenuSize = 5;
     private const int ChefSpecialsSize = 2;
-    private const int UpcomingReservationsSize = 3;
 
     // The menu page is opened per table (/Table/{tableId}); online customers use this one until tables are assigned.
     public const string MenuTableId = "T1";
@@ -35,9 +32,6 @@ public class IndexModel : PageModel
     public IReadOnlyList<MenuItem> ShortMenu { get; private set; } = [];
     public IReadOnlyList<MenuItem> ChefSpecials { get; private set; } = [];
     public IReadOnlyList<Feedback> Reviews { get; private set; } = [];
-
-    // The logged-in customer's next bookings, soonest first. Empty for visitors.
-    public IReadOnlyList<RestaurantReservation.Models.Reservation> UpcomingReservations { get; private set; } = [];
 
     public async Task OnGetAsync()
     {
@@ -73,24 +67,5 @@ public class IndexModel : PageModel
             .Include(f => f.Customer)
             .OrderByDescending(f => f.Rating)
             .ToListAsync();
-
-        if (User.IsInRole(AppRoles.Customer))
-        {
-            var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var today = DateOnly.FromDateTime(DateTime.Now);
-            var now = TimeOnly.FromDateTime(DateTime.Now);
-
-            // Pending and confirmed bookings that have not started yet; cancelled and completed ones are history.
-            UpcomingReservations = await _db.Reservations
-                .AsNoTracking()
-                .Include(r => r.Customer)
-                .Where(r => r.CustomerId == customerId
-                    && (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed)
-                    && (r.Date > today || (r.Date == today && r.TimeSlot >= now)))
-                .OrderBy(r => r.Date)
-                .ThenBy(r => r.TimeSlot)
-                .Take(UpcomingReservationsSize)
-                .ToListAsync();
-        }
     }
 }

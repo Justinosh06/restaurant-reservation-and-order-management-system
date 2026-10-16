@@ -13,6 +13,7 @@
     {
         "/Customer/Profile" => "profile",
         "/Customer/Password" => "password",
+        "/Customer/Reservations" => "reservations",
         _ => "dining"
     };
 }
@@ -31,6 +32,13 @@
                 <li>
                     <a asp-page="/Customer/Profile" class="sidebar-link @(section == "profile" ? "active" : "")">
                         <i class="fa-regular fa-user"></i> My profile
+                    </a>
+                </li>
+                <li>
+                    <a asp-page="/Customer/Reservations" class="sidebar-link @(section == "reservations" ? "active" : "")">
+                        <i class="fa-regular fa-calendar"></i>
+                        <span class="label-long">Upcoming reservations</span>
+                        <span class="label-short">Upcoming</span>
                     </a>
                 </li>
                 <li>

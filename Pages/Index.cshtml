@@ -1,7 +1,6 @@
 @page
 @using RestaurantReservation.Extensions
 @using RestaurantReservation.Infrastructure.Authentication
-@using RestaurantReservation.Models
 @model IndexModel
 @{
     ViewData["Title"] = "Welcome";
@@ -38,7 +37,7 @@
         <img class="hero-img" src="~/images/landing-hero.jpg" alt="Dishes served at @Model.RestaurantName" />
     </section>
 
-    <section class="booking-row @(isCustomer ? "with-upcoming" : "")">
+    <section class="booking-row">
         @* Reservations need a customer account, so visitors go through the login page first. *@
         <form class="reservation-card" method="get" action="@(isCustomer ? reserveUrl : Url.Page("/Login"))">
             @if (!isCustomer)
@@ -62,70 +61,6 @@
 
             <button type="submit" class="pill-btn w-100">Reserve a table</button>
         </form>
-
-        @if (isCustomer)
-        {
-            <div class="upcoming-card">
-                <h2 class="card-title">Upcoming reservation</h2>
-
-                @if (Model.UpcomingReservations.Count == 0)
-                {
-                    <p class="empty-note">You have no upcoming reservations. Book a table and it will show up here.</p>
-                }
-                else
-                {
-                    var next = Model.UpcomingReservations[0];
-
-                    <div class="upcoming-head">
-                        <div class="upcoming-date">
-                            <strong>@next.Date.ToString("dd")</strong>
-                            <span>@next.Date.ToString("MMM")</span>
-                        </div>
-                        <div>
-                            <span class="upcoming-day">@next.Date.ToString("dddd")</span>
-                            <span class="upcoming-time">@next.TimeSlot.ToString("h:mm tt")</span>
-                        </div>
-                        <span class="status-pill @(next.Status == ReservationStatus.Pending ? "muted" : "")">@next.Status</span>
-                    </div>
-
-                    <dl class="upcoming-details">
-                        <div>
-                            <dt>Name</dt>
-                            <dd>@(next.Customer?.FullName ?? User.Identity?.Name)</dd>
-                        </div>
-                        <div>
-                            <dt>Guests</dt>
-                            <dd>@next.Pax @(next.Pax == 1 ? "guest" : "guests")</dd>
-                        </div>
-                        <div>
-                            <dt>Table</dt>
-                            <dd>@(string.IsNullOrEmpty(next.TableId) ? "Not assigned yet" : $"Table {next.TableId}")</dd>
-                        </div>
-                        <div>
-                            <dt>Contact</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(next.Customer?.PhoneNumber) ? "-" : next.Customer!.PhoneNumber)</dd>
-                        </div>
-                        <div class="wide">
-                            <dt>Booking ID</dt>
-                            <dd>@next.Id</dd>
-                        </div>
-                    </dl>
-
-                    @if (Model.UpcomingReservations.Count > 1)
-                    {
-                        <ul class="upcoming-more">
-                            @foreach (var later in Model.UpcomingReservations.Skip(1))
-                            {
-                                <li>
-                                    <span>@later.Date.ToString("d MMM") &middot; @later.TimeSlot.ToString("h:mm tt")</span>
-                                    <span class="hint">@later.Pax @(later.Pax == 1 ? "guest" : "guests") &middot; @later.Status</span>
-                                </li>
-                            }
-                        </ul>
-                    }
-                }
-            </div>
-        }
 
         <div class="today-menu">
             <h2 class="section-title">Today's menu</h2>
