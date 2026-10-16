@@ -90,6 +90,10 @@ namespace RestaurantReservation.Data
             {
                 entity.HasKey(c => c.Id);
                 entity.HasIndex(c => c.Email).IsUnique();
+
+                entity.Property(c => c.Gender)
+                      .HasConversion<string>()
+                      .HasMaxLength(20);
             });
 
             // -------------------------------------------------------------

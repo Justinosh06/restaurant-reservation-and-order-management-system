@@ -1,0 +1,64 @@
+@using Microsoft.EntityFrameworkCore
+@using RestaurantReservation.Data
+@inject ApplicationDbContext Db
+@{
+    // Customer account pages: the landing page's navigation bar, a sidebar on the left and the page on the right.
+    Layout = "_Layout";
+
+    var restaurantName = await Db.RestaurantSettings.AsNoTracking().Select(s => s.Name).FirstOrDefaultAsync() ?? "Resto";
+    var currentPage = ViewContext.RouteData.Values["page"] as string ?? string.Empty;
+
+    // The dining visit and order pages belong to Dining history.
+    var section = currentPage switch
+    {
+        "/Customer/Profile" => "profile",
+        "/Customer/Password" => "password",
+        _ => "dining"
+    };
+}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
+<link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
+
+<div class="landing">
+    <partial name="_LandingNav" model="restaurantName" />
+
+    <div class="account">
+        <aside class="account-sidebar">
+            <h2 class="sidebar-title">My account</h2>
+
+            <ul class="sidebar-links">
+                <li>
+                    <a asp-page="/Customer/Profile" class="sidebar-link @(section == "profile" ? "active" : "")">
+                        <i class="fa-regular fa-user"></i> My profile
+                    </a>
+                </li>
+                <li>
+                    <a asp-page="/Customer/Dining/Index" class="sidebar-link @(section == "dining" ? "active" : "")">
+                        <i class="fa-solid fa-utensils"></i> Dining history
+                    </a>
+                </li>
+                <li>
+                    <a asp-page="/Customer/Password" class="sidebar-link @(section == "password" ? "active" : "")">
+                        <i class="fa-solid fa-key"></i> Password
+                    </a>
+                </li>
+                <li class="sidebar-logout">
+                    <form method="post" asp-page="/Logout">
+                        <button type="submit" class="sidebar-link">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </aside>
+
+        <div class="account-content">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

@@ -1,0 +1,52 @@
+@page
+@using RestaurantReservation.Extensions
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.Dining.IndexModel
+@{
+    ViewData["Title"] = "Dining History";
+
+    // Session times are stored in UTC.
+    DateTime ToLocal(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
+}
+
+<section>
+    <h1 class="section-title">Dining history</h1>
+
+    @if (Model.Visits.Count == 0)
+    {
+        <p class="empty-note">You have not dined with us yet.</p>
+    }
+    else
+    {
+        <div class="order-list">
+            @foreach (var visit in Model.Visits)
+            {
+                var session = visit.Session;
+
+                <a class="order-card" asp-page="/Customer/Dining/Visit" asp-route-id="@session.Id">
+                    <div>
+                        <span class="order-code">@ToLocal(session.StartingTime).ToString("d MMM yyyy")</span>
+                        <span class="hint">
+                            Arrived @ToLocal(session.StartingTime).ToString("HH:mm")
+                            @if (session.EndingTime is { } left)
+                            {
+                                <text>&middot; Left @ToLocal(left).ToString("HH:mm")</text>
+                            }
+                            &middot; @visit.Orders.Count @(visit.Orders.Count == 1 ? "order" : "orders")
+                        </span>
+                    </div>
+                    <div class="order-side">
+                        @if (session.EndingTime is { } end)
+                        {
+                            <span class="hint">@((int)(end - session.StartingTime).TotalMinutes) min at table</span>
+                        }
+                        else
+                        {
+                            <span class="status-pill">Dining now</span>
+                        }
+                        <span class="order-total">@Model.Currency.FormatCents(visit.TotalAmount)</span>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</section>

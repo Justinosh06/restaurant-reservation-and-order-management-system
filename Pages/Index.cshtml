@@ -1,10 +1,323 @@
-﻿@page
+@page
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Authentication
+@using RestaurantReservation.Models
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Welcome";
+    var isCustomer = User.IsInRole(AppRoles.Customer);
+
+    // Visitors must log in first; the login page then sends them on to the page they picked.
+    var menuUrl = Url.Page("/Table/Index", new { tableId = IndexModel.MenuTableId });
+    var menuLinkUrl = isCustomer ? menuUrl : Url.Page("/Login", new { returnUrl = menuUrl });
+    var reserveUrl = Url.Page("/Reservation/Management");
+
+    // A chef's special opens that dish on the menu; visitors log in first and are then sent on to it.
+    string SpecialUrl(string menuItemId)
+    {
+        var itemUrl = Url.Page("/Table/MenuItem/Index", new { tableId = IndexModel.MenuTableId, menuItemId });
+        return isCustomer ? itemUrl! : Url.Page("/Login", new { returnUrl = itemUrl })!;
+    }
+
+    const string mapEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3689.51102615882!2d113.98775958961416!3d22.372084687791705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3403fb70f463265b%3A0xb412a51f5ac2f272!2sResto%20Bar%20%26%20Grill!5e0!3m2!1sen!2smy!4v1791788991346!5m2!1sen!2smy";
+    // Same place as the embedded map, opened in Google Maps.
+    const string mapOpenUrl = "https://www.google.com/maps?cid=12975615030493114994";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
+<link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
+
+<div class="landing">
+    <partial name="_LandingNav" model="Model.RestaurantName" />
+
+    <section class="hero">
+        <div class="hero-text">
+            <h1 class="hero-title">Fresh pasta, good coffee, a table for you.</h1>
+            @* <span class="hero-tag">Dine in &middot; Reserve ahead</span> *@
+        </div>
+        <img class="hero-img" src="~/images/landing-hero.jpg" alt="Dishes served at @Model.RestaurantName" />
+    </section>
+
+    <section class="booking-row @(isCustomer ? "with-upcoming" : "")">
+        @* Reservations need a customer account, so visitors go through the login page first. *@
+        <form class="reservation-card" method="get" action="@(isCustomer ? reserveUrl : Url.Page("/Login"))">
+            @if (!isCustomer)
+            {
+                <input type="hidden" name="returnUrl" value="@reserveUrl" />
+            }
+            <h2 class="card-title">Reservation</h2>
+
+            <label class="field">
+                <span class="field-label">Date</span>
+                <input type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            </label>
+            <label class="field">
+                <span class="field-label">Time</span>
+                <input type="time" />
+            </label>
+            <label class="field">
+                <span class="field-label">Guests</span>
+                <input type="number" min="1" max="20" placeholder="2" />
+            </label>
+
+            <button type="submit" class="pill-btn w-100">Reserve a table</button>
+        </form>
+
+        @if (isCustomer)
+        {
+            <div class="upcoming-card">
+                <h2 class="card-title">Upcoming reservation</h2>
+
+                @if (Model.UpcomingReservations.Count == 0)
+                {
+                    <p class="empty-note">You have no upcoming reservations. Book a table and it will show up here.</p>
+                }
+                else
+                {
+                    var next = Model.UpcomingReservations[0];
+
+                    <div class="upcoming-head">
+                        <div class="upcoming-date">
+                            <strong>@next.Date.ToString("dd")</strong>
+                            <span>@next.Date.ToString("MMM")</span>
+                        </div>
+                        <div>
+                            <span class="upcoming-day">@next.Date.ToString("dddd")</span>
+                            <span class="upcoming-time">@next.TimeSlot.ToString("h:mm tt")</span>
+                        </div>
+                        <span class="status-pill @(next.Status == ReservationStatus.Pending ? "muted" : "")">@next.Status</span>
+                    </div>
+
+                    <dl class="upcoming-details">
+                        <div>
+                            <dt>Name</dt>
+                            <dd>@(next.Customer?.FullName ?? User.Identity?.Name)</dd>
+                        </div>
+                        <div>
+                            <dt>Guests</dt>
+                            <dd>@next.Pax @(next.Pax == 1 ? "guest" : "guests")</dd>
+                        </div>
+                        <div>
+                            <dt>Table</dt>
+                            <dd>@(string.IsNullOrEmpty(next.TableId) ? "Not assigned yet" : $"Table {next.TableId}")</dd>
+                        </div>
+                        <div>
+                            <dt>Contact</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(next.Customer?.PhoneNumber) ? "-" : next.Customer!.PhoneNumber)</dd>
+                        </div>
+                        <div class="wide">
+                            <dt>Booking ID</dt>
+                            <dd>@next.Id</dd>
+                        </div>
+                    </dl>
+
+                    @if (Model.UpcomingReservations.Count > 1)
+                    {
+                        <ul class="upcoming-more">
+                            @foreach (var later in Model.UpcomingReservations.Skip(1))
+                            {
+                                <li>
+                                    <span>@later.Date.ToString("d MMM") &middot; @later.TimeSlot.ToString("h:mm tt")</span>
+                                    <span class="hint">@later.Pax @(later.Pax == 1 ? "guest" : "guests") &middot; @later.Status</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+            </div>
+        }
+
+        <div class="today-menu">
+            <h2 class="section-title">Today's menu</h2>
+
+            @if (Model.ShortMenu.Count == 0)
+            {
+                <p class="empty-note">Our menu is being updated. Please check back soon.</p>
+            }
+            else
+            {
+                <ul class="menu-list">
+                    @foreach (var item in Model.ShortMenu)
+                    {
+                        <li>
+                            <span>@item.Name</span>
+                            <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <a href="@menuLinkUrl" class="pill-btn menu-btn">
+                View full menu <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+            @if (!isCustomer)
+            {
+                <p class="hint">Log in to see the full menu and place an order.</p>
+            }
+        </div>
+    </section>
+
+    @if (Model.ChefSpecials.Count > 0)
+    {
+        <section class="specials">
+            <h2 class="section-title text-center">Chef's specials</h2>
+
+            <div class="specials-grid">
+                @foreach (var item in Model.ChefSpecials)
+                {
+                    <a class="special-link" href="@SpecialUrl(item.Id)">
+                        <figure class="special-card">
+                            <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                            <figcaption>
+                                <span>@item.Name</span>
+                                <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
+                            </figcaption>
+                        </figure>
+                    </a>
+                }
+            </div>
+            @if (!isCustomer)
+            {
+                <p class="hint text-center">Log in to order the chef's specials.</p>
+            }
+        </section>
+    }
+
+    <details class="reviews">
+        <summary>
+            <span>Reviews</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </summary>
+
+        @if (Model.Reviews.Count == 0)
+        {
+            <p class="empty-note">No reviews yet.</p>
+        }
+        else
+        {
+            <div class="review-filter" role="group" aria-label="Filter reviews by rating">
+                <button type="button" class="filter-chip active" data-rating="" aria-pressed="true">All</button>
+                @for (var rating = 5; rating >= 1; rating--)
+                {
+                    <button type="button" class="filter-chip" data-rating="@rating" aria-pressed="false"
+                            aria-label="@rating star reviews">
+                        @rating <i class="fa-solid fa-star"></i>
+                    </button>
+                }
+            </div>
+
+            <p class="empty-note review-none" hidden>No reviews with this rating yet.</p>
+
+            <ul class="review-list">
+                @foreach (var review in Model.Reviews)
+                {
+                    <li data-rating="@review.Rating">
+                        <div class="review-head">
+                            <strong>@(review.Customer?.FirstName ?? "Guest")</strong>
+                            <span class="review-rating" aria-label="@review.Rating out of 5">
+                                @for (var star = 1; star <= 5; star++)
+                                {
+                                    <i class="@(star <= review.Rating ? "fa-solid" : "fa-regular") fa-star"></i>
+                                }
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(review.Description))
+                        {
+                            <p>@review.Description</p>
+                        }
+                        @if (review.MenuItem is not null)
+                        {
+                            <span class="hint">on @review.MenuItem.Name</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </details>
+
+    <section class="location">
+        <iframe class="map" title="Map to @Model.RestaurantName" src="@mapEmbedUrl"
+                allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+
+        <div class="location-info">
+            <h2 class="section-title">Location &amp; opening hours</h2>
+
+            @if (Model.Settings is null)
+            {
+                <p class="empty-note">Our address and opening hours will be announced soon.</p>
+            }
+            else
+            {
+                <p class="address">
+                    @Model.Settings.Address
+                    @if (!string.IsNullOrWhiteSpace(Model.Settings.PhoneNumber))
+                    {
+                        <br />@Model.Settings.PhoneNumber
+                    }
+                </p>
+
+                @if (Model.OpeningHours.Count > 0)
+                {
+                    <ul class="hours-list">
+                        @foreach (var hours in Model.OpeningHours)
+                        {
+                            <li>
+                                <span>@hours.DayOfWeek</span>
+                                @if (hours.IsClosed || hours.OpenTime is null || hours.CloseTime is null)
+                                {
+                                    <span>Closed</span>
+                                }
+                                else
+                                {
+                                    <span>@hours.OpenTime.Value.ToString("HH:mm") &ndash; @hours.CloseTime.Value.ToString("HH:mm")</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+        </div>
+
+        <a href="@mapOpenUrl" target="_blank" rel="noopener" class="pill-btn location-btn">
+            Open map <i class="fa-solid fa-arrow-up-right-from-square ms-2"></i>
+        </a>
+    </section>
 </div>
+
+@section Scripts {
+    <script>
+        // A page brought back by the Back button is a snapshot from before login or logout, so load it again.
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) {
+                location.reload();
+            }
+        });
+
+        // Review filter: show only the reviews with the picked star rating ("All" shows every review).
+        (function () {
+            const chips = document.querySelectorAll('.review-filter .filter-chip');
+            const reviews = document.querySelectorAll('.review-list li');
+            const none = document.querySelector('.review-none');
+
+            chips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    const rating = chip.dataset.rating;
+                    let shown = 0;
+
+                    reviews.forEach(function (review) {
+                        const match = !rating || review.dataset.rating === rating;
+                        review.hidden = !match;
+                        if (match) {
+                            shown++;
+                        }
+                    });
+                    chips.forEach(function (other) {
+                        other.classList.toggle('active', other === chip);
+                        other.setAttribute('aria-pressed', other === chip);
+                    });
+                    none.hidden = shown > 0;
+                });
+            });
+        })();
+    </script>
+}
