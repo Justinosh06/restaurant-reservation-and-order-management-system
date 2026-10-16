@@ -16,8 +16,9 @@ public class StripePaymentService : IPaymentService
 
     public async Task<Session> CreateTableSettlementSessionAsync(
         string tableId, 
+        string diningSessionId,
         string paymentAttemptId,
-        IEnumerable<(string Name, double UnitPrice, int Quantity, string Remark)> items, 
+        IEnumerable<(string Name, decimal UnitPrice, int Quantity, string Remark)> items,
         string domain)
     {
         var lineItems = items.Select(item => new SessionLineItemOptions
@@ -25,7 +26,7 @@ public class StripePaymentService : IPaymentService
             PriceData = new SessionLineItemPriceDataOptions
             {
                 Currency = "myr",
-                UnitAmount = (long)(item.UnitPrice * 100),
+                UnitAmount = (long)(item.UnitPrice * 100m),
                 ProductData = new SessionLineItemPriceDataProductDataOptions
                 {
                     Name = item.Name,
@@ -39,11 +40,12 @@ public class StripePaymentService : IPaymentService
         {
             LineItems = lineItems,
             Mode = "payment",
-            ClientReferenceId = $"table:{tableId}:{paymentAttemptId}",
+            ClientReferenceId = $"table:{tableId}:session:{diningSessionId}:{paymentAttemptId}",
             Metadata = new Dictionary<string, string>
             {
                 { "type", "table_settlement" },
                 { "table_id", tableId },
+                { "dining_session_id", diningSessionId },
                 { "payment_attempt_id", paymentAttemptId }
             },
             SuccessUrl = $"{domain}/Payment/{{CHECKOUT_SESSION_ID}}?tableId={tableId}",
@@ -52,7 +54,9 @@ public class StripePaymentService : IPaymentService
 
         return await _sessionService.CreateAsync(options, new RequestOptions
         {
-            IdempotencyKey = CreateIdempotencyKey("table_settlement", $"{tableId}:{paymentAttemptId}")
+            IdempotencyKey = CreateIdempotencyKey(
+                "table_settlement",
+                $"{tableId}:{diningSessionId}:{paymentAttemptId}")
         });
     }
 
