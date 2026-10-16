@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Data;
@@ -17,6 +19,14 @@ public static class DbSeeder
         // Uses EF migrations once the project has them; until then the tables are created directly.
         if (db.Database.GetMigrations().Any())
         {
+            var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+            var creator = db.GetService<IRelationalDatabaseCreator>();
+            if (environment.IsDevelopment() && await creator.ExistsAsync() && await creator.HasTablesAsync()
+                && !(await db.Database.GetAppliedMigrationsAsync()).Any())
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+
             await db.Database.MigrateAsync();
         }
         else
