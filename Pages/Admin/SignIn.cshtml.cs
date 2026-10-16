@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Authentication;
+using RestaurantReservation.Models;
 using RestaurantReservation.Services;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
@@ -43,6 +44,7 @@ public class SignInModel : PageModel
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
-        return Redirect("/");
+        // The dashboard ("/") is for Administrators only, so Staff start on the Orders page.
+        return Redirect(admin.Role == AdminRole.Administrator ? "/" : "/Admin/Orders");
     }
 }

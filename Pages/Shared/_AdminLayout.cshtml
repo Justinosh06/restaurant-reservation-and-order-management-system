@@ -2,12 +2,16 @@
 @* @inject SignInManager<IdentityUser> SignInManager *@
 @* @inject UserManager<IdentityUser> UserManager *@
 
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Admin
 @using RestaurantReservation.Infrastructure.Navigation
 @inject SidebarNavService NavService
+@inject RestaurantCurrency Currency
 
 @{
     var navGroups = await NavService.GetNavGroupsForUserAsync(User);
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+    var currency = await Currency.GetAsync();
 }
 
 <!DOCTYPE html>
@@ -21,8 +25,10 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/avatar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin_layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-pages.css" asp-append-version="true" />
 </head>
-<body>
+<body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()">
+    @Html.AntiForgeryToken()
     <div class="page-content">
         <div class="sidebar">
             <div class="header">
@@ -53,16 +59,30 @@
                 </ul>
             </div>
 
-            <div class="footer">
-                <a class="profile-btn">
+            <div class="footer dropup">
+                <button type="button" class="profile-btn w-100 text-start" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="avatar male">
-                        <img class="avatar-img" src="~/image/avatar.svg" />
+                        <img class="avatar-img" src="~/image/avatar.svg" alt="" />
                     </div>
                     <div class="right-container">
-                        <h4 class="name">Justin</h4>
-                        <p class="email">justin@gmail.com</p>
+                        <h4 class="name">@(User.IsInRole("Administrator") ? "Administrator" : "Staff")</h4>
+                        <p class="email">@User.Identity?.Name</p>
                     </div>
-                </a>
+                </button>
+                <ul class="dropdown-menu w-100 profile-menu">
+                    <li>
+                        <a class="dropdown-item" asp-page="/Admin/Profile/Profile">
+                            <i class="fa-regular fa-user fa-fw me-2"></i>Profile
+                        </a>
+                    </li>
+                    <li>
+                        <form method="post" asp-page="/Admin/Logout">
+                            <button type="submit" class="dropdown-item logout-item">
+                                <i class="fa-solid fa-arrow-right-from-bracket fa-fw me-2"></i>Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
             </div>
         </div>
 
@@ -74,7 +94,6 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/stateTriggerer.js" asp-append-version="true"></script>
     <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
     
     @await RenderSectionAsync("Scripts", required: false)

@@ -31,6 +31,8 @@ namespace RestaurantReservation.Models
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        public DateTime? ServedAt { get; set; }
+
         // Foreign Keys
         [Required]
         public string SessionId { get; set; } = string.Empty;
