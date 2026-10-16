@@ -1,35 +1,108 @@
 @page "/Table/{tableId}/MenuItem/{menuItemId}"
 @model RestaurantReservation.Pages.Table.MenuItem.MenuItemModel
+@using RestaurantReservation.Infrastructure
 @{
-    ViewData["Title"] = $"{Model.MenuItemId}";
+    ViewData["Title"] = Model.Item?.Name ?? "Menu item";
 }
 
-<link rel="stylesheet" href="~/css/menu_item.css" />
+<link rel="stylesheet" href="~/css/menu_item.css" asp-append-version="true" />
 
-<header class="header">
-    <a onclick="window.history.back()"
-        class="back-btn">
-        <i class="fa-solid fa-arrow-left"></i>
-    </a>
-</header>
+<div class="page-container">
+    <header class="header">
+        <a onclick="window.history.back()"
+            class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
 
-<div class="d-flex menu-item-container">
-    <div class="display-container">
+        <h1 class="title">@Model.Item!.Name</h1>
+    </header>
 
-    </div>
+    <div class="d-flex menu-item-container">
+        <div class="display-container">
+            @if (!string.IsNullOrWhiteSpace(Model.Item?.ThumbnailImage))
+            {
+                <img class="menu-item-image" src="@Model.Item.ThumbnailImage" alt="@Model.Item.Name" />
+            }
+        </div>
 
-    <div class="info-container">
-        <h1 class="title">Spaghetti Bolognaise</h1>
+        <div class="info-container">
+            <h1 class="title">@Model.Item!.Name</h1>
 
-        <label class="input-label">Remark</label>
-        <textarea class="remark-input" maxlength="300"></textarea>
-        <span class="character-counter">0/300</span>
+            <div class="tab-list">
+                <a asp-page="/Table/MenuItem/Index"
+                    asp-route-tableId="@Model.TableId"
+                    asp-route-menuItemId="@Model.MenuItemId"
+                    asp-route-tab="Order"
+                    class="tab @(Model.ActiveTab == "Order" ? "active" : "")"
+                    data-tab-navigation>Order</a>
 
-        <button class="add-to-cart-btn">
-            Add to Cart
-        </button>
+                <a asp-page="/Table/MenuItem/Index"
+                    asp-route-tableId="@Model.TableId"
+                    asp-route-menuItemId="@Model.MenuItemId"
+                    asp-route-tab="About"
+                    class="tab @(Model.ActiveTab == "About" ? "active" : "")"
+                    data-tab-navigation>About</a>
+            </div>
 
-        <p class="description">lorem ipsum dolor sit amet consectetur adipiscing elit similique aute dolore non id aute deserunt ullamco quis aliquip placeat sed ut maxime minus est exercitation id id esse dolores harum temporibus optio incididunt veniam imperdiet irure libero cum pariatur et et similique fugiat odio in quod libero lorem et reprehenderit</p>
+            @if (Model.ActiveTab == "Order")
+            {
+                <form method="post" asp-page-handler="AddToCart" asp-route-tableId="@Model.TableId" asp-route-menuItemId="@Model.MenuItemId" class="d-flex flex-column">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    @if (Model.Item.Options.Count > 0)
+                    {
+                        <section class="menu-item-options" aria-label="Menu item options">
+                            @foreach (var option in Model.Item.Options)
+                            {
+                                <label class="option">@option.Key</label>
+
+                                <div class="option-list">
+                                    @foreach (var value in option.Value.Split(
+                                        ',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <label class="option-choice">
+                                            <input type="radio" name="Options[@option.Key]" value="@value"
+                                                checked="@(Model.Options.TryGetValue(option.Key, out var selectedOption) && selectedOption == value)"
+                                                required />
+                                            <span>@value</span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                        </section>
+                    }
+
+                    <label class="input-label" for="remark-input">Remark</label>
+                    <textarea id="remark-input" name="Remarks" class="remark-input" maxlength="300">@Model.Remarks</textarea>
+                    <span class="character-counter">0/300</span>
+
+                    <div class="data-row">
+                        <p class="price">RM @Model.Item.PriceInMainUnit.ToString("F2")</p>
+
+                        <div class="quantity-wrapper" aria-label="Select quantity">
+                            <button type="button" class="quantity-btn" data-quantity-change="-1" aria-label="Decrease @Model.Item.Name quantity">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <span id="quantity-display" class="quantity-val fw-bold mx-2">@Model.Quantity</span>
+                            <input type="hidden" id="quantity-input" name="Quantity" value="@Model.Quantity" />
+                            <button type="button" class="quantity-btn" data-quantity-change="1" aria-label="Increase @Model.Item.Name quantity">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="add-to-cart-btn">
+                        Add to Cart
+                    </button>
+                </form>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(Model.Item.Description))
+                {
+                    <p class="description markdown-body">@Model.Item.Description.ToHtml()</p>
+                }
+            }
+        </div>
     </div>
 </div>
 
