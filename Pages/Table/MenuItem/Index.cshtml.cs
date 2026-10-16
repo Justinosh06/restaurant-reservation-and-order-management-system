@@ -40,11 +40,13 @@ public class MenuItemModel : PageModel
         }
 
         TableId = tableId.ToUpper();
-        if (!await _diningSessions.HasActiveSessionAsync(TableId))
+        var activeSession = await _diningSessions.GetActiveSessionAsync(TableId);
+        if (activeSession is null)
         {
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
 
+        ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
         MenuItemId = menuItemId.ToUpper();
         ActiveTab = string.Equals(tab, "About", StringComparison.OrdinalIgnoreCase) ? "About" : "Order";
         Item = await _db.MenuItems
@@ -74,6 +76,7 @@ public class MenuItemModel : PageModel
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
 
+        ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
         Item = await _db.MenuItems
             .FirstOrDefaultAsync(item => item.Id == MenuItemId && item.Availability);
         if (Item is null)
