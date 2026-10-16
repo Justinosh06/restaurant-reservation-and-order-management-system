@@ -481,5 +481,4 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# Admin uploads (promotion images)
 wwwroot/uploads/

@@ -95,7 +95,6 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin", "AdminPortal");
     options.Conventions.AllowAnonymousToPage("/Admin/SignIn");
 
-    // Staff only work with orders, tables and reservations; the rest of the admin portal is for Administrators.
     options.Conventions.AuthorizeFolder("/Admin/Dashboard", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
