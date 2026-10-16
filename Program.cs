@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Infrastructure.Navigation;
 using RestaurantReservation.Infrastructure.Stripe;
@@ -101,8 +100,6 @@ builder.Services.AddRazorPages(options =>
 builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider(SiteHosts.AdminSubdomain));
 
 var app = builder.Build();
-
-await DbSeeder.SeedAsync(app.Services);
 
 await DbSeeder.SeedAsync(app.Services);
 
