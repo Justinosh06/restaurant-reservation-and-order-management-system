@@ -95,6 +95,8 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin", "AdminPortal");
     options.Conventions.AllowAnonymousToPage("/Admin/SignIn");
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
+    // The online menu (view only) is for logged-in customers; visitors are sent to log in first.
+    options.Conventions.AuthorizeFolder("/Menu", "CustomerOnly");
 });
 builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider(SiteHosts.AdminSubdomain));
 

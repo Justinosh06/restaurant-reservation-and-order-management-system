@@ -15,9 +15,6 @@ public class IndexModel : PageModel
     private const int ShortMenuSize = 5;
     private const int ChefSpecialsSize = 2;
 
-    // The menu page is opened per table (/Table/{tableId}); online customers use this one until tables are assigned.
-    public const string MenuTableId = "T1";
-
     private readonly ApplicationDbContext _db;
 
     public IndexModel(ApplicationDbContext db)

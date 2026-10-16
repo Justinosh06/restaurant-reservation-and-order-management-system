@@ -1,0 +1,74 @@
+@page
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Models.Enums
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Menu.IndexModel
+@{
+    ViewData["Title"] = "Menu";
+}
+
+<link rel="stylesheet" href="~/css/table_page.css" asp-append-version="true" />
+
+<div class="menu-container">
+    <h1 class="title">Menu<span class="content-number" id="menu-total-count">@Model.Items.Count</span></h1>
+
+    <div class="pill-filter-row">
+        <span class="filter-pill active" data-category="all">
+            All<span class="content-number">@Model.Items.Count</span>
+        </span>
+
+        @foreach (var type in Enum.GetValues<MenuItemType>())
+        {
+            <span class="filter-pill" data-category="@type.ToString().ToLower()">
+                @type<span class="content-number">@Model.Items.Count(i => i.MenuItemType == type)</span>
+            </span>
+        }
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <p class="text-secondary">Our menu is being updated. Please check back soon.</p>
+    }
+
+    <div class="menu-grid">
+        @foreach (var item in Model.Items)
+        {
+            <a asp-page="/Menu/Item"
+               asp-route-menuItemId="@item.Id"
+               class="item-card-link text-decoration-none text-reset"
+               data-category="@item.MenuItemType.ToString().ToLower()">
+
+                <div class="item-card">
+                    <div class="thumbnail-container">
+                        @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
+                        {
+                            <img class="thumbnail-img" src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                        }
+                    </div>
+
+                    <div class="info-container">
+                        <h3 class="item-title">@item.Name</h3>
+
+                        <div class="bottom-section">
+                            <span class="price">@Model.Currency.FormatCents(item.Price)</span>
+                            <span class="category">
+                                @if (item.MenuItemType == MenuItemType.Beverage)
+                                {
+                                    <i class="fa-solid fa-martini-glass-citrus"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-utensils me-1"></i>
+                                }
+                                @item.MenuItemType
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/tableMenu.js" asp-append-version="true"></script>
+}

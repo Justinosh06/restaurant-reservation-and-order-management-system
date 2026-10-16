@@ -7,14 +7,14 @@
     var isCustomer = User.IsInRole(AppRoles.Customer);
 
     // Visitors must log in first; the login page then sends them on to the page they picked.
-    var menuUrl = Url.Page("/Table/Index", new { tableId = IndexModel.MenuTableId });
+    var menuUrl = Url.Page("/Menu/Index");
     var menuLinkUrl = isCustomer ? menuUrl : Url.Page("/Login", new { returnUrl = menuUrl });
     var reserveUrl = Url.Page("/Reservation/Management");
 
     // A chef's special opens that dish on the menu; visitors log in first and are then sent on to it.
     string SpecialUrl(string menuItemId)
     {
-        var itemUrl = Url.Page("/Table/MenuItem/Index", new { tableId = IndexModel.MenuTableId, menuItemId });
+        var itemUrl = Url.Page("/Menu/Item", new { menuItemId });
         return isCustomer ? itemUrl! : Url.Page("/Login", new { returnUrl = itemUrl })!;
     }
 
@@ -87,7 +87,7 @@
             </a>
             @if (!isCustomer)
             {
-                <p class="hint">Log in to see the full menu and place an order.</p>
+                <p class="hint">Log in to see the full menu.</p>
             }
         </div>
     </section>
@@ -113,7 +113,7 @@
             </div>
             @if (!isCustomer)
             {
-                <p class="hint text-center">Log in to order the chef's specials.</p>
+                <p class="hint text-center">Log in to see more about the chef's specials.</p>
             }
         </section>
     }

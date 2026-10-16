@@ -1,0 +1,52 @@
+@using Microsoft.EntityFrameworkCore
+@using RestaurantReservation.Data
+@inject ApplicationDbContext Db
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/table_layout.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        // View-only menu for customers browsing online: the table menu's header without the cart and checkout.
+        var restaurantName = await Db.RestaurantSettings.AsNoTracking().Select(s => s.Name).FirstOrDefaultAsync() ?? "Resto";
+    }
+
+    <div class="page-content">
+        <header class="header">
+            <div class="nav-group">
+                <a asp-page="/Menu/Index" class="nav-item active" aria-label="Menu">
+                    <i class="fa-solid fa-burger"></i>
+                </a>
+            </div>
+
+            <a asp-page="/Index" class="checkout-btn">
+                Back to dashboard
+            </a>
+        </header>
+
+        <main role="main" class="content-container">
+            @RenderBody()
+        </main>
+
+        <footer class="footer">
+            <h3 class="title">@restaurantName</h3>
+
+            <span class="copyright">&copy; @DateTime.Today.Year. @restaurantName Limited.</span>
+        </footer>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
