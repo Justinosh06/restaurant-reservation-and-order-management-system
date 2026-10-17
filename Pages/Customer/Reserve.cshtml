@@ -1,0 +1,95 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ReserveModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Book a table";
+    var selectedDate = Model.Input.Date == default ? "" : Model.Input.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var selectedTime = Model.Input.Time == default ? "" : Model.Input.Time.ToString("HH:mm", CultureInfo.InvariantCulture);
+}
+
+<link rel="stylesheet" href="~/css/reserve.css" asp-append-version="true" />
+
+<div class="reserve-page">
+    <div class="reserve-heading">
+        <div>
+            <h1>Book a table</h1>
+            <p>Pick a day and a time. We'll set up your table before you arrive.</p>
+        </div>
+        <a asp-page="/Customer/Index" class="reserve-back">Back</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="reserve-success" role="status">@Model.StatusMessage</div>
+    }
+
+    <form method="post" id="reserveForm"
+          data-today="@Model.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+          data-last-day="@Model.LastDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+          data-closed-days="@string.Join(' ', Model.ClosedDays)">
+        <div asp-validation-summary="All" class="reserve-errors"></div>
+        <input type="hidden" asp-for="Input.Date" id="dateInput" value="@selectedDate" />
+        <input type="hidden" asp-for="Input.Time" id="timeInput" value="@selectedTime" />
+
+        <div class="reserve-guests">
+            <span id="guestsLabel">Guests</span>
+            <div class="guest-stepper" role="group" aria-labelledby="guestsLabel">
+                <button type="button" id="guestsDown" aria-label="Fewer guests">−</button>
+                <input asp-for="Input.Guests" id="guestsInput" type="number" min="1" max="@ReserveModel.MaxPartySize" inputmode="numeric" />
+                <button type="button" id="guestsUp" aria-label="More guests">+</button>
+            </div>
+        </div>
+
+        <div class="booker">
+            <section class="booker-calendar" aria-label="Choose a date">
+                <div class="calendar-head">
+                    <h2 id="monthLabel"></h2>
+                    <div class="calendar-nav">
+                        <button type="button" id="prevMonth" aria-label="Previous month">‹</button>
+                        <button type="button" id="nextMonth" aria-label="Next month">›</button>
+                    </div>
+                </div>
+                <div class="calendar-weekdays" aria-hidden="true">
+                    <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </section>
+
+            <section class="booker-times" aria-labelledby="dayLabel">
+                <div class="times-head">
+                    <h2 id="dayLabel">Choose a date</h2>
+                    <div class="clock-toggle" role="group" aria-label="Time format">
+                        <button type="button" data-clock="12" class="active">12h</button>
+                        <button type="button" data-clock="24">24h</button>
+                    </div>
+                </div>
+                <div class="time-list" id="timeList" aria-live="polite"></div>
+            </section>
+        </div>
+
+        <label for="notesInput" class="reserve-notes-label">Notes <span>optional</span></label>
+        <textarea asp-for="Input.Notes" id="notesInput" rows="2" maxlength="500" placeholder="Allergies, birthday, high chair…"></textarea>
+
+        <div class="reserve-footer">
+            <span id="summary">Choose a date and time.</span>
+            <button type="submit" id="bookButton" disabled>Book</button>
+        </div>
+    </form>
+
+    @if (Model.Upcoming.Count > 0)
+    {
+        <section class="my-bookings" aria-labelledby="myBookingsTitle">
+            <h2 id="myBookingsTitle">Your upcoming bookings</h2>
+            @foreach (var booking in Model.Upcoming)
+            {
+                <article>
+                    <strong>@booking.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</strong>
+                    <span>@booking.PartySize @(booking.PartySize == 1 ? "guest" : "guests")</span>
+                    <span class="booking-status @booking.Status.ToString().ToLowerInvariant()">@booking.Status</span>
+                </article>
+            }
+        </section>
+    }
+</div>
+
+<script src="~/js/reserve.js" asp-append-version="true"></script>

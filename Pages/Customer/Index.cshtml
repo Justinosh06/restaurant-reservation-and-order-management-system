@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.IndexModel
 @{
     ViewData["Title"] = "Customer Dashboard";
@@ -12,3 +12,4 @@
 </div>
 <p>Welcome, <strong>@User.Identity?.Name</strong>! You are logged in as <span class="badge bg-primary">Customer</span>.</p>
 <p class="text-muted">Book a table and place your food orders.</p>
+<a asp-page="/Customer/Reserve" class="btn btn-success">Book a table</a>
