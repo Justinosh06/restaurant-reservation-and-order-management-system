@@ -5,8 +5,7 @@ using RestaurantReservation.Models.Enums;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Menu;
 
-// Menu for customers browsing online (/Menu). View only: ordering happens at the table (/Table/{tableId}).
-// Only customers can open it (see AuthorizeFolder in Program.cs); visitors are sent to log in first.
+// Menu for browsing online (/Menu). Open to everyone, logged in or not. View only: ordering happens at the table (/Table/{tableId}).
 public class IndexModel : PageModel
 {
     private readonly ApplicationDbContext _db;

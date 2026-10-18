@@ -39,6 +39,8 @@ public static class DbSeeder
             "IF COL_LENGTH('Customers', 'Gender') IS NULL ALTER TABLE Customers ADD Gender nvarchar(20) NULL");
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Customers', 'DateOfBirth') IS NULL ALTER TABLE Customers ADD DateOfBirth date NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Feedbacks', 'OrderId') IS NULL ALTER TABLE Feedbacks ADD OrderId nvarchar(max) NULL");
 
         // Options is stored as JSON; existing rows get an empty set of options.
         // EF formats raw SQL like string.Format, so the braces of {} are written doubled.

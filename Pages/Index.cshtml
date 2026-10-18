@@ -6,17 +6,11 @@
     ViewData["Title"] = "Welcome";
     var isCustomer = User.IsInRole(AppRoles.Customer);
 
-    // Visitors must log in first; the login page then sends them on to the page they picked.
+    // Everyone can browse the menu. Booking a table needs a customer account, so visitors log in first
+    // and the login page then sends them on to the booking page.
     var menuUrl = Url.Page("/Menu/Index");
-    var menuLinkUrl = isCustomer ? menuUrl : Url.Page("/Login", new { returnUrl = menuUrl });
-    var reserveUrl = Url.Page("/Reservation/Management");
-
-    // A chef's special opens that dish on the menu; visitors log in first and are then sent on to it.
-    string SpecialUrl(string menuItemId)
-    {
-        var itemUrl = Url.Page("/Menu/Item", new { menuItemId });
-        return isCustomer ? itemUrl! : Url.Page("/Login", new { returnUrl = itemUrl })!;
-    }
+    // The customer booking page (Pages/Customer/Reserve) comes from the reservation module.
+    const string reserveUrl = "/Customer/Reserve";
 
     const string mapEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3689.51102615882!2d113.98775958961416!3d22.372084687791705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3403fb70f463265b%3A0xb412a51f5ac2f272!2sResto%20Bar%20%26%20Grill!5e0!3m2!1sen!2smy!4v1791788991346!5m2!1sen!2smy";
     // Same place as the embedded map, opened in Google Maps.
@@ -82,13 +76,9 @@
                 </ul>
             }
 
-            <a href="@menuLinkUrl" class="pill-btn menu-btn">
+            <a href="@menuUrl" class="pill-btn menu-btn">
                 View full menu <i class="fa-solid fa-arrow-right ms-1"></i>
             </a>
-            @if (!isCustomer)
-            {
-                <p class="hint">Log in to see the full menu.</p>
-            }
         </div>
     </section>
 
@@ -100,7 +90,7 @@
             <div class="specials-grid">
                 @foreach (var item in Model.ChefSpecials)
                 {
-                    <a class="special-link" href="@SpecialUrl(item.Id)">
+                    <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id">
                         <figure class="special-card">
                             <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
                             <figcaption>
@@ -111,10 +101,6 @@
                     </a>
                 }
             </div>
-            @if (!isCustomer)
-            {
-                <p class="hint text-center">Log in to see more about the chef's specials.</p>
-            }
         </section>
     }
 

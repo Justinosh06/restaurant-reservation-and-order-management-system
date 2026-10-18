@@ -1,5 +1,6 @@
 @using Microsoft.EntityFrameworkCore
 @using RestaurantReservation.Data
+@using RestaurantReservation.Infrastructure.Authentication
 @inject ApplicationDbContext Db
 <!DOCTYPE html>
 <html lang="en">
@@ -26,8 +27,9 @@
                 </a>
             </div>
 
+            @* The home page is the customer's dashboard once they are logged in. *@
             <a asp-page="/Index" class="checkout-btn">
-                Back to dashboard
+                @(User.IsInRole(AppRoles.Customer) ? "Back to dashboard" : "Back to home")
             </a>
         </header>
 

@@ -8,7 +8,19 @@
     // Order and session times are stored in UTC.
     DateTime ToLocal(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
 
-    var visit = Model.Order.Session;
+    string ItemName(string menuItemId) =>
+        Model.Items.FirstOrDefault(i => i.MenuItemId == menuItemId)?.MenuItem?.Name ?? menuItemId;
+
+    // Read-only stars for a rating from 1 to 5.
+    void Stars(int rating)
+    {
+        <span class="review-stars" aria-label="@rating out of 5">
+            @for (var star = 1; star <= 5; star++)
+            {
+                <i class="@(star <= rating ? "fa-solid" : "fa-regular") fa-star"></i>
+            }
+        </span>
+    }
 }
 
 <section class="detail-page">
@@ -26,20 +38,9 @@
 
     <dl class="order-meta">
         <div>
-            <dt>Ordered</dt>
+            <dt>Started</dt>
             <dd>@ToLocal(Model.Order.CreatedAt).ToString("d MMM yyyy, HH:mm")</dd>
         </div>
-        @if (visit is not null)
-        {
-            <div>
-                <dt>Arrived</dt>
-                <dd>@ToLocal(visit.StartingTime).ToString("HH:mm")</dd>
-            </div>
-            <div>
-                <dt>Left</dt>
-                <dd>@(visit.EndingTime is { } end ? ToLocal(end).ToString("HH:mm") : "Dining now")</dd>
-            </div>
-        }
         <div>
             <dt>Items</dt>
             <dd>@Model.Items.Sum(i => i.Quantity)</dd>
@@ -53,7 +54,9 @@
                 var price = item.MenuItem?.Price ?? 0;
                 var index = Model.Feedback.FindIndex(f => f.MenuItemId == item.MenuItemId);
                 // An item ordered twice gets one feedback box, under its first line.
-                var showFeedback = index >= 0 && item == Model.Items.First(i => i.MenuItemId == item.MenuItemId);
+                var firstLine = item == Model.Items.First(i => i.MenuItemId == item.MenuItemId);
+                var showFeedback = index >= 0 && firstLine;
+                var showLocked = firstLine && Model.Locked.Contains(item.MenuItemId);
 
                 <li class="order-item">
                     @if (!string.IsNullOrEmpty(item.MenuItem?.ThumbnailImage))
@@ -76,7 +79,25 @@
 
                     <strong class="item-total">@Model.Currency.FormatCents(price * item.Quantity)</strong>
 
-                    @if (showFeedback)
+                    @if (showLocked)
+                    {
+                        var given = Model.Previous[item.MenuItemId];
+
+                        @* Feedback already given on this order (or a later one) can no longer be changed here. *@
+                        <div class="item-feedback feedback-given">
+                            <div class="feedback-given-head">
+                                <span class="hint">
+                                    @(given.OrderId == Model.Order.Id ? "Your feedback" : "You reviewed this dish on a later order")
+                                </span>
+                                @{ Stars(given.Rating); }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(given.Description))
+                            {
+                                <p class="mb-0">@given.Description</p>
+                            }
+                        </div>
+                    }
+                    else if (showFeedback)
                     {
                         var input = Model.Feedback[index];
 
@@ -126,5 +147,73 @@
         {
             <p class="hint mb-0">Feedback can be left once an order has been served.</p>
         }
+
+        @if (Model.Conflicts.Count > 0)
+        {
+            @* Reminder before replacing earlier feedback. Nothing is saved until the customer chooses. *@
+            <div class="modal fade" id="overwriteModal" tabindex="-1" aria-labelledby="overwriteModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title h5" id="overwriteModalLabel">Replace your earlier feedback?</h2>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">
+                                You have reviewed @(Model.Conflicts.Count == 1 ? "this dish" : "these dishes") before.
+                                Each dish keeps only one review from you. Click the feedback you want to keep.
+                            </p>
+
+                            <ul class="overwrite-list">
+                                @foreach (var conflict in Model.Conflicts)
+                                {
+                                    var earlier = Model.Previous[conflict.MenuItemId];
+
+                                    <li>
+                                        <strong class="d-block mb-2">@ItemName(conflict.MenuItemId)</strong>
+
+                                        @* Clicking a box picks it; the earlier feedback is picked to start with. *@
+                                        <div class="overwrite-compare" role="radiogroup" aria-label="Which feedback to keep for @ItemName(conflict.MenuItemId)">
+                                            <label class="overwrite-option">
+                                                <input type="radio" name="OverwriteChoice[@conflict.MenuItemId]" value="keep" checked />
+                                                <span class="overwrite-option-head">
+                                                    <span class="hint">Earlier feedback</span>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                </span>
+                                                @{ Stars(earlier.Rating); }
+                                                <p class="mb-0">@(string.IsNullOrWhiteSpace(earlier.Description) ? "No comment" : earlier.Description)</p>
+                                            </label>
+                                            <label class="overwrite-option">
+                                                <input type="radio" name="OverwriteChoice[@conflict.MenuItemId]" value="replace" />
+                                                <span class="overwrite-option-head">
+                                                    <span class="hint">New feedback</span>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                </span>
+                                                @{ Stars(conflict.Rating ?? 0); }
+                                                <p class="mb-0">@(string.IsNullOrWhiteSpace(conflict.Description) ? "No comment" : conflict.Description)</p>
+                                            </label>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="pill-btn ghost" data-bs-dismiss="modal">Go back</button>
+                            <button type="submit" name="ConfirmOverwrite" value="true" class="pill-btn">Save my choices</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </form>
 </section>
+
+@section Scripts {
+    @if (Model.Conflicts.Count > 0)
+    {
+        <script>
+            // The reminder opens straight away when Send feedback finds earlier feedback.
+            new bootstrap.Modal(document.getElementById('overwriteModal')).show();
+        </script>
+    }
+}

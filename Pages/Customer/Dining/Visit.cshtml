@@ -17,20 +17,9 @@
 
     <dl class="order-meta">
         <div>
-            <dt>Arrived</dt>
+            <dt>Started</dt>
             <dd>@ToLocal(session.StartingTime).ToString("HH:mm")</dd>
         </div>
-        <div>
-            <dt>Left</dt>
-            <dd>@(session.EndingTime is { } left ? ToLocal(left).ToString("HH:mm") : "Dining now")</dd>
-        </div>
-        @if (session.EndingTime is { } end)
-        {
-            <div>
-                <dt>Time at table</dt>
-                <dd>@((int)(end - session.StartingTime).TotalMinutes) min</dd>
-            </div>
-        }
         <div>
             <dt>Orders</dt>
             <dd>@Model.Visit.Orders.Count</dd>

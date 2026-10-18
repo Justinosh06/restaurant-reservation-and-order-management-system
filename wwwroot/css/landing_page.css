@@ -641,6 +641,109 @@ body:has(.landing) {
             }
         }
 
+        .review-stars {
+            display: inline-flex;
+            gap: 2px;
+            color: black;
+            white-space: nowrap;
+        }
+
+        /* Feedback already given: shown read-only. */
+        .feedback-given {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #F2F2F3;
+            gap: 4px;
+
+            .feedback-given-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 4px 12px;
+            }
+
+            p {
+                color: #444444;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        /* Reminder before replacing earlier feedback: earlier and new feedback side by side, then the choice. */
+        .overwrite-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+
+            li {
+                padding: 12px 0;
+                border-top: 1px solid #ECECEC;
+            }
+        }
+
+        .overwrite-compare {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+
+            p {
+                margin-top: 4px;
+                color: #444444;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        /* Each feedback box is a choice: click it to pick it. The picked box gets a black border and a tick. */
+        .overwrite-option {
+            display: block;
+            padding: 10px 12px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: #F2F2F3;
+            cursor: pointer;
+            transition: 200ms ease-in-out;
+
+            input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .overwrite-option-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                i {
+                    visibility: hidden;
+                }
+            }
+        }
+
+        .overwrite-option:hover {
+            border-color: #CCCCCC;
+        }
+
+        .overwrite-option:has(input:checked) {
+            border-color: black;
+            background: white;
+
+            .overwrite-option-head i {
+                visibility: visible;
+            }
+        }
+
+        .overwrite-option:has(input:focus-visible) {
+            outline: 2px solid black;
+            outline-offset: 2px;
+        }
+
+        .modal-footer .pill-btn.ghost {
+            background: transparent;
+            color: black;
+            outline: 1px solid black;
+        }
+
         /* Stars are radio buttons listed 5 to 1 and shown reversed, so a checked star also fills the ones before it. */
         .star-input {
             display: flex;
@@ -1039,6 +1142,11 @@ body:has(.landing) {
 @media only screen and (max-width: 576px) {
     .landing .landing-nav .greeting {
         display: none;
+    }
+
+    /* Earlier and new feedback stack in the reminder. */
+    .landing .detail-page .overwrite-compare {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

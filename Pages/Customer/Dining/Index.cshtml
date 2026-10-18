@@ -26,23 +26,11 @@
                     <div>
                         <span class="order-code">@ToLocal(session.StartingTime).ToString("d MMM yyyy")</span>
                         <span class="hint">
-                            Arrived @ToLocal(session.StartingTime).ToString("HH:mm")
-                            @if (session.EndingTime is { } left)
-                            {
-                                <text>&middot; Left @ToLocal(left).ToString("HH:mm")</text>
-                            }
+                            Started @ToLocal(session.StartingTime).ToString("HH:mm")
                             &middot; @visit.Orders.Count @(visit.Orders.Count == 1 ? "order" : "orders")
                         </span>
                     </div>
                     <div class="order-side">
-                        @if (session.EndingTime is { } end)
-                        {
-                            <span class="hint">@((int)(end - session.StartingTime).TotalMinutes) min at table</span>
-                        }
-                        else
-                        {
-                            <span class="status-pill">Dining now</span>
-                        }
                         <span class="order-total">@Model.Currency.FormatCents(visit.TotalAmount)</span>
                     </div>
                 </a>
