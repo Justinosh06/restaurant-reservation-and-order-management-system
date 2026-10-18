@@ -6,10 +6,15 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Reservation Management";
-    var reservations = Model.Reservations
-        .Where(reservation => Model.FilterTableId is null || reservation.TableIds.Contains(Model.FilterTableId))
-        .OrderBy(reservation => reservation.ReservationAt)
-        .ToList();
+    var now = DateTime.Now;
+    var emptyText = Model.Tab switch
+    {
+        "upcoming" => "No upcoming reservations with a table yet. Seat pending ones on Table Management.",
+        "pending" => "Every upcoming reservation has a table.",
+        "past" => "No past reservations yet.",
+        _ => "No cancelled reservations."
+    };
+    string? lastMonth = null;
 }
 
 <link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
@@ -52,68 +57,112 @@
             <div class="status-message" role="status">@Model.StatusMessage</div>
         }
 
-        <section class="reservations-section">
-            <div class="section-heading">
-                <div>
-                    <p class="eyebrow">SCHEDULE</p>
-                    <h2>All reservations</h2>
-                </div>
-                <span class="reservation-total">@reservations.Count total</span>
-            </div>
-
-            @if (reservations.Count == 0)
+        <nav class="reservation-tabs" aria-label="Reservation lists">
+            @foreach (var tab in ReservationManagementModel.Tabs)
             {
-                <div class="empty-reservations">
-                    <span class="empty-icon" aria-hidden="true">＋</span>
-                    <strong>No reservations found</strong>
-                    <p>Create a reservation or choose another table filter.</p>
-                </div>
+                <a class="reservation-tab @(Model.Tab == tab.Key ? "active" : "")"
+                   asp-page="/Admin/Reservation/Management"
+                   asp-route-tab="@tab.Key"
+                   asp-route-tableId="@Model.FilterTableId"
+                   aria-current="@(Model.Tab == tab.Key ? "page" : null)">
+                    @tab.Label <span class="tab-count">@Model.TabCounts.GetValueOrDefault(tab.Key)</span>
+                </a>
             }
-            else
-            {
-                <div class="reservation-agenda">
-                    @foreach (var reservation in reservations)
+        </nav>
+
+        @if (Model.TabReservations.Count == 0)
+        {
+            <div class="empty-reservations">
+                <span class="empty-icon" aria-hidden="true"><i class="fa-regular fa-calendar"></i></span>
+                <strong>Nothing here</strong>
+                <p>@emptyText</p>
+            </div>
+        }
+        else
+        {
+            <div class="booking-rows">
+                @foreach (var reservation in Model.TabReservations)
+                {
+                    var month = reservation.ReservationAt.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
+                    if (month != lastMonth)
                     {
-                        <article class="agenda-item">
-                            <div class="agenda-date">
-                                <strong>@reservation.ReservationAt.ToString("dd", CultureInfo.CurrentCulture)</strong>
-                                <span>@reservation.ReservationAt.ToString("MMM", CultureInfo.CurrentCulture)</span>
-                            </div>
-                            <div class="agenda-details">
-                                <strong>@reservation.CustomerName</strong>
-                                <span>@(!reservation.HasTable ? "No table yet" : reservation.TableIds.Count == 1 ? $"Table {reservation.TableLabel}" : $"Tables {reservation.TableLabel}") · @reservation.PartySize guests · @reservation.Status@(reservation.DepositLabel is null ? "" : $" · {reservation.DepositLabel}")</span>
-                            </div>
-                            <time class="agenda-time" datetime="@reservation.ReservationAt.ToString("yyyy-MM-ddTHH:mm:ss")">
+                        lastMonth = month;
+                        <h2 class="booking-month">@month</h2>
+                    }
+
+                    var isToday = reservation.ReservationAt.Date == now.Date;
+                    var isOpen = Model.Tab is "upcoming" or "pending";
+                    <article class="booking-row @(Model.Tab == "cancelled" ? "cancelled" : "")">
+                        <div class="booking-date @(isToday ? "today" : "")">
+                            <span>@reservation.ReservationAt.ToString("ddd", CultureInfo.CurrentCulture)</span>
+                            <strong>@reservation.ReservationAt.ToString("dd", CultureInfo.CurrentCulture)</strong>
+                        </div>
+                        <div class="booking-when">
+                            <span>
+                                <i class="fa-solid fa-clock" aria-hidden="true"></i>
                                 @reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)
-                            </time>
-                            @if (!string.IsNullOrWhiteSpace(reservation.ContactNumber))
-                            {
-                                <span class="agenda-contact">@reservation.ContactNumber</span>
-                            }
-                            <div class="agenda-actions">
-                                <a class="agenda-manage"
-                                   asp-page="/Admin/Reservation/Management"
+                            </span>
+                            <span class="@(reservation.HasTable ? "" : "no-table")">
+                                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                                @(!reservation.HasTable ? "No table yet" : reservation.TableIds.Count == 1 ? $"Table {reservation.TableLabel}" : $"Tables {reservation.TableLabel}")
+                            </span>
+                        </div>
+                        <div class="booking-guest">
+                            <strong>@reservation.CustomerName</strong>
+                            <span>
+                                <span class="guest-chip"><i class="fa-solid fa-user-group" aria-hidden="true"></i> @reservation.PartySize</span>
+                                @if (!string.IsNullOrWhiteSpace(reservation.ContactNumber))
+                                {
+                                    <span>@reservation.ContactNumber</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(reservation.Notes))
+                                {
+                                    <span class="booking-notes" title="@reservation.Notes">@reservation.Notes</span>
+                                }
+                            </span>
+                        </div>
+                        @if (reservation.DepositLabel is not null)
+                        {
+                            <span class="booking-badge @(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "refunded")">@reservation.DepositLabel</span>
+                        }
+                        else if (reservation.Status == RestaurantReservation.Models.ReservationStatus.Confirmed && isOpen)
+                        {
+                            <span class="booking-badge confirmed">Confirmed</span>
+                        }
+
+                        <details class="booking-menu">
+                            <summary>Edit <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+                            <div class="booking-menu-list">
+                                <a asp-page="/Admin/Reservation/Management"
                                    asp-route-edit="@reservation.Id"
-                                   asp-route-tableId="@Model.FilterTableId">
-                                    Edit
+                                   asp-route-tableId="@Model.FilterTableId"
+                                   asp-route-tab="@Model.Tab">
+                                    <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit booking
                                 </a>
+                                @if (isOpen)
+                                {
+                                    <a asp-page="/Admin/Table/Management">
+                                        <i class="fa-solid fa-chair" aria-hidden="true"></i> @(reservation.HasTable ? "Move table" : "Assign table")
+                                    </a>
+                                    <form method="post" asp-page-handler="Cancel" class="cancel-reservation-form"
+                                          data-deposit="@(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "")">
+                                        <input type="hidden" name="ReservationId" value="@reservation.Id" />
+                                        <input type="hidden" name="FilterTableId" value="@Model.FilterTableId" />
+                                        <input type="hidden" name="Tab" value="@Model.Tab" />
+                                        <button type="submit"><i class="fa-solid fa-ban" aria-hidden="true"></i> Cancel reservation</button>
+                                    </form>
+                                }
                                 <form method="post" asp-page-handler="Delete" class="delete-reservation-form">
                                     <input type="hidden" name="ReservationId" value="@reservation.Id" />
                                     <input type="hidden" name="FilterTableId" value="@Model.FilterTableId" />
-                                    <button type="submit" class="agenda-delete">Delete</button>
+                                    <input type="hidden" name="Tab" value="@Model.Tab" />
+                                    <button type="submit" class="danger"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
                                 </form>
                             </div>
-                        </article>
-                    }
-                </div>
-            }
-        </section>
-
-        @if (reservations.Any(reservation => reservation.ReservationAt < DateTime.Now))
-        {
-            <p class="reservation-history-note">
-                Past reservations are included so you can still review, edit, or remove them.
-            </p>
+                        </details>
+                    </article>
+                }
+            </div>
         }
     </div>
 </div>
@@ -138,6 +187,7 @@
               class="reservation-form"
               hidden="@(Model.FormMode == "edit")">
             <input type="hidden" asp-for="FilterTableId" />
+            <input type="hidden" asp-for="Tab" />
             <div asp-validation-summary="All" class="validation-summary"></div>
 
             <fieldset class="table-choices">
@@ -187,6 +237,7 @@
               hidden="@(Model.FormMode != "edit")">
             <input type="hidden" asp-for="ReservationId" />
             <input type="hidden" asp-for="FilterTableId" />
+            <input type="hidden" asp-for="Tab" />
             <div asp-validation-summary="All" class="validation-summary"></div>
 
             <fieldset class="table-choices">

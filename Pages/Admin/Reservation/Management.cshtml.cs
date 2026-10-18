@@ -5,14 +5,29 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Models;
+using RestaurantReservation.Services;
+using Stripe;
 // The Razor pages in Pages/Table compile into a namespace called Table, which hides the model's short name here.
 using DiningTable = RestaurantReservation.Models.Table;
 
 // Not ...Pages.Admin.Reservation: a namespace called Reservation would hide the Reservation model from other admin pages.
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 
-public class ReservationManagementModel(ApplicationDbContext db) : PageModel
+public class ReservationManagementModel(
+    ApplicationDbContext db,
+    IPaymentService payments,
+    ILogger<ReservationManagementModel> logger) : PageModel
 {
+    // The list tabs: upcoming bookings already seated at a table, upcoming ones still
+    // waiting for a table, bookings whose time has passed, and cancelled ones.
+    public static readonly (string Key, string Label)[] Tabs =
+    [
+        ("upcoming", "Upcoming"),
+        ("pending", "Pending"),
+        ("past", "Past"),
+        ("cancelled", "Cancelled")
+    ];
+
     public List<DiningTable> Tables { get; private set; } = [];
 
     public List<ReservationSummary> Reservations { get; private set; } = [];
@@ -30,6 +45,20 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
     [BindProperty]
     public string? FilterTableId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string Tab { get; set; } = "upcoming";
+
+    // The reservations on the open tab (after the table filter), in the order they are listed.
+    public List<ReservationSummary> TabReservations { get; private set; } = [];
+
+    public Dictionary<string, int> TabCounts { get; private set; } = [];
+
+    public static string TabOf(ReservationSummary reservation, DateTime now) =>
+        reservation.Status == ReservationStatus.Cancelled ? "cancelled"
+        : reservation.Status == ReservationStatus.Completed || reservation.EndsAt <= now ? "past"
+        : reservation.HasTable ? "upcoming"
+        : "pending";
+
     [TempData]
     public string? StatusMessage { get; set; }
 
@@ -37,6 +66,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
     {
         await LoadPageAsync();
         FilterTableId = Tables.FirstOrDefault(table => table.Id == tableId)?.Id;
+        BuildTabs();
 
         if (!string.IsNullOrEmpty(edit))
         {
@@ -86,7 +116,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
         await db.SaveChangesAsync();
 
         StatusMessage = "Reservation created.";
-        return RedirectToPage(new { tableId = FilterTableId });
+        return RedirectToPage(new { tableId = FilterTableId, tab = TabOf(ReservationSummary.From(reservation), DateTime.Now) });
     }
 
     public async Task<IActionResult> OnPostUpdateAsync()
@@ -113,7 +143,7 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
         await db.SaveChangesAsync();
 
         StatusMessage = "Reservation updated.";
-        return RedirectToPage(new { tableId = FilterTableId });
+        return RedirectToPage(new { tableId = FilterTableId, tab = TabOf(ReservationSummary.From(reservation), DateTime.Now) });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync()
@@ -130,7 +160,46 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
             StatusMessage = "That reservation was already deleted.";
         }
 
-        return RedirectToPage(new { tableId = FilterTableId });
+        return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+    }
+
+    // Cancels a booking but keeps it (it moves to the Cancelled tab). A paid deposit is refunded in full.
+    public async Task<IActionResult> OnPostCancelAsync()
+    {
+        var reservation = ReservationId is null ? null : await db.Reservations
+            .Include(item => item.Customer)
+            .FirstOrDefaultAsync(item => item.Id == ReservationId);
+        if (reservation is null || reservation.Status == ReservationStatus.Cancelled)
+        {
+            StatusMessage = "That reservation is already cancelled or gone.";
+            return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+        }
+
+        var summary = ReservationSummary.From(reservation);
+        var label = $"{summary.CustomerName}'s booking on "
+            + summary.ReservationAt.ToString("ddd d MMM, h:mm tt", CultureInfo.CurrentCulture);
+
+        var refunded = false;
+        if (reservation.DepositStatus == DepositStatus.Paid && reservation.StripeSessionId is not null)
+        {
+            try
+            {
+                await payments.RefundCheckoutSessionAsync(reservation.StripeSessionId);
+                reservation.DepositStatus = DepositStatus.Refunded;
+                refunded = true;
+            }
+            catch (Exception error) when (error is StripeException or InvalidOperationException)
+            {
+                logger.LogError(error, "Could not refund the deposit for reservation {ReservationId}.", reservation.Id);
+                StatusMessage = $"Couldn't refund the deposit for {label}, so it was not cancelled. Try again, or refund it in the Stripe dashboard.";
+                return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+            }
+        }
+
+        reservation.Status = ReservationStatus.Cancelled;
+        await db.SaveChangesAsync();
+        StatusMessage = $"{label} is cancelled." + (refunded ? " The deposit was refunded." : "");
+        return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
     }
 
     private async Task LoadPageAsync()
@@ -146,6 +215,30 @@ public class ReservationManagementModel(ApplicationDbContext db) : PageModel
             .Include(reservation => reservation.ReservationTables)
             .ToListAsync();
         Reservations = reservations.Select(ReservationSummary.From).ToList();
+        BuildTabs();
+    }
+
+    private void BuildTabs()
+    {
+        if (!Tabs.Any(tab => tab.Key == Tab))
+        {
+            Tab = "upcoming";
+        }
+
+        var now = DateTime.Now;
+        var shown = Reservations
+            .Where(reservation => FilterTableId is null || reservation.TableIds.Contains(FilterTableId))
+            .ToList();
+        TabCounts = Tabs.ToDictionary(
+            tab => tab.Key,
+            tab => shown.Count(reservation => TabOf(reservation, now) == tab.Key));
+
+        // Coming bookings soonest first; past and cancelled ones most recent first.
+        var onTab = shown.Where(reservation => TabOf(reservation, now) == Tab);
+        TabReservations = (Tab is "past" or "cancelled"
+                ? onTab.OrderByDescending(reservation => reservation.ReservationAt)
+                : onTab.OrderBy(reservation => reservation.ReservationAt))
+            .ToList();
     }
 
     // existing is the reservation being edited, or null when creating one.
