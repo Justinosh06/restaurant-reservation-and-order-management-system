@@ -203,23 +203,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Pending tab: the floor plan, like Table Management. Pick a booking in the sidebar,
-    // tap free tables (the suggested ones start picked), then save.
-    const workspace = document.getElementById("pendingWorkspace");
-    if (workspace) {
+    // Assign table (Pending bookings): the floor plan, like Table Management, in a pop-up.
+    // The suggested tables start picked; tap free tables to change them, then save.
+    const floorDialog = document.getElementById("floorAssign");
+    if (floorDialog) {
         const banner = document.getElementById("pendingBanner");
         const bannerText = document.getElementById("pendingText");
         const saveButton = document.getElementById("pendingSave");
-        const cancelButton = document.getElementById("pendingCancel");
-        const floorTables = Array.from(workspace.querySelectorAll(".floor-table"));
-        const queueItems = Array.from(workspace.querySelectorAll(".queue-item"));
-        const idleText = bannerText.textContent;
+        const floorTables = Array.from(floorDialog.querySelectorAll(".floor-table"));
         let selected = null;
         let chosen = [];
-
-        const describe = function (item) {
-            return item.dataset.name + " · " + item.dataset.party + " guests · " + item.dataset.time;
-        };
 
         const showChosen = function () {
             const free = idList(selected.dataset.free);
@@ -241,58 +234,46 @@ document.addEventListener("DOMContentLoaded", function () {
             banner.classList.toggle("warning", chosen.length > 0 && !enough);
             bannerText.textContent = chosen.length === 0
                 ? (free.length > 0
-                    ? "Choose tables for " + describe(selected)
-                    : "No table is free for " + describe(selected) + ". Free one up or add a table.")
-                : describe(selected) + ": " + seats + " seats for " + party + " guests (" + chosen.join(" + ") + ")"
+                    ? "Tap the tables to seat " + party + " guests."
+                    : "No table is free at this time. Free one up or add a table.")
+                : seats + " seats for " + party + " guests (" + chosen.join(" + ") + ")"
                     + (enough ? "" : ". Tap another table to add it.");
             saveButton.disabled = !enough;
         };
 
-        const clearSelection = function () {
+        const closeFloor = function () {
+            if (!selected) {
+                return;
+            }
             selected = null;
-            chosen = [];
-            queueItems.forEach(function (item) {
-                item.classList.remove("selected");
-                item.setAttribute("aria-pressed", "false");
-            });
-            floorTables.forEach(function (table) {
-                table.classList.remove("picked", "fits", "no-fit");
-                table.removeAttribute("aria-pressed");
-            });
-            app.classList.remove("assigning");
-            banner.classList.remove("warning");
-            bannerText.textContent = idleText;
-            saveButton.disabled = true;
-            cancelButton.hidden = true;
+            floorDialog.classList.remove("open");
+            floorDialog.setAttribute("aria-hidden", "true");
+            if (!panel.classList.contains("open")) {
+                backdrop.classList.remove("open");
+            }
         };
 
-        queueItems.forEach(function (item) {
-            item.setAttribute("aria-pressed", "false");
-            item.addEventListener("click", function () {
-                if (selected === item) {
-                    clearSelection();
-                    return;
-                }
-                selected = item;
-                chosen = idList(item.dataset.suggested);
-                queueItems.forEach(function (other) {
-                    other.classList.toggle("selected", other === item);
-                    other.setAttribute("aria-pressed", other === item ? "true" : "false");
+        document.querySelectorAll(".floor-assign-open").forEach(function (button) {
+            button.addEventListener("click", function () {
+                selected = button;
+                chosen = idList(button.dataset.suggested);
+                document.getElementById("floorAssignTitle").textContent = button.dataset.name;
+                document.getElementById("floorAssignInfo").textContent =
+                    button.dataset.party + " guests · " + button.dataset.time;
+                menus.forEach(function (menu) {
+                    menu.open = false;
                 });
-                app.classList.add("assigning");
-                cancelButton.hidden = false;
                 showChosen();
+                floorDialog.classList.add("open");
+                floorDialog.setAttribute("aria-hidden", "false");
+                backdrop.classList.add("open");
+                document.getElementById("closeFloorAssign").focus();
             });
         });
 
         floorTables.forEach(function (table) {
             table.addEventListener("click", function () {
                 const id = table.dataset.tableId;
-                if (!selected) {
-                    banner.classList.add("warning");
-                    bannerText.textContent = "Pick a booking on the right first, then tap " + id + " to seat it there.";
-                    return;
-                }
                 if (chosen.includes(id)) {
                     chosen = chosen.filter(function (other) { return other !== id; });
                 } else if (idList(selected.dataset.free).includes(id)) {
@@ -311,10 +292,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 postAssignment(selected.dataset.reservationId, chosen);
             }
         });
-        cancelButton.addEventListener("click", clearSelection);
+        document.getElementById("pendingCancel").addEventListener("click", closeFloor);
+        document.getElementById("closeFloorAssign").addEventListener("click", closeFloor);
+        backdrop.addEventListener("click", closeFloor);
         document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape" && selected && !backdrop.classList.contains("open")) {
-                clearSelection();
+            if (event.key === "Escape") {
+                closeFloor();
             }
         });
     }

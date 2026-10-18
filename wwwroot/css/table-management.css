@@ -1700,49 +1700,42 @@ body:has(.service-app) {
     font-weight: 600;
 }
 
-/* Pending tab floor plan on Reservation Management (reuses the Table Management styles above). */
-.reservation-management-page .table-workspace {
-    margin-top: 2px;
+/* Assign table pop-up on Reservation Management: the Table Management floor plan in a dialog. */
+.floor-assign-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 1042;
+    display: none;
+    width: min(1100px, calc(100vw - 32px));
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgb(0 0 0 / 22%);
+    transform: translate(-50%, -50%);
 }
 
-.queue-entry {
-    position: relative;
+.floor-assign-dialog.open {
+    display: block;
 }
 
-.queue-entry .queue-item {
-    padding-right: 44px;
+.floor-assign-dialog .floorplan-shell {
+    margin: 0;
 }
 
-.queue-menu {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+.floor-assign-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--line);
+    background: #fff;
 }
 
-.queue-menu summary {
-    padding: 5px 9px;
-    border-color: transparent;
-    background: transparent;
-    color: var(--muted);
-}
-
-.queue-menu summary:hover {
-    background: #f1f2ef;
-}
-
-.queue-menu summary i {
-    font-size: 12px;
-    transition: none;
-}
-
-.queue-menu[open] summary i {
-    transform: none;
-}
-
-.queue-deposit {
-    margin-left: 6px;
-    color: var(--green);
-    font-weight: 600;
+.floor-assign-head h2 {
+    margin: 2px 0;
+    font-size: 20px;
 }
 
 .legend-inline {
