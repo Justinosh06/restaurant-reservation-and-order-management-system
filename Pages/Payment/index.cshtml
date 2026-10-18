@@ -48,7 +48,7 @@
             <div class="btn-container">
                 @if (!Model.ShowRetryButton && !Model.ShowRefreshButton)
                 {
-                    <button type="button" class="back-btn" onclick="window.location.href='/'">Back to Home</button>
+                    <a class="back-btn" href="@Model.BackUrl">@Model.BackLabel</a>
                 }
                 @if (Model.ShowReceiptButton)
                 {
@@ -56,7 +56,14 @@
                 }
                 @if (Model.ShowRetryButton)
                 {
-                    <button type="button" class="retry-btn">Retry</button>
+                    @if (Model.RetryUrl is not null)
+                    {
+                        <a class="retry-btn" href="@Model.RetryUrl">Retry</a>
+                    }
+                    else
+                    {
+                        <button type="button" class="retry-btn">Retry</button>
+                    }
                 }
                 @if (Model.ShowRefreshButton)
                 {

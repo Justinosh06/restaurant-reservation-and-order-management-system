@@ -57,10 +57,12 @@ public class StripePaymentService : IPaymentService
     }
 
     public async Task<Session> CreateReservationDepositSessionAsync(
-        int reservationId, 
-        string customerName, 
-        double depositAmount, 
-        string domain)
+        string reservationId,
+        string customerName,
+        string? customerEmail,
+        double depositAmount,
+        string successUrl,
+        string cancelUrl)
     {
         var lineItems = new List<SessionLineItemOptions>
         {
@@ -73,7 +75,7 @@ public class StripePaymentService : IPaymentService
                     ProductData = new SessionLineItemPriceDataProductDataOptions
                     {
                         Name = $"Table Reservation Deposit - {customerName}",
-                        Description = $"Reservation Reference #{reservationId}"
+                        Description = $"Reservation Reference #{reservationId[..8].ToUpperInvariant()}"
                     }
                 },
                 Quantity = 1
@@ -84,25 +86,40 @@ public class StripePaymentService : IPaymentService
         {
             LineItems = lineItems,
             Mode = "payment",
+            CustomerEmail = customerEmail,
             ClientReferenceId = $"reservation:{reservationId}",
             Metadata = new Dictionary<string, string>
             {
                 { "type", "reservation_deposit" },
-                { "reservation_id", reservationId.ToString() }
+                { "reservation_id", reservationId }
             },
-            SuccessUrl = $"{domain}/Reservation/Confirmation?sessionId={{CHECKOUT_SESSION_ID}}&reservationId={reservationId}",
-            CancelUrl = $"{domain}/Reservation/Cancel?reservationId={reservationId}"
+            ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            SuccessUrl = successUrl,
+            CancelUrl = cancelUrl
         };
 
         return await _sessionService.CreateAsync(options, new RequestOptions
         {
-            IdempotencyKey = CreateIdempotencyKey("reservation_deposit", reservationId.ToString())
+            IdempotencyKey = CreateIdempotencyKey("reservation_deposit", reservationId)
         });
     }
 
     public async Task<Session> GetCheckoutSessionAsync(string sessionId)
     {
         return await _sessionService.GetAsync(sessionId);
+    }
+
+    public async Task<Refund> RefundCheckoutSessionAsync(string sessionId)
+    {
+        var session = await _sessionService.GetAsync(sessionId);
+        if (string.IsNullOrEmpty(session.PaymentIntentId))
+        {
+            throw new InvalidOperationException($"Checkout session {sessionId} has no payment to refund.");
+        }
+
+        return await new RefundService().CreateAsync(
+            new RefundCreateOptions { PaymentIntent = session.PaymentIntentId },
+            new RequestOptions { IdempotencyKey = CreateIdempotencyKey("refund", sessionId) });
     }
 
     private static string CreateIdempotencyKey(string paymentType, string paymentReference)

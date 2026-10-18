@@ -6,14 +6,22 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Models;
+using RestaurantReservation.Services;
 using Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
+using Stripe;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 
-// Customers pick a party size, a date and a time. Tables are not chosen here:
-// the booking starts as Pending and staff seat it on Table Management.
-public class ReserveModel(ApplicationDbContext db) : PageModel
+// Customers pick a party size, a date and a time, then pay a deposit on Stripe Checkout.
+// Tables are not chosen here: the booking starts as Pending and staff seat it on Table Management.
+public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILogger<ReserveModel> logger) : PageModel
 {
+    public const double Deposit = 20.00;
+
+    // Seats stay held for a customer who is still on the Stripe page. Stripe expires the
+    // checkout after 30 minutes; the extra 5 covers a payment that finishes right at the end.
+    private static readonly TimeSpan UnpaidHold = TimeSpan.FromMinutes(35);
+
     // Used when the restaurant has not set its business hours yet.
     private static readonly TimeOnly DefaultOpen = new(8, 0);
     private static readonly TimeOnly DefaultClose = new(22, 0);
@@ -52,7 +60,24 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
 
     public async Task OnGetAsync()
     {
+        await SettleExpiredUnpaidAsync();
         await LoadPageAsync();
+    }
+
+    // Stripe sends the customer here when they leave the checkout page without paying.
+    public async Task<IActionResult> OnGetPaymentCancelledAsync(string? reservationId)
+    {
+        var reservation = reservationId is null ? null : await FindOwnBookingAsync(item => item.Id == reservationId);
+        if (reservation is { DepositStatus: DepositStatus.Unpaid } && !await MarkPaidIfStripeSaysSoAsync(reservation))
+        {
+            db.Reservations.Remove(reservation);
+            await db.SaveChangesAsync();
+        }
+
+        StatusMessage = reservation is { DepositStatus: DepositStatus.Paid }
+            ? $"Your deposit was already paid, so your booking on {Describe(reservation)} stands."
+            : "Payment cancelled, so no booking was made.";
+        return RedirectToPage();
     }
 
     // GET /Customer/Reserve?handler=Slots&date=2026-10-20&guests=4 - the times on that day and whether each has room.
@@ -99,22 +124,45 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
             return Page();
         }
 
+        // Saved first so the seats are held while the customer pays; it only counts once paid.
         var reservation = new Reservation
         {
+            Id = Guid.NewGuid().ToString("N"),
             Date = Input.Date,
             TimeSlot = Input.Time,
             Pax = Input.Guests,
             Status = ReservationStatus.Pending,
             CustomerId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-            Notes = string.IsNullOrWhiteSpace(Input.Notes) ? null : Input.Notes.Trim()
+            Notes = string.IsNullOrWhiteSpace(Input.Notes) ? null : Input.Notes.Trim(),
+            DepositAmount = (int)(Deposit * 100),
+            DepositStatus = DepositStatus.Unpaid
         };
         db.Reservations.Add(reservation);
         await db.SaveChangesAsync();
 
-        var at = Input.Date.ToDateTime(Input.Time);
-        StatusMessage = $"Booked for {Input.Guests} on {at.ToString("dddd d MMMM 'at' h:mm tt", CultureInfo.CurrentCulture)}. "
-            + "We'll confirm your table soon.";
-        return RedirectToPage();
+        var page = $"{Request.Scheme}://{Request.Host}/Customer/Reserve";
+        try
+        {
+            var session = await payments.CreateReservationDepositSessionAsync(
+                reservation.Id,
+                User.FindFirstValue(ClaimTypes.Name) ?? "Guest",
+                User.FindFirstValue(ClaimTypes.Email),
+                Deposit,
+                successUrl: $"{Request.Scheme}://{Request.Host}/Payment/{{CHECKOUT_SESSION_ID}}",
+                cancelUrl: $"{page}?handler=PaymentCancelled&reservationId={reservation.Id}");
+            reservation.StripeSessionId = session.Id;
+            await db.SaveChangesAsync();
+            return Redirect(session.Url);
+        }
+        catch (Exception error) when (error is StripeException or InvalidOperationException)
+        {
+            logger.LogError(error, "Could not start the Stripe deposit payment for reservation {ReservationId}.", reservation.Id);
+            db.Reservations.Remove(reservation);
+            await db.SaveChangesAsync();
+            ModelState.AddModelError(string.Empty, "We couldn't open the payment page. Please try again in a moment.");
+            await LoadPageAsync();
+            return Page();
+        }
     }
 
     public async Task<IActionResult> OnPostCancelAsync(string? reservationId)
@@ -138,10 +186,29 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
             return RedirectToPage();
         }
 
+        // The deposit is refunded in full; if Stripe refuses, the booking stays so nothing is lost.
+        var refunded = false;
+        if (reservation.DepositStatus == DepositStatus.Paid && reservation.StripeSessionId is not null)
+        {
+            try
+            {
+                await payments.RefundCheckoutSessionAsync(reservation.StripeSessionId);
+                reservation.DepositStatus = DepositStatus.Refunded;
+                refunded = true;
+            }
+            catch (Exception error) when (error is StripeException or InvalidOperationException)
+            {
+                logger.LogError(error, "Could not refund the deposit for reservation {ReservationId}.", reservation.Id);
+                StatusMessage = "We couldn't refund your deposit just now, so your booking is still on. Please try again or call us.";
+                return RedirectToPage();
+            }
+        }
+
         // Kept as Cancelled (not deleted) so staff can still see it; cancelled bookings don't hold tables.
         reservation.Status = ReservationStatus.Cancelled;
         await db.SaveChangesAsync();
-        StatusMessage = $"Your booking on {at} is cancelled.";
+        StatusMessage = $"Your booking on {at} is cancelled."
+            + (refunded ? $" Your RM{Deposit:0} deposit is on its way back to your card (usually 5-10 working days)." : "");
         return RedirectToPage();
     }
 
@@ -167,6 +234,61 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
             .ToList();
     }
 
+    private Task<Reservation?> FindOwnBookingAsync(System.Linq.Expressions.Expression<Func<Reservation, bool>> match)
+    {
+        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return db.Reservations.IgnoreQueryFilters()
+            .Where(item => item.CustomerId == customerId)
+            .FirstOrDefaultAsync(match);
+    }
+
+    // Asks Stripe whether the deposit was paid (the customer may have closed the tab before coming back).
+    private async Task<bool> MarkPaidIfStripeSaysSoAsync(Reservation reservation)
+    {
+        if (reservation.StripeSessionId is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var session = await payments.GetCheckoutSessionAsync(reservation.StripeSessionId);
+            if (session.PaymentStatus != "paid")
+            {
+                return false;
+            }
+        }
+        catch (StripeException error)
+        {
+            logger.LogError(error, "Could not check the Stripe payment for reservation {ReservationId}.", reservation.Id);
+            return false;
+        }
+
+        reservation.DepositStatus = DepositStatus.Paid;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    // Unpaid bookings older than the hold are either paid after all or dropped, freeing their seats.
+    private async Task SettleExpiredUnpaidAsync()
+    {
+        var cutoff = DateTime.UtcNow - UnpaidHold;
+        var expired = await db.Reservations.IgnoreQueryFilters()
+            .Where(item => item.DepositStatus == DepositStatus.Unpaid && item.CreatedAt < cutoff)
+            .ToListAsync();
+        foreach (var reservation in expired)
+        {
+            if (!await MarkPaidIfStripeSaysSoAsync(reservation))
+            {
+                db.Reservations.Remove(reservation);
+            }
+        }
+        await db.SaveChangesAsync();
+    }
+
+    private static string Describe(Reservation reservation) =>
+        reservation.Date.ToDateTime(reservation.TimeSlot).ToString("dddd d MMMM 'at' h:mm tt", CultureInfo.CurrentCulture);
+
     private Task<List<BusinessHours>> LoadHoursAsync() =>
         db.BusinessHours.AsNoTracking().ToListAsync();
 
@@ -185,9 +307,12 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
         var last = close.Add(-LastBookingBeforeClose);
 
         var tables = await db.Tables.AsNoTracking().ToListAsync();
-        var bookings = (await db.Reservations.AsNoTracking()
+        // Bookings still being paid for hold their seats too, until the hold runs out.
+        var holdCutoff = DateTime.UtcNow - UnpaidHold;
+        var bookings = (await db.Reservations.AsNoTracking().IgnoreQueryFilters()
                 .Include(item => item.ReservationTables)
                 .Where(item => item.Date >= date.AddDays(-1) && item.Date <= date.AddDays(1)
+                    && (item.DepositStatus != DepositStatus.Unpaid || item.CreatedAt >= holdCutoff)
                     && item.Status != ReservationStatus.Cancelled
                     && item.Status != ReservationStatus.Completed)
                 .ToListAsync())

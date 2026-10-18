@@ -13,7 +13,7 @@
     <div class="reserve-heading">
         <div>
             <h1>Book a table</h1>
-            <p>Pick a day and a time. We'll set up your table before you arrive.</p>
+            <p>Pick a day and a time, then pay a RM@(ReserveModel.Deposit.ToString("0")) deposit to hold your table.</p>
         </div>
         <a asp-page="/Customer/Index" class="reserve-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</a>
     </div>
@@ -102,7 +102,8 @@
             </div>
             <div class="reserve-footer">
                 <span id="summary">Choose a date and time.</span>
-                <button type="submit" id="bookButton" disabled><i class="fa-solid fa-check" aria-hidden="true"></i> Book table</button>
+                <button type="submit" id="bookButton" disabled><i class="fa-brands fa-cc-stripe" aria-hidden="true"></i> Pay RM@(ReserveModel.Deposit.ToString("0")) deposit</button>
+                <span class="deposit-note">Secure payment by Stripe. Refunded if you cancel by the day before.</span>
             </div>
         </div>
     </form>
@@ -122,7 +123,7 @@
                         <i class="fa-solid @(confirmed ? "fa-circle-check" : "fa-hourglass-half") booking-icon @(confirmed ? "confirmed" : "pending")" aria-hidden="true"></i>
                         <strong>@booking.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</strong>
                         <span class="booking-meta">
-                            @booking.PartySize @(booking.PartySize == 1 ? "guest" : "guests") · @(confirmed ? "Confirmed" : "Waiting for confirmation")
+                            @booking.PartySize @(booking.PartySize == 1 ? "guest" : "guests") · @(confirmed ? "Confirmed" : "Waiting for confirmation")@(booking.DepositLabel is null ? "" : $" · {booking.DepositLabel}")
                         </span>
                         @if (Model.CanCancel(booking))
                         {

@@ -485,6 +485,11 @@
     opacity: .35;
 }
 
+.deposit-note {
+    color: var(--muted);
+    font-size: .75rem;
+}
+
 /* Upcoming bookings, like the "Served" list. */
 .my-bookings {
     margin-top: 18px;

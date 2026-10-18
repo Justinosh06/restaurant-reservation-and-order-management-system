@@ -1,6 +1,11 @@
+using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using RestaurantReservation.Data;
 using RestaurantReservation.Models;
+using RestaurantReservation.Services;
 using Stripe;
 using Stripe.Checkout;
 
@@ -8,6 +13,15 @@ namespace RestaurantReservation.Pages.Payment;
 
 public class IndexModel : PageModel
 {
+    private readonly ApplicationDbContext _db;
+    private readonly IPaymentService _paymentService;
+
+    public IndexModel(ApplicationDbContext db, IPaymentService paymentService)
+    {
+        _db = db;
+        _paymentService = paymentService;
+    }
+
     public string PaymentId { get; set; } = string.Empty;
     public TransactionStatus Status { get; private set; }
     public string StatusLabel { get; private set; } = string.Empty;
@@ -24,6 +38,9 @@ public class IndexModel : PageModel
     public bool ShowReceiptButton => Status is TransactionStatus.Succeeded or TransactionStatus.Refunded && !string.IsNullOrWhiteSpace(ReceiptUrl);
     public bool ShowRetryButton => Status == TransactionStatus.Failed;
     public bool ShowRefreshButton => Status is TransactionStatus.Pending or TransactionStatus.Processing;
+    public string BackUrl { get; private set; } = "/";
+    public string BackLabel { get; private set; } = "Back to Home";
+    public string? RetryUrl { get; private set; }
 
     public async Task<IActionResult> OnGet(string paymentId, string? scenario = null)
     {
@@ -33,6 +50,21 @@ public class IndexModel : PageModel
         }
 
         PaymentId = paymentId;
+
+        // A table reservation deposit paid on Stripe Checkout (the payment ID is the checkout session ID).
+        var deposit = await _db.Reservations.IgnoreQueryFilters()
+            .Include(reservation => reservation.Customer)
+            .FirstOrDefaultAsync(reservation => reservation.StripeSessionId == paymentId);
+        if (deposit is not null)
+        {
+            if (deposit.CustomerId != User.FindFirstValue(ClaimTypes.NameIdentifier))
+            {
+                return NotFound();
+            }
+
+            await LoadReservationDepositAsync(deposit);
+            return Page();
+        }
 
         // Mock preview routes: /Payment/demo-pending, /Payment/demo-processing,
         // /Payment/demo-succeeded, /Payment/demo-failed, /Payment/demo-refunded.
@@ -101,6 +133,102 @@ public class IndexModel : PageModel
         ReceiptUrl = await TryGetStripeReceiptUrlAsync(paymentId);
 
         return Page();
+    }
+
+    private async Task LoadReservationDepositAsync(Reservation reservation)
+    {
+        Stripe.Checkout.Session? session = null;
+        try
+        {
+            session = await _paymentService.GetCheckoutSessionAsync(reservation.StripeSessionId!);
+        }
+        catch (StripeException)
+        {
+            // Show what the database knows; the customer can refresh once Stripe is reachable.
+        }
+
+        // The customer is back from Stripe, so record the payment if it went through.
+        if (reservation.DepositStatus == DepositStatus.Unpaid && session?.PaymentStatus == "paid")
+        {
+            reservation.DepositStatus = DepositStatus.Paid;
+            await _db.SaveChangesAsync();
+        }
+
+        Status = reservation.DepositStatus switch
+        {
+            DepositStatus.Paid => TransactionStatus.Succeeded,
+            DepositStatus.Refunded => TransactionStatus.Refunded,
+            _ when session?.Status == "expired" => TransactionStatus.Failed,
+            _ => TransactionStatus.Pending
+        };
+
+        var bookedFor = reservation.Date.ToDateTime(reservation.TimeSlot)
+            .ToString("ddd d MMM 'at' h:mm tt", CultureInfo.CurrentCulture);
+        StatusLabel = Status switch
+        {
+            TransactionStatus.Succeeded => "Deposit Paid",
+            TransactionStatus.Refunded => "Deposit Refunded",
+            TransactionStatus.Failed => "Payment Expired",
+            _ => "Payment Pending"
+        };
+        StatusMessage = Status switch
+        {
+            TransactionStatus.Succeeded => $"Your table for {reservation.Pax} on {bookedFor} is booked. We'll confirm your table soon.",
+            TransactionStatus.Refunded => $"Your booking on {bookedFor} was cancelled and the deposit refunded.",
+            TransactionStatus.Failed => "The payment window closed before payment, so no booking was made.",
+            _ => "We're waiting for Stripe to confirm your payment."
+        };
+        StatusIcon = Status switch
+        {
+            TransactionStatus.Succeeded => "fa-solid fa-circle-check",
+            TransactionStatus.Refunded => "fa-solid fa-arrow-rotate-left",
+            TransactionStatus.Failed => "fa-solid fa-circle-xmark",
+            _ => "fa-regular fa-clock"
+        };
+        StatusIconClass = Status switch
+        {
+            TransactionStatus.Succeeded => "success",
+            TransactionStatus.Refunded => "refund",
+            TransactionStatus.Failed => "failed",
+            _ => "pending"
+        };
+
+        var amount = (reservation.DepositAmount ?? 0) / 100m;
+        CurrencySymbol = "RM";
+        AmountWhole = decimal.Truncate(amount).ToString("N0");
+        AmountFraction = ((amount - decimal.Truncate(amount)) * 100).ToString("00");
+        PaymentMethodLabel = await TryGetPaymentMethodLabelAsync(session?.PaymentIntentId) ?? "Stripe Checkout";
+        CustomerName = reservation.Customer?.FullName ?? reservation.GuestName ?? "Guest";
+        CreatedAtDisplay = reservation.CreatedAt.ToLocalTime().ToString("dd MMM, yyyy HH:mm");
+        ReceiptUrl = Status is TransactionStatus.Succeeded or TransactionStatus.Refunded
+            ? await TryGetStripeReceiptUrlAsync(reservation.StripeSessionId!)
+            : string.Empty;
+        BackUrl = "/Customer/Reserve";
+        BackLabel = "Back to My Bookings";
+        RetryUrl = "/Customer/Reserve";
+    }
+
+    // "Visa ending in 4242", or null when Stripe has no card details for the payment.
+    private static async Task<string?> TryGetPaymentMethodLabelAsync(string? paymentIntentId)
+    {
+        if (string.IsNullOrWhiteSpace(paymentIntentId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var paymentIntent = await new PaymentIntentService().GetAsync(paymentIntentId,
+                new PaymentIntentGetOptions { Expand = ["payment_method"] });
+            var card = paymentIntent.PaymentMethod?.Card;
+            return card is null
+                ? paymentIntent.PaymentMethod?.Type
+                : $"{CultureInfo.InvariantCulture.TextInfo.ToTitleCase(card.Brand)} ending in {card.Last4}";
+        }
+        catch (StripeException)
+        {
+            return null;
+        }
     }
 
     private static async Task<string> TryGetStripeReceiptUrlAsync(string paymentId)

@@ -81,7 +81,7 @@
                             </div>
                             <div class="agenda-details">
                                 <strong>@reservation.CustomerName</strong>
-                                <span>@(!reservation.HasTable ? "No table yet" : reservation.TableIds.Count == 1 ? $"Table {reservation.TableLabel}" : $"Tables {reservation.TableLabel}") · @reservation.PartySize guests · @reservation.Status</span>
+                                <span>@(!reservation.HasTable ? "No table yet" : reservation.TableIds.Count == 1 ? $"Table {reservation.TableLabel}" : $"Tables {reservation.TableLabel}") · @reservation.PartySize guests · @reservation.Status@(reservation.DepositLabel is null ? "" : $" · {reservation.DepositLabel}")</span>
                             </div>
                             <time class="agenda-time" datetime="@reservation.ReservationAt.ToString("yyyy-MM-ddTHH:mm:ss")">
                                 @reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)

@@ -12,8 +12,18 @@ public sealed record ReservationSummary(
     int PartySize,
     DateTime ReservationAt,
     string? Notes,
-    ReservationStatus Status)
+    ReservationStatus Status,
+    DepositStatus Deposit = DepositStatus.None,
+    int? DepositAmount = null)
 {
+    // "RM20 deposit paid", or null when the booking has no deposit.
+    public string? DepositLabel => Deposit switch
+    {
+        DepositStatus.Paid => $"RM{DepositAmount / 100m:0.##} deposit paid",
+        DepositStatus.Refunded => $"RM{DepositAmount / 100m:0.##} deposit refunded",
+        _ => null
+    };
+
     // How long a table is held for one booking.
     public static readonly TimeSpan SlotLength = TimeSpan.FromHours(2);
 
@@ -47,7 +57,9 @@ public sealed record ReservationSummary(
             reservation.Pax,
             reservation.Date.ToDateTime(reservation.TimeSlot),
             reservation.Notes,
-            reservation.Status);
+            reservation.Status,
+            reservation.DepositStatus,
+            reservation.DepositAmount);
 
     private static string? FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
