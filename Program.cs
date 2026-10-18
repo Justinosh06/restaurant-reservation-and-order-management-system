@@ -32,6 +32,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<SidebarNavService>();
+builder.Services.AddScoped<DiningSessionService>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 
@@ -114,6 +115,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseStatusCodePagesWithReExecute("/NotFound");
 
 app.UseSession();
 app.UseAuthentication();
@@ -131,4 +133,3 @@ app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
-
