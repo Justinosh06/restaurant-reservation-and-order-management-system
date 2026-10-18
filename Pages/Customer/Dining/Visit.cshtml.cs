@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -23,15 +24,27 @@ public class VisitModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(string id)
     {
-        // Sample history for now; read the customer's own session once order processing saves real ones.
-        var visit = SampleOrders.FindVisit(id);
-        if (visit is null)
+        // Only the customer's own orders in this session; another customer's visit is not found.
+        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var orders = await _db.Orders
+            .AsNoTracking()
+            .Include(o => o.Session)
+            .Where(o => o.SessionId == id && o.CustomerId == customerId)
+            .OrderBy(o => o.CreatedAt)
+            .ToListAsync();
+        if (orders.Count == 0 || orders[0].Session is null)
         {
             return NotFound();
         }
 
-        Visit = visit;
-        OrderItems = SampleOrders.Items;
+        Visit = new DiningVisit(orders[0].Session!, orders);
+
+        var orderIds = orders.Select(o => o.Id).ToList();
+        OrderItems = (await _db.OrderItems
+                .AsNoTracking()
+                .Where(i => orderIds.Contains(i.OrderId))
+                .ToListAsync())
+            .ToLookup(i => i.OrderId);
         Currency = await _db.RestaurantSettings.AsNoTracking().Select(s => (CurrencyType?)s.DefaultCurrency).FirstOrDefaultAsync()
             ?? CurrencyType.MYR;
         return Page();

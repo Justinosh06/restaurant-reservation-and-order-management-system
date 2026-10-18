@@ -149,15 +149,23 @@ public class OrderModel : PageModel
 
     private async Task<bool> LoadOrderAsync(string id)
     {
-        // Sample history for now; read the customer's own order from the database once order processing saves real orders.
-        var order = SampleOrders.Find(id);
+        // Only the customer's own order; another customer's order is not found.
+        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var order = await _db.Orders
+            .AsNoTracking()
+            .Include(o => o.Session)
+            .FirstOrDefaultAsync(o => o.Id == id && o.CustomerId == customerId);
         if (order is null)
         {
             return false;
         }
 
         Order = order;
-        Items = SampleOrders.Items[id].ToList();
+        Items = await _db.OrderItems
+            .AsNoTracking()
+            .Include(i => i.MenuItem)
+            .Where(i => i.OrderId == id)
+            .ToListAsync();
 
         Currency = await _db.RestaurantSettings.AsNoTracking().Select(s => (CurrencyType?)s.DefaultCurrency).FirstOrDefaultAsync()
             ?? CurrencyType.MYR;

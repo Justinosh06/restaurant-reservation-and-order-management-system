@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
@@ -23,7 +24,19 @@ public class IndexModel : PageModel
         Currency = await _db.RestaurantSettings.AsNoTracking().Select(s => (CurrencyType?)s.DefaultCurrency).FirstOrDefaultAsync()
             ?? CurrencyType.MYR;
 
-        // Sample history for now; read the customer's own sessions and orders once order processing saves real ones.
-        Visits = SampleOrders.Visits;
+        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var orders = await _db.Orders
+            .AsNoTracking()
+            .Include(o => o.Session)
+            .Where(o => o.CustomerId == customerId)
+            .ToListAsync();
+
+        // One box per session, newest visit first.
+        Visits = orders
+            .Where(o => o.Session is not null)
+            .GroupBy(o => o.SessionId)
+            .Select(g => new DiningVisit(g.First().Session!, g.OrderBy(o => o.CreatedAt).ToList()))
+            .OrderByDescending(v => v.Session.StartingTime)
+            .ToList();
     }
 }
