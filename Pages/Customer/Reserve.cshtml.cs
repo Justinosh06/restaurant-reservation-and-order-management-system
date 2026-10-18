@@ -15,15 +15,18 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 public class ReserveModel(ApplicationDbContext db) : PageModel
 {
     // Used when the restaurant has not set its business hours yet.
-    private static readonly TimeOnly DefaultOpen = new(11, 0);
+    private static readonly TimeOnly DefaultOpen = new(8, 0);
     private static readonly TimeOnly DefaultClose = new(22, 0);
 
-    private static readonly TimeSpan SlotStep = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan SlotStep = TimeSpan.FromHours(1);
 
     // The last booking starts this long before closing.
     private static readonly TimeSpan LastBookingBeforeClose = TimeSpan.FromHours(1);
 
     public const int MaxPartySize = 20;
+
+    // Bookings open this many days ahead, so the kitchen has time to prepare.
+    public const int MinDaysAhead = 2;
     public const int DaysAhead = 60;
 
     [BindProperty]
@@ -39,7 +42,13 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
 
     public DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
 
+    public DateOnly FirstDay => Today.AddDays(MinDaysAhead);
+
     public DateOnly LastDay => Today.AddDays(DaysAhead);
+
+    // Customers can cancel until the day before their booking, not on the day itself.
+    public bool CanCancel(ReservationSummary booking) =>
+        DateOnly.FromDateTime(booking.ReservationAt) > Today;
 
     public async Task OnGetAsync()
     {
@@ -49,7 +58,7 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
     // GET /Customer/Reserve?handler=Slots&date=2026-10-20&guests=4 - the times on that day and whether each has room.
     public async Task<IActionResult> OnGetSlotsAsync(DateOnly date, int guests)
     {
-        if (date < Today || date > LastDay || guests < 1 || guests > MaxPartySize)
+        if (date < FirstDay || date > LastDay || guests < 1 || guests > MaxPartySize)
         {
             return new JsonResult(Array.Empty<object>());
         }
@@ -64,9 +73,11 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.Date < Today || Input.Date > LastDay)
+        if (Input.Date < FirstDay || Input.Date > LastDay)
         {
-            ModelState.AddModelError("Input.Date", $"Choose a date within the next {DaysAhead} days.");
+            ModelState.AddModelError("Input.Date",
+                $"Choose a date from {FirstDay.ToString("d MMM", CultureInfo.CurrentCulture)} to {LastDay.ToString("d MMM", CultureInfo.CurrentCulture)}. "
+                + $"Bookings must be made at least {MinDaysAhead} days ahead.");
         }
         else if (ModelState.IsValid)
         {
@@ -103,6 +114,34 @@ public class ReserveModel(ApplicationDbContext db) : PageModel
         var at = Input.Date.ToDateTime(Input.Time);
         StatusMessage = $"Booked for {Input.Guests} on {at.ToString("dddd d MMMM 'at' h:mm tt", CultureInfo.CurrentCulture)}. "
             + "We'll confirm your table soon.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostCancelAsync(string? reservationId)
+    {
+        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var reservation = reservationId is null ? null : await db.Reservations
+            .Include(item => item.Customer)
+            .Include(item => item.ReservationTables)
+            .FirstOrDefaultAsync(item => item.Id == reservationId && item.CustomerId == customerId);
+        if (reservation is null || reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed)
+        {
+            StatusMessage = "That booking can no longer be cancelled.";
+            return RedirectToPage();
+        }
+
+        var booking = ReservationSummary.From(reservation);
+        var at = booking.ReservationAt.ToString("dddd d MMMM 'at' h:mm tt", CultureInfo.CurrentCulture);
+        if (!CanCancel(booking))
+        {
+            StatusMessage = $"Your booking on {at} is today, so it can't be cancelled online. Please call the restaurant.";
+            return RedirectToPage();
+        }
+
+        // Kept as Cancelled (not deleted) so staff can still see it; cancelled bookings don't hold tables.
+        reservation.Status = ReservationStatus.Cancelled;
+        await db.SaveChangesAsync();
+        StatusMessage = $"Your booking on {at} is cancelled.";
         return RedirectToPage();
     }
 

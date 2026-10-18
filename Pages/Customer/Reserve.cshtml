@@ -28,6 +28,7 @@
 
     <form method="post" id="reserveForm"
           data-today="@Model.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+          data-first-day="@Model.FirstDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
           data-last-day="@Model.LastDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
           data-closed-days="@string.Join(' ', Model.ClosedDays)">
         <div asp-validation-summary="All" class="reserve-errors"></div>
@@ -52,7 +53,7 @@
                 <div>
                     <span class="summary-label">Date</span>
                     <strong class="summary-value" id="dateValue">—</strong>
-                    <span class="summary-hint">Within the next @ReserveModel.DaysAhead days</span>
+                    <span class="summary-hint">Book at least @ReserveModel.MinDaysAhead days ahead</span>
                 </div>
             </div>
             <div class="summary-card">
@@ -111,6 +112,7 @@
         <section class="board-panel my-bookings" aria-labelledby="myBookingsTitle">
             <div class="panel-head">
                 <h2><span id="myBookingsTitle">Your upcoming bookings</span> <span class="count-badge">@Model.Upcoming.Count</span></h2>
+                <span class="panel-note">You can cancel up to the day before.</span>
             </div>
             <div class="booking-list">
                 @foreach (var booking in Model.Upcoming)
@@ -122,6 +124,17 @@
                         <span class="booking-meta">
                             @booking.PartySize @(booking.PartySize == 1 ? "guest" : "guests") · @(confirmed ? "Confirmed" : "Waiting for confirmation")
                         </span>
+                        @if (Model.CanCancel(booking))
+                        {
+                            <form method="post" asp-page-handler="Cancel" class="cancel-booking-form">
+                                <input type="hidden" name="reservationId" value="@booking.Id" />
+                                <button type="submit" class="cancel-booking">Cancel</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="cancel-closed" title="Bookings can only be cancelled up to the day before.">Today</span>
+                        }
                     </article>
                 }
             </div>

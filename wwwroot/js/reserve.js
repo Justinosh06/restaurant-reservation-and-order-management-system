@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const today = parseDate(form.dataset.today);
+    const firstDay = parseDate(form.dataset.firstDay);
     const lastDay = parseDate(form.dataset.lastDay);
     const closedDays = form.dataset.closedDays ? form.dataset.closedDays.split(" ").map(Number) : [];
     const maxGuests = Number(guestsInput.max);
@@ -48,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function isBookable(date) {
-        return date >= today && date <= lastDay && !closedDays.includes(date.getDay());
+        return date >= firstDay && date <= lastDay && !closedDays.includes(date.getDay());
     }
 
     function renderCalendar() {
@@ -229,7 +230,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Start on the date sent back after a failed submit, else the first day that can be booked.
-    let start = dateInput.value ? parseDate(dateInput.value) : new Date(today);
+    let start = dateInput.value ? parseDate(dateInput.value) : new Date(firstDay);
     while (!dateInput.value && !isBookable(start) && start <= lastDay) {
         start.setDate(start.getDate() + 1);
     }
@@ -239,4 +240,12 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
         renderCalendar();
     }
+
+    document.querySelectorAll(".cancel-booking-form").forEach(function (cancelForm) {
+        cancelForm.addEventListener("submit", function (event) {
+            if (!window.confirm("Cancel this booking?")) {
+                event.preventDefault();
+            }
+        });
+    });
 });

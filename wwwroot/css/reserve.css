@@ -528,6 +528,37 @@
     text-align: right;
 }
 
+.panel-note {
+    color: var(--muted);
+    font-size: .78rem;
+}
+
+.cancel-booking-form {
+    margin: 0;
+}
+
+.cancel-booking {
+    padding: 4px 12px;
+    border: 1px solid #f0c9c1;
+    border-radius: 999px;
+    background: #fff;
+    color: #b34336;
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.cancel-booking:hover {
+    background: #fff4f1;
+}
+
+.cancel-closed {
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: .78rem;
+}
+
 @media (max-width: 860px) {
     .summary-cards,
     .booker {
