@@ -15,12 +15,15 @@
             <h1>Book a table</h1>
             <p>Pick a day and a time. We'll set up your table before you arrive.</p>
         </div>
-        <a asp-page="/Customer/Index" class="reserve-back">Back</a>
+        <a asp-page="/Customer/Index" class="reserve-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</a>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
     {
-        <div class="reserve-success" role="status">@Model.StatusMessage</div>
+        <div class="reserve-success" role="status">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+            <span>@Model.StatusMessage</span>
+        </div>
     }
 
     <form method="post" id="reserveForm"
@@ -31,33 +34,57 @@
         <input type="hidden" asp-for="Input.Date" id="dateInput" value="@selectedDate" />
         <input type="hidden" asp-for="Input.Time" id="timeInput" value="@selectedTime" />
 
-        <div class="reserve-guests">
-            <span id="guestsLabel">Guests</span>
-            <div class="guest-stepper" role="group" aria-labelledby="guestsLabel">
-                <button type="button" id="guestsDown" aria-label="Fewer guests">−</button>
-                <input asp-for="Input.Guests" id="guestsInput" type="number" min="1" max="@ReserveModel.MaxPartySize" inputmode="numeric" />
-                <button type="button" id="guestsUp" aria-label="More guests">+</button>
+        <div class="summary-cards">
+            <div class="summary-card">
+                <span class="summary-icon guests" aria-hidden="true"><i class="fa-solid fa-user-group"></i></span>
+                <div>
+                    <span class="summary-label" id="guestsLabel">Guests</span>
+                    <div class="guest-stepper" role="group" aria-labelledby="guestsLabel">
+                        <button type="button" id="guestsDown" aria-label="Fewer guests">−</button>
+                        <input asp-for="Input.Guests" id="guestsInput" type="number" min="1" max="@ReserveModel.MaxPartySize" inputmode="numeric" />
+                        <button type="button" id="guestsUp" aria-label="More guests">+</button>
+                    </div>
+                    <span class="summary-hint">Up to @ReserveModel.MaxPartySize people</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <span class="summary-icon date" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span>
+                <div>
+                    <span class="summary-label">Date</span>
+                    <strong class="summary-value" id="dateValue">—</strong>
+                    <span class="summary-hint">Within the next @ReserveModel.DaysAhead days</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <span class="summary-icon time" aria-hidden="true"><i class="fa-solid fa-clock"></i></span>
+                <div>
+                    <span class="summary-label">Time</span>
+                    <strong class="summary-value" id="timeValue">—</strong>
+                    <span class="summary-hint">Your table is held for 2 hours</span>
+                </div>
             </div>
         </div>
 
         <div class="booker">
-            <section class="booker-calendar" aria-label="Choose a date">
-                <div class="calendar-head">
+            <section class="board-panel" aria-label="Choose a date">
+                <div class="panel-head">
                     <h2 id="monthLabel"></h2>
                     <div class="calendar-nav">
                         <button type="button" id="prevMonth" aria-label="Previous month">‹</button>
                         <button type="button" id="nextMonth" aria-label="Next month">›</button>
                     </div>
                 </div>
-                <div class="calendar-weekdays" aria-hidden="true">
-                    <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+                <div class="panel-card">
+                    <div class="calendar-weekdays" aria-hidden="true">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
                 </div>
-                <div class="calendar-grid" id="calendarGrid"></div>
             </section>
 
-            <section class="booker-times" aria-labelledby="dayLabel">
-                <div class="times-head">
-                    <h2 id="dayLabel">Choose a date</h2>
+            <section class="board-panel" aria-labelledby="dayLabel">
+                <div class="panel-head">
+                    <h2><span id="dayLabel">Times</span> <span class="count-badge" id="slotCount">0</span></h2>
                     <div class="clock-toggle" role="group" aria-label="Time format">
                         <button type="button" data-clock="12" class="active">12h</button>
                         <button type="button" data-clock="24">24h</button>
@@ -67,27 +94,37 @@
             </section>
         </div>
 
-        <label for="notesInput" class="reserve-notes-label">Notes <span>optional</span></label>
-        <textarea asp-for="Input.Notes" id="notesInput" rows="2" maxlength="500" placeholder="Allergies, birthday, high chair…"></textarea>
-
-        <div class="reserve-footer">
-            <span id="summary">Choose a date and time.</span>
-            <button type="submit" id="bookButton" disabled>Book</button>
+        <div class="reserve-bottom">
+            <div class="notes-field">
+                <label for="notesInput">Notes <span>optional</span></label>
+                <textarea asp-for="Input.Notes" id="notesInput" rows="2" maxlength="500" placeholder="Allergies, birthday, high chair…"></textarea>
+            </div>
+            <div class="reserve-footer">
+                <span id="summary">Choose a date and time.</span>
+                <button type="submit" id="bookButton" disabled><i class="fa-solid fa-check" aria-hidden="true"></i> Book table</button>
+            </div>
         </div>
     </form>
 
     @if (Model.Upcoming.Count > 0)
     {
-        <section class="my-bookings" aria-labelledby="myBookingsTitle">
-            <h2 id="myBookingsTitle">Your upcoming bookings</h2>
-            @foreach (var booking in Model.Upcoming)
-            {
-                <article>
-                    <strong>@booking.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</strong>
-                    <span>@booking.PartySize @(booking.PartySize == 1 ? "guest" : "guests")</span>
-                    <span class="booking-status @booking.Status.ToString().ToLowerInvariant()">@booking.Status</span>
-                </article>
-            }
+        <section class="board-panel my-bookings" aria-labelledby="myBookingsTitle">
+            <div class="panel-head">
+                <h2><span id="myBookingsTitle">Your upcoming bookings</span> <span class="count-badge">@Model.Upcoming.Count</span></h2>
+            </div>
+            <div class="booking-list">
+                @foreach (var booking in Model.Upcoming)
+                {
+                    var confirmed = booking.Status == RestaurantReservation.Models.ReservationStatus.Confirmed;
+                    <article>
+                        <i class="fa-solid @(confirmed ? "fa-circle-check" : "fa-hourglass-half") booking-icon @(confirmed ? "confirmed" : "pending")" aria-hidden="true"></i>
+                        <strong>@booking.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</strong>
+                        <span class="booking-meta">
+                            @booking.PartySize @(booking.PartySize == 1 ? "guest" : "guests") · @(confirmed ? "Confirmed" : "Waiting for confirmation")
+                        </span>
+                    </article>
+                }
+            </div>
         </section>
     }
 </div>

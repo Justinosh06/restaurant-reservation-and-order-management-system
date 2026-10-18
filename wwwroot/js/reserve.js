@@ -11,6 +11,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const guestsInput = document.getElementById("guestsInput");
     const summary = document.getElementById("summary");
     const bookButton = document.getElementById("bookButton");
+    const slotCount = document.getElementById("slotCount");
+    const dateValue = document.getElementById("dateValue");
+    const timeValue = document.getElementById("timeValue");
 
     if (!form || !grid || !timeList || !dateInput || !timeInput || !guestsInput) {
         console.error("Reservation page is missing required elements.");
@@ -111,6 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const request = ++slotRequest;
+        slotCount.textContent = "0";
         timeList.replaceChildren(message("Loading times…"));
         let slots;
         try {
@@ -130,6 +134,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        slotCount.textContent = slots.filter(function (slot) { return slot.available; }).length;
         if (slots.length === 0) {
             timeList.replaceChildren(message("We're closed on this day."));
         } else if (!slots.some(function (slot) { return slot.available; })) {
@@ -175,6 +180,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const ready = dateInput.value && timeInput.value;
         bookButton.disabled = !ready;
         const guests = Number(guestsInput.value);
+        dateValue.textContent = dateInput.value
+            ? parseDate(dateInput.value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })
+            : "—";
+        timeValue.textContent = timeInput.value ? formatTime(timeInput.value) : "—";
         summary.textContent = ready
             ? guests + (guests === 1 ? " guest" : " guests") + " · "
                 + parseDate(dateInput.value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })
