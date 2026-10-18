@@ -36,6 +36,7 @@ builder.Services.AddScoped<SidebarNavService>();
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddSingleton<RestaurantClock>();
 builder.Services.AddScoped<RestaurantCurrency>();
+builder.Services.AddScoped<DiningSessionService>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 
@@ -120,6 +121,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseStatusCodePagesWithReExecute("/NotFound");
 
 app.UseSession();
 app.UseAuthentication();
@@ -137,4 +139,3 @@ app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
-

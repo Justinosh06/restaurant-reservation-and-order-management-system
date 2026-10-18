@@ -1,56 +1,162 @@
-.menu-item-container {
+.page-container {
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     height: 100dvh;
-    padding: 8px;
 
-    .display-container {
-        flex: 1;
-        position: relative;
-        height: 100%;
-        background-color: #F2F2F3;
-        border-radius: 25px;
+    .header {
+        top: 0;
+        position: sticky;
+        padding: 8px;
+        display: flex;
+        align-items: center;
 
         .back-btn {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            width: 45px;
-            font-size: 1.2rem;
-            aspect-ratio: 1/1;
-            background: white;
-            border-radius: 100%;
+            width: 80px;
+            height: 60px;
+            font-size: 1.4rem;
+            background: #F2F2F3;
+            border-radius: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: black;
             text-decoration: none;
+            cursor: pointer;
+        }
+
+        .title {
+            left: 50%;
+            transform: translateX(-50%);
+            position: absolute;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -2px;
+            font-family: "Bricolage Grotesque", sans-serif;
         }
     }
 
-    .info-container {
-        flex: 1;
-        display: flex;
-        padding: 16px;
-        align-items: center;
-        justify-content: center;
-        overflow-y: auto;
+    .menu-item-container {
+        height: 100%;
 
-        .center-container {
-            width: 100%;
+        .display-container {
+            flex: 1;
+            height: 100%;
+
+            .menu-item-image {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+        }
+
+        .info-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            overflow-y: auto;
 
             .title {
+                display: none;
                 font-size: 2.5rem;
                 font-weight: 600;
                 letter-spacing: -2px;
-                text-transform: uppercase;
+                margin-bottom: 24px;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            .tab-list {
+                padding: 8px;
+                display: flex;
+                margin-bottom: 12px;
+                align-items: center;
+                background: #F2F2F3;
+                border-radius: 100px;
+
+                .tab {
+                    flex: 1;
+                    color: #888888;
+                    text-align: center;
+                    font-weight: 600;
+                    font-size: 1.25rem;
+                    cursor: pointer;
+                    text-decoration: none;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .tab.active {
+                    padding: 8px;
+                    color: black;
+                    background: white;
+                    border-radius: 100px;
+                }
+            }
+
+            .price {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 0;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            .menu-item-options {
+                .option {
+                    margin-top: 12px;
+                    margin-bottom: 8px;
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: #888888;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .option-list {
+                    gap: 8px;
+                    display: flex;
+
+                    .option-choice {
+                        flex: 1;
+                        padding: 16px;
+                        cursor: pointer;
+                        border-radius: 30px;
+                        background: #F2F2F3;
+                        font-weight: 600;
+                        text-align: center;
+                        font-family: "Bricolage Grotesque", sans-serif;
+                        transition: 300ms ease-in-out;
+
+                        input[type=radio] {
+                            display: none;
+                        }
+                    }
+
+                    .option-choice:has(input[type=radio]:checked) {
+                        background: black;
+                        color: white;
+                    }
+                }
             }
 
             .description {
-                margin-bottom: 16px;
+                margin-bottom: 32px;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            .options-title {
+                font-size: 1.25rem;
+                font-weight: 700;
+            }
+
+            .option {
+                margin-bottom: 8px;
             }
 
             .input-label {
-                font-weight: 700;
+                color: #888888;
+                margin-top: 12px;
+                font-size: 1.2rem;
+                font-weight: 600;
+                font-family: "Bricolage Grotesque", sans-serif;
             }
 
             .remark-input {
@@ -68,12 +174,43 @@
                 outline: none;
             }
 
+            .character-counter {
+                width: 100%;
+                text-align: right;
+                margin-bottom: 24px;
+                font-weight: 500;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            .data-row {
+                display: flex;
+                margin-bottom: 16px;
+                align-items: center;
+                justify-content: space-between;
+
+                .quantity-wrapper {
+                    gap: 2px;
+                    display: flex;
+
+                    .quantity-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: #F2F2F3;
+                        border-radius: 100%;
+                        width: 25px;
+                        height: 25px;
+                    }
+                }
+            }
+
             .add-to-cart-btn {
                 color: white;
                 background: black;
+                font-family: "Bricolage Grotesque", sans-serif;
                 border-radius: 100px;
-                font-weight: 600;
-                padding: 8px;
+                font-weight: 800;
+                padding: 12px;
                 width: 100%;
             }
         }
@@ -81,26 +218,43 @@
 }
 
 @media only screen and (max-width: 768px) {
-    .menu-item-container {
-        flex-direction: column;
-        height: fit-content;
-        overflow: auto;
+    .page-container {
+        overflow-y: auto;
 
-        .display-container {
-            flex: none;
-            height: fit-content;
-            min-height: 200px;
-            margin-bottom: 16px;
+        .header {
+            .title {
+                display: none;
+            }
         }
 
-        .info-container {
-            flex: none;
-            padding: 0;
-            height: 100%;
+        .menu-item-container {
+            flex-direction: column;
+            height: fit-content;
 
-            .center-container {
+            .display-container {
+                flex: none;
+                height: fit-content;
+                min-height: 200px;
+                margin-bottom: 16px;
+            }
 
-                .remark-input {
+            .info-container {
+                flex: none;
+                padding: 16px;
+
+                .title {
+                    display: block;
+                }
+
+                .menu-item-options {
+                    .option-list {
+                        .option-choice {
+                            padding: 10px;
+                        }
+                    }
+                }
+                
+                .price {
                     margin-bottom: 50px;
                 }
 

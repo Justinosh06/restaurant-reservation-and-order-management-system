@@ -9,38 +9,167 @@
         margin-top: 8px;
         color: #444444;
         background: #F2F2F3;
+        font-family: "Bricolage Grotesque", sans-serif;
     }
 
     .title {
         font-size: 5rem;
         font-weight: 700;
-        font-family: "Bricolage Grotesque", sans-serif;
         display: flex;
         align-items: start;
+        font-family: "Bricolage Grotesque", sans-serif;
     }
 
     .pill-filter-row {
         display: flex;
         flex-wrap: wrap;
         margin-bottom: 16px;
-        column-gap: 24px;
+        gap: 8px;
+
+        .menu-search {
+            position: relative;
+
+            [hidden] {
+                display: none !important;
+            }
+
+            .search-modal {
+                position: fixed;
+                inset: 0;
+                z-index: 1050;
+                padding: 8px;
+                padding-top: 85px;
+                backdrop-filter: blur(16px);
+                background: rgb(255 255 255 / 90%);
+            }
+
+            .searchbar-popup {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                width: min(100%, 520px);
+
+                .searchbar-input {
+                    border-radius: 30px;
+                    padding: 8px 16px;
+                    background: #F2F2F3;
+                    width: 100%;
+                    min-height: 48px;
+                    border: 0;
+                    outline: 0;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .searchbar-input::placeholder {
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .searchbar-submit {
+                    border-radius: 30px;
+                    padding: 10px 24px;
+                    background: black;
+                    color: white;
+                    font-weight: 600;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .searchbar-close {
+                    position: absolute;
+                    bottom: 8px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    font-size: 2.5rem;
+                    background: #F2F2F3;
+                    width: 50px;
+                    border-radius: 20px;
+                    height: fit-content;
+                    aspect-ratio: 1/1;
+                }
+            }
+
+            .search-recommendations {
+                width: min(100%, 520px);
+                margin-top: 20px;
+
+                .search-recommendation-group + .search-recommendation-group {
+                    margin-top: 20px;
+                }
+
+                .search-recommendation-group h2 {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .search-recommendation-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                    padding: 0;
+                    list-style: none;
+                }
+
+                .search-recommendation {
+                    width: 100%;
+                    padding: 12px 16px;
+                    border-radius: 16px;
+                    background: #F2F2F3;
+                    text-align: left;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+            }
+
+            .active-search {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                width: fit-content;
+                cursor: pointer;
+                background: #F2F2F3;
+                border-radius: 30px;
+                padding: 12px 16px;
+                font-size: 1rem;
+                font-weight: 600;
+                font-family: "Bricolage Grotesque", sans-serif;
+
+                .active-search-query,
+                .clear-search {
+                    padding: 0;
+                    background: transparent;
+                }
+            }
+        }
+
+        .searchbar-btn {
+            gap: 16px;
+            display: flex;
+            align-items: center;
+            background: #F2F2F3;
+            width: fit-content;
+            cursor: pointer;
+            max-width: 400px;
+            border-radius: 30px;
+            padding: 16px 24px;
+            height: 45px;
+        }
 
         .filter-pill {
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 600;
             font-family: "Bricolage Grotesque", sans-serif;
-            display: flex;
-            align-items: start;
-            color: #888888;
+            padding: 2px 16px;
+            background: #F2F2F3;
+            border-radius: 100px;
             cursor: pointer;
-            gap: 8px;
             transition: 300ms ease-in-out;
+            min-height: none;
+            height: 45px;
         }
     }
 
-    .filter-pill:hover,
     .filter-pill.active {
-        color: black;
+        background: black;
+        color: white;
     }
 
     .menu-grid {
@@ -50,8 +179,6 @@
 
         .item-card {
             position: relative;
-            background: #F2F2F3;
-            aspect-ratio: 2/3;
             width: 100%;
             border-radius: 25px;
             cursor: pointer;
@@ -62,7 +189,7 @@
             .thumbnail-container {
                 flex-shrink: 0;
                 width: 100%;
-                height: 80%;
+                aspect-ratio: 1/1;
                 margin-bottom: auto;
 
                 .thumbnail-img {
@@ -71,46 +198,75 @@
                     object-fit: contain;
                 }
             }
-            
-            .plus-icon {
-                position: absolute;
-                right: 8px;
-                top: 8px;
-                font-size: 1.2rem;
-                background: white;
-                border-radius: 100%;
-                aspect-ratio: 1/1;
-                width: 45px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
 
             .info-container {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
 
-                .top-section {
+                .item-title {
+                    font-size: 2.2rem;
+                    font-weight: 600;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                    text-align: center;
+                }
+
+                .bottom-section {
+                    gap: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
                     .price {
-                        color: #666666;
                         font-weight: 500;
                         font-family: "Bricolage Grotesque", sans-serif;
                     }
 
-                    .item-title {
-                        font-size: 2.2rem;
+                    .category {
+                        color: var(--primary-color);
+                        background: var(--secondary-color);
                         font-weight: 600;
+                        border-radius: 100px;
+                        padding: 4px 12px;
+                        width: fit-content;
+                        font-family: "Bricolage Grotesque", sans-serif;
                     }
                 }
-
-                .category {
-                    background: white;
-                    border-radius: 100px;
-                    padding: 4px 8px;
-                    width: fit-content;
-                }
             }
+        }
+    }
+}
+
+.content-container:has(.dining-session-start) {
+    margin-top: auto;
+
+    .dining-session-start {
+        height: 100%;
+        padding: 32px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-family: "Bricolage Grotesque", sans-serif;
+
+        h1 {
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: 400;
+        }
+
+        p {
+            margin-bottom: 24px;
+            color: #555;
+        }
+
+        .start-session-button {
+            padding: 12px 32px;
+            border: 0;
+            border-radius: 30px;
+            background: black;
+            color: white;
+            font-weight: 600;
         }
     }
 }
@@ -124,6 +280,14 @@
 }
 
 @media only screen and (max-width: 768px) {
+    .menu-container {
+        .menu-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+}
+
+@media only screen and (max-width: 480px) {
     .menu-container {
         .menu-grid {
             grid-template-columns: 1fr;
@@ -146,11 +310,15 @@
 
                 .info-container {
                     height: 100%;
+                    justify-content: center;
                     
-                    .top-section {
-                        .item-title {
-                            font-size: 1.8rem;
-                        }
+                    .item-title {
+                        font-size: 1.8rem;
+                        text-align: left;
+                    }
+
+                    .bottom-section {
+                        justify-content: start;
                     }
                 }
             }

@@ -18,6 +18,7 @@
         border-radius: 100px;
 
         .nav-item {
+            position: relative;
             display: flex;
             font-size: 1.8rem;
             aspect-ratio: 1/1;
@@ -28,6 +29,18 @@
             color: #888888;
             cursor: pointer;
             transition: 300ms ease-in-out;
+
+            .content-number {
+                padding: 4px 6px;
+                position: absolute;
+                color: var(--secondary-color);
+                background: var(--primary-color);
+                font-weight: 700;
+                font-size: 1rem;
+                border-radius: 16px;
+                right: -5px;
+                top: -8px;
+            }
         }
 
         .nav-item:hover {
@@ -53,6 +66,7 @@
         text-decoration: none;
         background: #F2F2F3;
         border-radius: 100px;
+        font-family: "Bricolage Grotesque", sans-serif;
         transition: 300ms ease-in-out;
     }
 
@@ -62,21 +76,26 @@
     }
 }
 
+.content-container {
+    height: 100%;
+    margin-bottom: auto;
+}
+
 .footer {
-    margin-top: auto;
     padding: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-family: "Bricolage Grotesque", sans-serif;
 
     .title {
         font-size: 2rem;
         font-weight: 700;
         letter-spacing: -2px;
+        font-family: "Bricolage Grotesque", sans-serif;
     }
 
     .copyright {
-        font-weight: 500;
+        font-weight: 600;
+        font-family: "Bricolage Grotesque", sans-serif;
     }
 }

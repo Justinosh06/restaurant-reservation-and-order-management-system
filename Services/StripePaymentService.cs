@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Stripe;
 using Stripe.Checkout;
 
@@ -14,7 +16,9 @@ public class StripePaymentService : IPaymentService
 
     public async Task<Session> CreateTableSettlementSessionAsync(
         string tableId, 
-        IEnumerable<(string Name, double UnitPrice, int Quantity, string Remark)> items, 
+        string diningSessionId,
+        string paymentAttemptId,
+        IEnumerable<(string Name, decimal UnitPrice, int Quantity, string Remark)> items,
         string domain)
     {
         var lineItems = items.Select(item => new SessionLineItemOptions
@@ -22,7 +26,7 @@ public class StripePaymentService : IPaymentService
             PriceData = new SessionLineItemPriceDataOptions
             {
                 Currency = "myr",
-                UnitAmount = (long)(item.UnitPrice * 100),
+                UnitAmount = (long)(item.UnitPrice * 100m),
                 ProductData = new SessionLineItemPriceDataProductDataOptions
                 {
                     Name = item.Name,
@@ -36,16 +40,24 @@ public class StripePaymentService : IPaymentService
         {
             LineItems = lineItems,
             Mode = "payment",
+            ClientReferenceId = $"table:{tableId}:session:{diningSessionId}:{paymentAttemptId}",
             Metadata = new Dictionary<string, string>
             {
                 { "type", "table_settlement" },
-                { "table_id", tableId }
+                { "table_id", tableId },
+                { "dining_session_id", diningSessionId },
+                { "payment_attempt_id", paymentAttemptId }
             },
             SuccessUrl = $"{domain}/Payment/{{CHECKOUT_SESSION_ID}}?tableId={tableId}",
             CancelUrl = $"{domain}/Table/{tableId}/Checkout"
         };
 
-        return await _sessionService.CreateAsync(options);
+        return await _sessionService.CreateAsync(options, new RequestOptions
+        {
+            IdempotencyKey = CreateIdempotencyKey(
+                "table_settlement",
+                $"{tableId}:{diningSessionId}:{paymentAttemptId}")
+        });
     }
 
     public async Task<Session> CreateReservationDepositSessionAsync(
@@ -76,6 +88,7 @@ public class StripePaymentService : IPaymentService
         {
             LineItems = lineItems,
             Mode = "payment",
+            ClientReferenceId = $"reservation:{reservationId}",
             Metadata = new Dictionary<string, string>
             {
                 { "type", "reservation_deposit" },
@@ -85,11 +98,20 @@ public class StripePaymentService : IPaymentService
             CancelUrl = $"{domain}/Reservation/Cancel?reservationId={reservationId}"
         };
 
-        return await _sessionService.CreateAsync(options);
+        return await _sessionService.CreateAsync(options, new RequestOptions
+        {
+            IdempotencyKey = CreateIdempotencyKey("reservation_deposit", reservationId.ToString())
+        });
     }
 
     public async Task<Session> GetCheckoutSessionAsync(string sessionId)
     {
         return await _sessionService.GetAsync(sessionId);
+    }
+
+    private static string CreateIdempotencyKey(string paymentType, string paymentReference)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(paymentReference)));
+        return $"{paymentType}_{hash}";
     }
 }
