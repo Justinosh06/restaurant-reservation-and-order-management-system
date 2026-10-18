@@ -12,15 +12,15 @@ namespace RestaurantReservation.Models
         [Required(ErrorMessage = "Restaurant setting ID is required.")]
         public string Id { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(100)]
+        [Required(ErrorMessage = "Restaurant name is required.")]
+        [StringLength(100, ErrorMessage = "Restaurant name cannot exceed 100 characters.")]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(250)]
+        [Required(ErrorMessage = "Address is required.")]
+        [StringLength(250, ErrorMessage = "Address cannot exceed 250 characters.")]
         public string Address { get; set; } = string.Empty;
 
-        [StringLength(20)]
+        [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters.")]
         public string? PhoneNumber { get; set; }
 
         [Required]

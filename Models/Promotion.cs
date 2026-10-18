@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RestaurantReservation.Models
 {
@@ -9,17 +8,21 @@ namespace RestaurantReservation.Models
         [Required(ErrorMessage = "Promotion ID is required.")]
         public string Id { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Title is required.")]
+        [StringLength(100, ErrorMessage = "Title cannot exceed 100 characters.")]
+        public string Title { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Description is required.")]
+        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters.")]
+        public string Description { get; set; } = string.Empty;
+
+        [StringLength(500, ErrorMessage = "Image URL cannot exceed 500 characters.")]
+        public string? ImageUrl { get; set; }
+
         [Required]
         public DateOnly StartDate { get; set; }
 
         [Required]
         public DateOnly EndDate { get; set; }
-
-        // Foreign Key
-        [Required]
-        public string OrderId { get; set; } = string.Empty;
-
-        [ForeignKey(nameof(OrderId))]
-        public Order? Order { get; set; }
     }
 }

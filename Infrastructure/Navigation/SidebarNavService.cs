@@ -26,7 +26,7 @@ public class SidebarNavService
             {
                 Title = group.Title,
                 NavLinks = (group.NavLinks ?? new List<SidebarNavItem>())
-                    //.Where(item => item.Roles.Count == 0 || item.Roles.Any(user.IsInRole))
+                    .Where(item => item.Roles.Count == 0 || item.Roles.Any(user.IsInRole))
                     .ToList()
             })
             .Where(group => group.NavLinks.Count > 0)

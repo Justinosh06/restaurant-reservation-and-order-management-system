@@ -5,9 +5,38 @@
       "NavLinks": [
         {
           "Title": "Dashboard",
-          "Icon": "fa-regular fa-face-grin-squint-tears",
-          "Page": "/Admin/Index",
-          "Roles": ["Administrator", "Staff"]
+          "Icon": "fa-solid fa-chart-line",
+          "Page": "/Admin/Dashboard/Dashboard",
+          "Roles": [
+            "Administrator"
+          ]
+        },
+        {
+          "Title": "Orders",
+          "Icon": "fa-solid fa-receipt",
+          "Page": "/Admin/Orders/Order",
+          "Roles": [
+            "Administrator",
+            "Staff"
+          ]
+        },
+        {
+          "Title": "Table Management",
+          "Icon": "fa-solid fa-table-cells",
+          "Page": "/Admin/Tables/Table",
+          "Roles": [
+            "Administrator",
+            "Staff"
+          ]
+        },
+        {
+          "Title": "Reservation Management",
+          "Icon": "fa-regular fa-calendar-check",
+          "Page": "/Admin/Reservations/Reservation",
+          "Roles": [
+            "Administrator",
+            "Staff"
+          ]
         }
       ]
     },
@@ -15,10 +44,36 @@
       "Title": "Management",
       "NavLinks": [
         {
-          "Title": "Staff & Roles",
+          "Title": "Staffs",
           "Icon": "fa-regular fa-user",
-          "Page": "/Admin/Users/Index",
-          "Roles": ["Administrator"]
+          "Page": "/Admin/Staffs/Staff",
+          "Roles": [
+            "Administrator"
+          ]
+        },
+        {
+          "Title": "Announcement",
+          "Icon": "fa-solid fa-bullhorn",
+          "Page": "/Admin/Announcements/Announcement",
+          "Roles": [
+            "Administrator"
+          ]
+        },
+        {
+          "Title": "Promotion",
+          "Icon": "fa-solid fa-tags",
+          "Page": "/Admin/Promotions/Promotion",
+          "Roles": [
+            "Administrator"
+          ]
+        },
+        {
+          "Title": "Restaurant Settings",
+          "Icon": "fa-solid fa-gear",
+          "Page": "/Admin/Settings/Setting",
+          "Roles": [
+            "Administrator"
+          ]
         }
       ]
     }

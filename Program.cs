@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
 using RestaurantReservation.Infrastructure.Authentication;
+using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Infrastructure.Navigation;
 using RestaurantReservation.Infrastructure.Stripe;
 
@@ -33,6 +33,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<SidebarNavService>();
+builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
+builder.Services.AddSingleton<RestaurantClock>();
+builder.Services.AddScoped<RestaurantCurrency>();
 builder.Services.AddScoped<DiningSessionService>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
@@ -40,13 +43,8 @@ builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 // Register Controllers (Required for Stripe Webhook Controller)
 builder.Services.AddControllers();
 
-// Register Razor Pages and the custom subdomain route provider
-builder.Services.AddRazorPages();
-builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider("admin"));
-
 // 2. Configure HTTP Pipeline
 // Login / Register
-builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddScoped<IPasswordHasher<RestaurantReservation.Models.Customer>, PasswordHasher<RestaurantReservation.Models.Customer>>();
 builder.Services.AddSingleton<CaptchaService>();
 builder.Services.AddSingleton<AdminSignInTicketService>();
@@ -89,6 +87,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminPortal", policy => policy.RequireRole(AppRoles.Administrator, AppRoles.Staff));
+    options.AddPolicy("AdministratorOnly", policy => policy.RequireRole(AppRoles.Administrator));
     options.AddPolicy("CustomerOnly", policy => policy.RequireRole(AppRoles.Customer));
 });
 
@@ -96,6 +95,12 @@ builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin", "AdminPortal");
     options.Conventions.AllowAnonymousToPage("/Admin/SignIn");
+
+    options.Conventions.AuthorizeFolder("/Admin/Dashboard", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Promotions", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Settings", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
 });
 builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider(SiteHosts.AdminSubdomain));
