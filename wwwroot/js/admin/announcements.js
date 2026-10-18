@@ -147,8 +147,8 @@
         expiresInput.value = a?.lastDay ?? "";
         expiresInput.min = a ? "" : form.dataset.today;
         activeInput.checked = a?.isActive ?? true;
-        const iconInput = [...form.querySelectorAll("input[name='ann-icon']")].find(input => input.value === a?.icon);
-        if (iconInput) iconInput.checked = true;
+        const categoryInput = [...form.querySelectorAll("input[name='ann-category']")].find(input => input.value === a?.category);
+        if (categoryInput) categoryInput.checked = true;
         updateCharCount();
 
         document.getElementById("ann-modal-title").textContent = a ? "Edit announcement" : "New announcement";
@@ -192,7 +192,7 @@
                 id: editingId || null,
                 title: titleInput.value.trim(),
                 description: descInput.value.trim(),
-                icon: form.querySelector("input[name='ann-icon']:checked").value,
+                category: form.querySelector("input[name='ann-category']:checked").value,
                 isActive: activeInput.checked,
                 expiresAt: expiresInput.value || null
             });
