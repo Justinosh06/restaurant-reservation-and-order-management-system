@@ -1752,3 +1752,89 @@ body:has(.service-app) {
     margin-right: 12px;
 }
 
+/* Table Management check-in: tables with guests seated, and the Upcoming sidebar. */
+.legend-dot.occupied {
+    background: #3a63b8;
+}
+
+.floor-table.occupied .table-top {
+    border-color: #9db4e3;
+    background: #edf2fc;
+}
+
+.floor-table.occupied .table-status-mark,
+.floor-table.occupied .chair {
+    background: #3a63b8;
+}
+
+.floor-table.spotlight .table-top {
+    border: 2px solid var(--ink);
+    box-shadow: 0 0 0 4px rgb(37 39 35 / 10%);
+}
+
+.queue-group {
+    margin: 6px 2px 0;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.checkin-item {
+    cursor: default;
+}
+
+.checkin-item.checked-in {
+    border-left-color: #3a63b8;
+    background: #f6f8fd;
+}
+
+.checkin-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.checkin-actions form {
+    margin: 0;
+}
+
+.checkin-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--green);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.checkin-button:hover {
+    background: #1f5a3e;
+}
+
+.checkin-done {
+    color: #3a63b8;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.checkin-undo {
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.checkin-later {
+    color: var(--muted);
+    font-size: 11px;
+}
+

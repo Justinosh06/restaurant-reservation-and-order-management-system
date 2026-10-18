@@ -77,157 +77,32 @@ document.addEventListener("DOMContentLoaded", function () {
         backdrop.classList.remove("open");
     }
 
-    // Assigning: pick a reservation in the sidebar, tap one or more free tables, then save.
-    const assignBanner = document.getElementById("assignBanner");
-    const assignText = document.getElementById("assignText");
-    const saveAssignButton = document.getElementById("saveAssignButton");
-    const unassignButton = document.getElementById("unassignButton");
-    const cancelAssignButton = document.getElementById("cancelAssignButton");
-    const assignForm = document.getElementById("assignForm");
-    const assignTableIds = document.getElementById("assignTableIds");
+    // Hovering a booking in the sidebar lights up its tables on the floor plan.
     const floorTables = Array.from(document.querySelectorAll(".floor-table"));
-    const queueItems = Array.from(document.querySelectorAll(".queue-item"));
-    let selected = null;
-    let picked = [];
+    document.querySelectorAll(".checkin-item").forEach(function (item) {
+        const ids = item.dataset.tables ? item.dataset.tables.split(" ") : [];
+        const spotlight = function (on) {
+            floorTables.forEach(function (table) {
+                table.classList.toggle("spotlight", on && ids.includes(table.dataset.tableId));
+            });
+        };
+        item.addEventListener("mouseenter", function () { spotlight(true); });
+        item.addEventListener("mouseleave", function () { spotlight(false); });
+    });
 
-    function idList(value) {
-        return value ? value.split(" ") : [];
-    }
-
-    function describe(item) {
-        return item.dataset.name + " · " + item.dataset.party + " guests · " + item.dataset.time;
-    }
-
-    function seatsOf(id) {
-        const table = floorTables.find(function (button) {
-            return button.dataset.tableId === id;
-        });
-        return table ? Number(table.dataset.capacity) : 0;
-    }
-
-    function sameTables(a, b) {
-        return a.length === b.length && a.every(function (id) {
-            return b.includes(id);
-        });
-    }
-
-    // Redraws the floor plan and banner for the current reservation and picked tables.
-    function showPicked() {
-        const free = idList(selected.dataset.free);
-        const current = idList(selected.dataset.tables);
-        floorTables.forEach(function (table) {
-            const id = table.dataset.tableId;
-            const isPicked = picked.includes(id);
-            table.classList.toggle("picked", isPicked);
-            table.classList.toggle("fits", !isPicked && free.includes(id));
-            table.classList.toggle("no-fit", !isPicked && !free.includes(id));
-            table.setAttribute("aria-pressed", isPicked ? "true" : "false");
-        });
-
-        const party = Number(selected.dataset.party);
-        const seats = picked.reduce(function (total, id) {
-            return total + seatsOf(id);
-        }, 0);
-        const enough = picked.length > 0 && seats >= party;
-
-        assignBanner.classList.remove("warning");
-        if (picked.length === 0) {
-            assignText.textContent = free.length > 0
-                ? "Choose tables for " + describe(selected)
-                : "No table is free for " + describe(selected) + ". Add a table or free one up.";
-        } else {
-            assignText.textContent = describe(selected) + ": " + seats + " of " + party + " seats chosen ("
-                + picked.join(" + ") + ")" + (enough ? "." : ". Tap another table to add it.");
-        }
-        saveAssignButton.disabled = !enough || sameTables(picked, current);
-        unassignButton.hidden = current.length === 0;
-    }
-
-    function selectReservation(item) {
-        selected = item;
-        picked = idList(item.dataset.tables);
-        queueItems.forEach(function (other) {
-            other.classList.toggle("selected", other === item);
-            other.setAttribute("aria-pressed", other === item ? "true" : "false");
-        });
-        app.classList.add("assigning");
-        assignBanner.hidden = false;
-        showPicked();
-    }
-
-    function clearSelection() {
-        selected = null;
-        picked = [];
-        queueItems.forEach(function (item) {
-            item.classList.remove("selected");
-            item.setAttribute("aria-pressed", "false");
-        });
-        floorTables.forEach(function (table) {
-            table.classList.remove("picked", "fits", "no-fit");
-            table.removeAttribute("aria-pressed");
-        });
-        app.classList.remove("assigning");
-        assignBanner.hidden = true;
-    }
-
-    function submitAssignment(tableIds) {
-        document.getElementById("assignReservationId").value = selected.dataset.reservationId;
-        assignTableIds.replaceChildren();
-        tableIds.forEach(function (id) {
-            const input = document.createElement("input");
-            input.type = "hidden";
-            input.name = "tableIds";
-            input.value = id;
-            assignTableIds.appendChild(input);
-        });
-        assignForm.submit();
-    }
-
-    queueItems.forEach(function (item) {
-        item.setAttribute("aria-pressed", "false");
-        item.addEventListener("click", function () {
-            if (selected === item) {
-                clearSelection();
-            } else {
-                selectReservation(item);
+    document.querySelectorAll(".undo-checkin-form").forEach(function (form) {
+        form.addEventListener("submit", function (event) {
+            if (!window.confirm("Undo this check-in?")) {
+                event.preventDefault();
             }
         });
     });
 
     floorTables.forEach(function (button) {
         button.addEventListener("click", function () {
-            if (!selected) {
-                openTable(button.dataset.tableId);
-                return;
-            }
-
-            const id = button.dataset.tableId;
-            if (picked.includes(id)) {
-                picked = picked.filter(function (other) {
-                    return other !== id;
-                });
-                showPicked();
-            } else if (idList(selected.dataset.free).includes(id)) {
-                picked.push(id);
-                showPicked();
-            } else {
-                assignBanner.classList.add("warning");
-                assignText.textContent = id + " is already booked around " + selected.dataset.time + ". Pick another table.";
-            }
+            openTable(button.dataset.tableId);
         });
     });
-
-    saveAssignButton.addEventListener("click", function () {
-        if (selected && picked.length > 0) {
-            submitAssignment(picked);
-        }
-    });
-    unassignButton.addEventListener("click", function () {
-        if (selected) {
-            submitAssignment([]);
-        }
-    });
-    cancelAssignButton.addEventListener("click", clearSelection);
 
     closeButton.addEventListener("click", closePanel);
     closeAddButton.addEventListener("click", closePanel);
@@ -236,8 +111,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("keydown", function (event) {
         if (event.key === "Escape" && backdrop.classList.contains("open")) {
             closePanel();
-        } else if (event.key === "Escape" && selected) {
-            clearSelection();
         }
     });
 

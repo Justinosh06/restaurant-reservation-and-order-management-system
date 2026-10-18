@@ -8,6 +8,8 @@ namespace RestaurantReservation.Models
     {
         Pending,
         Confirmed,
+        // The guests have arrived and been seated (Table Management's Check in).
+        CheckedIn,
         Cancelled,
         Completed
     }

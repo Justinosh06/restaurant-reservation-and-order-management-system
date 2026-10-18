@@ -30,12 +30,18 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
     // Reservations that also use other tables; removing the table only takes it off them.
     public Dictionary<string, int> SharedReservationCounts { get; private set; } = [];
 
-    // Upcoming reservations for the sidebar: ones still needing a table first, then by time.
+    // Upcoming bookings that already have a table, soonest first, for the check-in sidebar.
+    // Assigning tables happens on Reservation Management's Pending tab.
     public List<ReservationSummary> Queue { get; private set; } = [];
 
-    // For each reservation in the queue, the tables free at its time (its own tables included).
-    // Staff can combine several of them when one table is too small.
-    public Dictionary<string, List<string>> FreeTables { get; private set; } = [];
+    // Guests can be checked in from this long before their booking until its slot ends.
+    public static readonly TimeSpan CheckInOpensBefore = TimeSpan.FromHours(1);
+
+    public static bool CanCheckIn(ReservationSummary reservation, DateTime now) =>
+        reservation.HasTable
+        && reservation.Status != ReservationStatus.CheckedIn
+        && now >= reservation.ReservationAt - CheckInOpensBefore
+        && now < reservation.EndsAt;
 
     [TempData]
     public string? StatusMessage { get; set; }
@@ -69,16 +75,9 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
 
         var now = DateTime.Now;
         Queue = Reservations
-            .Where(reservation => reservation.EndsAt > now)
-            .OrderBy(reservation => reservation.HasTable)
-            .ThenBy(reservation => reservation.ReservationAt)
+            .Where(reservation => reservation.HasTable && reservation.EndsAt > now)
+            .OrderBy(reservation => reservation.ReservationAt)
             .ToList();
-        FreeTables = Queue.ToDictionary(
-            reservation => reservation.Id,
-            reservation => Tables
-                .Where(table => ReservationSummary.FindClash(Reservations, table.Id, reservation.ReservationAt, reservation.Id) is null)
-                .Select(table => table.Id)
-                .ToList());
 
         SelectedTableId = Tables.FirstOrDefault(table => table.Id == tableId)?.Id;
     }
@@ -143,14 +142,10 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         return RedirectToPage();
     }
 
-    // Seats a reservation at the given tables (several for a large party), or takes it off its tables
-    // when tableIds is empty.
-    public async Task<IActionResult> OnPostAssignAsync(string? reservationId, string[] tableIds)
+    // Marks the guests as arrived. Their tables show as Checked in until the booking's slot ends.
+    public async Task<IActionResult> OnPostCheckInAsync(string? reservationId)
     {
-        var reservation = reservationId is null ? null : await db.Reservations
-            .Include(item => item.Customer)
-            .Include(item => item.ReservationTables)
-            .FirstOrDefaultAsync(item => item.Id == reservationId);
+        var reservation = await FindReservationAsync(reservationId);
         if (reservation is null)
         {
             StatusMessage = "That reservation no longer exists.";
@@ -158,64 +153,50 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         }
 
         var summary = ReservationSummary.From(reservation);
-        var label = $"{summary.CustomerName} ({summary.PartySize} guests, "
-            + $"{summary.ReservationAt.ToString("ddd d MMM, h:mm tt", CultureInfo.CurrentCulture)})";
-
-        var wanted = tableIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
-        if (wanted.Count == 0)
+        if (reservation.Status == ReservationStatus.CheckedIn)
         {
-            reservation.ReservationTables.Clear();
-            await db.SaveChangesAsync();
-            StatusMessage = $"{label} no longer has a table.";
+            StatusMessage = $"{summary.CustomerName} is already checked in.";
             return RedirectToPage();
         }
 
-        var tables = await db.Tables.Where(table => wanted.Contains(table.Id)).ToListAsync();
-        if (tables.Count != wanted.Count)
+        if (!CanCheckIn(summary, DateTime.Now))
         {
-            StatusMessage = "One of those tables no longer exists.";
+            StatusMessage = !summary.HasTable
+                ? $"{summary.CustomerName} has no table yet. Assign one on Reservation Management first."
+                : $"{summary.CustomerName} can be checked in from "
+                    + $"{(summary.ReservationAt - CheckInOpensBefore).ToString("ddd d MMM, h:mm tt", CultureInfo.CurrentCulture)}.";
             return RedirectToPage();
         }
 
-        var seats = tables.Sum(table => table.Capacity);
-        if (reservation.Pax > seats)
-        {
-            StatusMessage = $"{label} needs {reservation.Pax} seats, but {TablesLabel(wanted)} only seat{(wanted.Count == 1 ? "s" : "")} {seats}.";
-            return RedirectToPage();
-        }
-
-        var others = (await db.Reservations.AsNoTracking()
-                .Include(item => item.Customer)
-                .Include(item => item.ReservationTables)
-                .Where(item => item.Id != reservation.Id
-                    && item.ReservationTables.Any(link => wanted.Contains(link.TableId)))
-                .ToListAsync())
-            .Select(ReservationSummary.From)
-            .ToList();
-        foreach (var tableId in wanted)
-        {
-            var clash = ReservationSummary.FindClash(others, tableId, summary.ReservationAt, reservation.Id);
-            if (clash is not null)
-            {
-                StatusMessage = $"Table {tableId} is already booked by {clash.CustomerName} at "
-                    + $"{clash.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)}.";
-                return RedirectToPage();
-            }
-        }
-
-        reservation.ReservationTables.RemoveAll(link => !wanted.Contains(link.TableId));
-        foreach (var tableId in wanted.Where(id => reservation.ReservationTables.All(link => link.TableId != id)))
-        {
-            // Id is set here, not on save: EF cannot track two new links that both have an empty Id.
-            reservation.ReservationTables.Add(new ReservationTable { Id = Guid.NewGuid().ToString("N"), TableId = tableId });
-        }
+        reservation.Status = ReservationStatus.CheckedIn;
         await db.SaveChangesAsync();
-        StatusMessage = $"{label} is now at {TablesLabel(wanted)}.";
+        StatusMessage = $"{summary.CustomerName} ({summary.PartySize} guests) checked in at {summary.TableLabel}.";
         return RedirectToPage();
     }
 
-    private static string TablesLabel(IReadOnlyCollection<string> tableIds) =>
-        (tableIds.Count == 1 ? "table " : "tables ") + string.Join(" + ", tableIds);
+    // Takes back a check-in made by mistake.
+    public async Task<IActionResult> OnPostUndoCheckInAsync(string? reservationId)
+    {
+        var reservation = await FindReservationAsync(reservationId);
+        if (reservation is not { Status: ReservationStatus.CheckedIn })
+        {
+            StatusMessage = "That reservation isn't checked in.";
+            return RedirectToPage();
+        }
+
+        reservation.Status = ReservationStatus.Confirmed;
+        await db.SaveChangesAsync();
+        StatusMessage = $"Check-in undone for {ReservationSummary.From(reservation).CustomerName}.";
+        return RedirectToPage();
+    }
+
+    private async Task<Reservation?> FindReservationAsync(string? reservationId) =>
+        reservationId is null ? null : await db.Reservations
+            .Include(item => item.Customer)
+            .Include(item => item.ReservationTables)
+            .FirstOrDefaultAsync(item => item.Id == reservationId
+                && item.Status != ReservationStatus.Cancelled
+                && item.Status != ReservationStatus.Completed);
 
     private Task<List<DiningTable>> LoadTablesAsync() =>
         db.Tables.AsNoTracking()

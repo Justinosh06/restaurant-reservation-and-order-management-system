@@ -118,7 +118,7 @@
             <div class="booking-list">
                 @foreach (var booking in Model.Upcoming)
                 {
-                    var confirmed = booking.Status == RestaurantReservation.Models.ReservationStatus.Confirmed;
+                    var confirmed = booking.Status is RestaurantReservation.Models.ReservationStatus.Confirmed or RestaurantReservation.Models.ReservationStatus.CheckedIn;
                     <article>
                         <i class="fa-solid @(confirmed ? "fa-circle-check" : "fa-hourglass-half") booking-icon @(confirmed ? "confirmed" : "pending")" aria-hidden="true"></i>
                         <strong>@booking.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</strong>

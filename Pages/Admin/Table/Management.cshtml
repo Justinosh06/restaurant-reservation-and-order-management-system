@@ -33,7 +33,7 @@
             <div>
                 <p class="eyebrow">DINING ROOM</p>
                 <h1>Table Management</h1>
-                <p class="subheading">Pick a reservation on the right, tap one or more tables, then save.</p>
+                <p class="subheading">See which tables are booked and check guests in when they arrive.</p>
             </div>
             <div class="floor-toolbar-actions">
                 <div class="floor-toolbar-buttons">
@@ -45,6 +45,7 @@
                     <span><i class="legend-dot available"></i>Available</span>
                     <span><i class="legend-dot reserved"></i>Reserved</span>
                     <span><i class="legend-dot soon"></i>Starting soon</span>
+                    <span><i class="legend-dot occupied"></i>Checked in</span>
                 </div>
             </div>
         </div>
@@ -56,14 +57,6 @@
 
         <div class="table-workspace">
         <section class="floorplan-shell" id="floorplan" aria-label="Restaurant floor plan">
-            <div class="assign-banner" id="assignBanner" role="status" hidden>
-                <span id="assignText"></span>
-                <span class="assign-actions">
-                    <button type="button" class="assign-save" id="saveAssignButton" disabled>Save</button>
-                    <button type="button" class="assign-unassign" id="unassignButton" hidden>Remove from tables</button>
-                    <button type="button" class="assign-cancel" id="cancelAssignButton">Cancel</button>
-                </span>
-            </div>
             <div class="floorplan-label">
                 <span><i class="floor-indicator"></i> Main floor</span>
                 <span>@Model.Tables.Count tables</span>
@@ -82,14 +75,17 @@
                         .FirstOrDefault(reservation => reservation.TableIds.Contains(table.Id));
                     var startsSoon = nextReservation is not null
                         && nextReservation.ReservationAt <= now.AddMinutes(60);
+                    // Checked-in guests sit at the table until their slot ends.
+                    var seatedNow = nextReservation is { Status: RestaurantReservation.Models.ReservationStatus.CheckedIn }
+                        && nextReservation.ReservationAt - TableManagementModel.CheckInOpensBefore <= now;
 
                     <button type="button"
-                            class="floor-table @(nextReservation is null ? "available" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
+                            class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
                             data-reservation-count="@Model.ReservationCounts.GetValueOrDefault(table.Id)"
                             data-shared-count="@Model.SharedReservationCounts.GetValueOrDefault(table.Id)"
-                            aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : "reserved")">
+                            aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">
                             <span class="table-status-mark" aria-hidden="true"></span>
@@ -98,7 +94,7 @@
                             {
                                 <span class="table-booking">
                                     <span>@nextReservation.PartySize guests</span>
-                                    <span>@nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
+                                    <span>@(seatedNow ? "Checked in" : nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture))</span>
                                 </span>
                             }
                             else
@@ -120,42 +116,57 @@
 
         <aside class="reservation-queue" aria-labelledby="queueTitle">
             <div class="queue-heading">
-                <h2 id="queueTitle">Reservations</h2>
-                <span>@Model.Queue.Count upcoming</span>
+                <h2 id="queueTitle">Upcoming</h2>
+                <span>@Model.Queue.Count booked</span>
             </div>
             @if (Model.Queue.Count == 0)
             {
                 <div class="queue-empty">
-                    <strong>No upcoming reservations</strong>
-                    <p>Create them in <a asp-page="/Admin/Reservation/Management">Reservation Management</a>.</p>
+                    <strong>No upcoming bookings with a table</strong>
+                    <p>Seat bookings on the Pending tab of <a asp-page="/Admin/Reservation/Management" asp-route-tab="pending">Reservation Management</a>.</p>
                 </div>
             }
             else
             {
-                var unassignedCount = Model.Queue.Count(reservation => !reservation.HasTable);
-                <p class="queue-hint">
-                    @(unassignedCount == 0 ? "Every booking has a table." : $"{unassignedCount} still need a table.")
-                    Select one to seat or move it.
-                </p>
+                <p class="queue-hint">Check guests in when they arrive. Check-in opens 1 hour before the booking.</p>
                 <div class="queue-list">
-                    @foreach (var reservation in Model.Queue)
+                    @foreach (var group in Model.Queue.GroupBy(reservation => reservation.ReservationAt.Date == now.Date ? "Today" : "Later"))
                     {
-                        var time = reservation.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture);
-                        <button type="button"
-                                class="queue-item @(reservation.HasTable ? "" : "unassigned")"
-                                data-reservation-id="@reservation.Id"
-                                data-name="@reservation.CustomerName"
-                                data-party="@reservation.PartySize"
-                                data-time="@time"
-                                data-tables="@string.Join(' ', reservation.TableIds)"
-                                data-free="@string.Join(' ', Model.FreeTables[reservation.Id])">
-                            <span class="queue-time">@time</span>
-                            <strong class="queue-name">@reservation.CustomerName</strong>
-                            <span class="queue-meta">
-                                @reservation.PartySize guests
-                                <span class="queue-table">@(reservation.HasTable ? reservation.TableLabel : "No table")</span>
-                            </span>
-                        </button>
+                        <h3 class="queue-group">@group.Key</h3>
+                        @foreach (var reservation in group)
+                        {
+                            var checkedIn = reservation.Status == RestaurantReservation.Models.ReservationStatus.CheckedIn;
+                            var canCheckIn = TableManagementModel.CanCheckIn(reservation, now);
+                            <div class="queue-item checkin-item @(checkedIn ? "checked-in" : "")" data-tables="@string.Join(' ', reservation.TableIds)">
+                                <span class="queue-time">@reservation.ReservationAt.ToString(group.Key == "Today" ? "h:mm tt" : "ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</span>
+                                <strong class="queue-name">@reservation.CustomerName</strong>
+                                <span class="queue-meta">
+                                    @reservation.PartySize guests
+                                    <span class="queue-table">@reservation.TableLabel</span>
+                                </span>
+                                <div class="checkin-actions">
+                                    @if (checkedIn)
+                                    {
+                                        <span class="checkin-done"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Checked in</span>
+                                        <form method="post" asp-page-handler="UndoCheckIn" class="undo-checkin-form">
+                                            <input type="hidden" name="reservationId" value="@reservation.Id" />
+                                            <button type="submit" class="checkin-undo">Undo</button>
+                                        </form>
+                                    }
+                                    else if (canCheckIn)
+                                    {
+                                        <form method="post" asp-page-handler="CheckIn">
+                                            <input type="hidden" name="reservationId" value="@reservation.Id" />
+                                            <button type="submit" class="checkin-button"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Check in</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="checkin-later">Check-in from @((reservation.ReservationAt - TableManagementModel.CheckInOpensBefore).ToString(group.Key == "Today" ? "h:mm tt" : "ddd h:mm tt", CultureInfo.CurrentCulture))</span>
+                                    }
+                                </div>
+                            </div>
+                        }
                     }
                 </div>
             }
@@ -163,11 +174,6 @@
         </div>
     </div>
 </div>
-
-<form method="post" asp-page-handler="Assign" id="assignForm" hidden>
-    <input type="hidden" name="reservationId" id="assignReservationId" />
-    <span id="assignTableIds"></span>
-</form>
 
 <div class="panel-backdrop" id="panelBackdrop"></div>
 <aside class="reservation-panel table-details-panel"

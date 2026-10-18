@@ -278,7 +278,11 @@
                             {
                                 <span class="booking-badge @(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "refunded")">@reservation.DepositLabel</span>
                             }
-                            else if (reservation.Status == RestaurantReservation.Models.ReservationStatus.Confirmed && isOpen)
+                            else if (reservation.Status == RestaurantReservation.Models.ReservationStatus.CheckedIn && isOpen)
+                        {
+                            <span class="booking-badge confirmed">Checked in</span>
+                        }
+                        else if (reservation.Status == RestaurantReservation.Models.ReservationStatus.Confirmed && isOpen)
                             {
                                 <span class="booking-badge confirmed">Confirmed</span>
                             }
