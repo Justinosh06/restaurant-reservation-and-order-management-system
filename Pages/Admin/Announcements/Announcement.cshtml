@@ -28,9 +28,9 @@
                         </div>
                         <select class="form-select form-select-sm w-auto" id="ann-category-filter" aria-label="Filter by category">
                             <option value="">All categories</option>
-                            @foreach (var icon in AnnouncementModel.Icons)
+                            @foreach (var category in AnnouncementModel.Categories)
                             {
-                                <option value="@icon.Label">@icon.Label</option>
+                                <option value="@category.Name">@category.Name</option>
                             }
                         </select>
                         <select class="form-select form-select-sm w-auto" id="ann-status-filter" aria-label="Filter by status">
@@ -82,11 +82,11 @@
                 <fieldset class="mb-3">
                     <legend class="form-label fs-6">Category</legend>
                     <div class="d-flex flex-wrap gap-2">
-                        @for (var i = 0; i < AnnouncementModel.Icons.Count; i++)
+                        @for (var i = 0; i < AnnouncementModel.Categories.Count; i++)
                         {
-                            var icon = AnnouncementModel.Icons[i];
-                            <input type="radio" class="btn-check" name="ann-icon" id="ann-icon-@i" value="@icon.Value" checked="@(i == 0)" />
-                            <label class="btn btn-outline-secondary btn-sm rounded-pill" for="ann-icon-@i"><i class="@icon.Value me-1"></i>@icon.Label</label>
+                            var category = AnnouncementModel.Categories[i];
+                            <input type="radio" class="btn-check" name="ann-category" id="ann-category-@i" value="@category.Name" checked="@(i == 0)" />
+                            <label class="btn btn-outline-secondary btn-sm rounded-pill" for="ann-category-@i"><i class="@category.Icon me-1"></i>@category.Name</label>
                         }
                     </div>
                 </fieldset>

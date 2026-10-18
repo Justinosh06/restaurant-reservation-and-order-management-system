@@ -9,16 +9,16 @@ namespace RestaurantReservation.Pages.Admin.Announcements;
 
 public class AnnouncementModel : PageModel
 {
-    public static readonly IReadOnlyList<(string Value, string Label)> Icons =
+    public static readonly IReadOnlyList<(string Name, string Icon)> Categories =
     [
-        ("fa-solid fa-circle-info", "General"),
-        ("fa-solid fa-door-closed", "Closure"),
-        ("fa-solid fa-clock", "Hours change"),
-        ("fa-solid fa-screwdriver-wrench", "Maintenance"),
-        ("fa-solid fa-utensils", "New menu"),
-        ("fa-solid fa-champagne-glasses", "Event"),
-        ("fa-solid fa-gift", "Festive"),
-        ("fa-solid fa-triangle-exclamation", "Urgent")
+        ("General", "fa-solid fa-circle-info"),
+        ("Closure", "fa-solid fa-door-closed"),
+        ("Hours change", "fa-solid fa-clock"),
+        ("Maintenance", "fa-solid fa-screwdriver-wrench"),
+        ("New menu", "fa-solid fa-utensils"),
+        ("Event", "fa-solid fa-champagne-glasses"),
+        ("Festive", "fa-solid fa-gift"),
+        ("Urgent", "fa-solid fa-triangle-exclamation")
     ];
 
     private readonly ApplicationDbContext _db;
@@ -32,7 +32,7 @@ public class AnnouncementModel : PageModel
 
     public DateOnly Today => _clock.Today;
 
-    public record SaveAnnouncementRequest(string? Id, string? Title, string? Description, string? Icon, bool IsActive, string? ExpiresAt);
+    public record SaveAnnouncementRequest(string? Id, string? Title, string? Description, string? Category, bool IsActive, string? ExpiresAt);
 
     public record AnnouncementIdRequest(string Id);
 
@@ -90,9 +90,9 @@ public class AnnouncementModel : PageModel
         {
             return error;
         }
-        if (!Icons.Any(i => i.Value == request.Icon))
+        if (!Categories.Any(c => c.Name == request.Category))
         {
-            return "Please choose one of the listed icons.";
+            return "Please choose one of the listed categories.";
         }
 
         DateTime? expiresAt = null;
@@ -113,7 +113,7 @@ public class AnnouncementModel : PageModel
 
         announcement.Title = title;
         announcement.Description = description;
-        announcement.Icon = request.Icon!;
+        announcement.Category = request.Category!;
         announcement.IsActive = request.IsActive;
         announcement.ExpiresAt = expiresAt;
         return null;
@@ -152,8 +152,8 @@ public class AnnouncementModel : PageModel
         id = a.Id,
         title = a.Title,
         description = a.Description,
-        icon = a.Icon,
-        category = Icons.FirstOrDefault(i => i.Value == a.Icon).Label ?? "General",
+        category = a.Category,
+        icon = Categories.FirstOrDefault(c => c.Name == a.Category).Icon ?? Categories[0].Icon,
         isActive = a.IsActive,
         isExpired = a.ExpiresAt <= DateTime.UtcNow,
         createdAt = a.CreatedAt,

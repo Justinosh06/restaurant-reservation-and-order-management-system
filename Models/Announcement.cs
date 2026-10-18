@@ -19,9 +19,9 @@ namespace RestaurantReservation.Models
         [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters.")]
         public string Description { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Icon is required.")]
-        [StringLength(50, ErrorMessage = "Icon cannot exceed 50 characters.")]
-        public string Icon { get; set; } = "fa-solid fa-circle-info";
+        [Required(ErrorMessage = "Category is required.")]
+        [StringLength(20, ErrorMessage = "Category cannot exceed 20 characters.")]
+        public string Category { get; set; } = "General";
 
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
