@@ -5,7 +5,6 @@ namespace RestaurantReservation.Models.Enums
     public enum MenuItemType
     {
         Pasta,
-        Pizza,
         Beverage
     }
 }

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RestaurantReservation.Models
 {
@@ -15,13 +14,7 @@ namespace RestaurantReservation.Models
 
         public DateTime? EndingTime { get; set; }
 
-        [Required]
-        public string TableId { get; set; } = string.Empty;
-
-        [ForeignKey(nameof(TableId))]
-        public Table? Table { get; set; }
-
-        public ICollection<Order> Orders { get; set; } = new List<Order>();
+        public Order? Order { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

@@ -7,67 +7,27 @@
 <link rel="stylesheet" href="~/css/checkout_page.css" asp-append-version="true">
 
 <div class="checkout-container">
-    <h2 class="section-title">Your Orders</h2>
-    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-    {
-        <p class="alert-text" role="status">@Model.StatusMessage</p>
-    }
     <div class="order-list">
+        <h2 class="section-title">Your Orders</h2>
+
         @foreach (var order in Model.SessionOrders)
         {
-            <details class="order-wrapper">
-                <summary class="order-btn">
-                    <div class="d-flex title-row">
-                        <div>
-                            <h4 class="title">Order</h4>
-                            <h4 class="title-id">#@order.OrderCode</h4>
-                        </div>
+            <button type="button" class="order-btn">
+                <h4 class="title">Order #@order.OrderCode</h4>
+                <span class="detail">@order.FormattedTime - @order.Status</span>
 
-                        <div class="status">@order.Status</div>
-                    </div>
-                    <span class="detail">@order.FormattedTime</span>
-                </summary>
-
-                <div class="order-items">
-                    @foreach (var item in order.Items)
-                    {
-                        <div class="order-item">
-                            <div class="d-flex justify-content-between">
-                                <div class="order-item-details">
-                                    <span class="order-item-name">@item.Name</span>
-                                    @if (!string.IsNullOrWhiteSpace(item.Options))
-                                    {
-                                        <span class="order-item-remark">@item.Options</span>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(item.Remark))
-                                    {
-                                        <span class="order-item-remark">@item.Remark</span>
-                                    }
-                                </div>
-                                <span class="order-item-price">RM @((item.UnitPrice * item.Quantity).ToString("F2"))</span>
-                            </div>
-                            <span class="order-item-quantity">Quantity: @item.Quantity</span>
-                        </div>
-                    }
-                </div>
-            </details>
-        }
-        @if (Model.SessionOrders.Count == 0)
-        {
-            <div class="empty-container">
-                <p class="empty-text">No orders have been placed for this dining session yet.</p>
-                <a class="view-cart-btn" asp-page="/Table/Cart" asp-route-tableId="@Model.TableId">View cart</a>
-            </div>
+                <i class="fa-solid fa-chevron-right icon"></i>
+            </button>
         }
     </div>
 
-    @if (Model.SessionOrders.Count > 0)
-    {
+    <div class="sticky-bottom-wrapper">
+        <h4 class="total-price">Total: RM @Model.TotalAmount.ToString("F2")</h4>
+
         <form method="post" asp-page-handler="PayWithStripe" asp-route-tableId="@Model.TableId">
-            <button type="submit" class="pay-btn w-100" disabled="@(!Model.CanPay)">
-                <h4 class="total-price">RM @Model.TotalAmount.ToString("F2")</h4>
-                <span class="d-flex align-items-center gap-1">Pay with <span class="fa-brands fa-stripe icon"></span></span>
+            <button type="submit" class="pay-btn w-100">
+                Pay with <span class="fa-brands fa-stripe icon"></span>
             </button>
         </form>
-    }
+    </div>
 </div>

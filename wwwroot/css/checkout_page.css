@@ -1,13 +1,11 @@
 .checkout-container {
-    padding: 8px;
+    padding: 12px;
     max-width: 600px;
     margin-inline: auto;
 
     .section-title {
-        position: absolute;
-        top: 24px;
-        left: 50%;
-        transform: translateX(-50%);
+        margin-top: -66px;
+        margin-bottom: 40px;
         font-size: 1.5rem;
         text-align: center;
         letter-spacing: -1px;
@@ -15,157 +13,86 @@
         font-family: "Bricolage Grotesque", sans-serif;
     }
 
-    .alert-text {
-        color: var(--primary-color);
-        background: #edfdca;
-        padding: 24px;
-        font-weight: 600;
-        border-radius: 30px;
-        font-family: "Bricolage Grotesque", sans-serif;
-    }
-
     .order-list {
-        gap: 8px;
         display: flex;
         flex-direction: column;
-        border-radius: 30px;
-        margin-bottom: 16px;
+        gap: 8px;
 
-        .order-wrapper {
-            padding: 8px;
-            border-radius: 30px;
+        .order-btn {
+            padding: 24px;
             background: #F2F2F3;
-            transition: 400ms ease-in-out;
+            border-radius: 25px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            text-align: left;
 
-            .order-btn {
-                padding: 24px;
-                background: white;
-                border-radius: 22px;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-                text-align: left;
-
-                .title-row {
-                    display: flex;
-                    justify-content: space-between;
-
-                    .title {
-                        font-size: 1rem;
-                        font-weight: 300;
-                        color: #888888;
-                        font-family: "Bricolage Grotesque", sans-serif;
-                    }
-
-                    .title-id {
-                        font-size: 1.8rem;
-                    }
-
-                    .status {
-                        background: var(--secondary-color);
-                        color: var(--primary-color);
-                        height: fit-content;
-                        font-size: 0.9rem;
-                        padding: 4px 12px;
-                        border-radius: 30px;
-                        font-weight: 600;
-                        font-family: "Bricolage Grotesque", sans-serif;
-                    }
-                }
-
-                .detail {
-                    font-size: 1rem;
-                    margin-bottom: 0;
-                    letter-spacing: -1px;
-                    color: #888888;
-                    font-weight: 500;
-                }
+            .title {
+                margin-bottom: 0;
+                font-size: 1.2rem;
+                letter-spacing: -1px;
+                color: black;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-family: "Bricolage Grotesque", sans-serif;
             }
 
-            .order-items {
-                padding: 8px 16px;
-
-                .order-item {
-                    padding: 12px 0;
-                    display: flex;
-                    flex-direction: column;
-                    font-family: "Bricolage Grotesque", sans-serif;
-
-                    .order-item-details {
-                        display: flex;
-                        flex-direction: column;
-
-                        .order-item-name {
-                            font-size: 1.2rem;
-                            font-weight: 600;
-                            margin-bottom: 16px;
-                        }
-                    }
-                }
-
-                .order-item:not(:last-child) {
-                    border-bottom: 1px solid #cccccc;
-                }
+            .detail {
+                font-size: 1rem;
+                margin-bottom: 0;
+                letter-spacing: -1px;
+                color: #888888;
+                font-weight: 500;
             }
+
+            .icon {
+                position: absolute;
+                translate: 0 -50%;
+                top: 50%;
+                right: 24px;
+                color: #888888;
+            }
+        }
+
+        .order-wrapper.active {
+            max-height: none;
         }
     }
 
-    .pay-btn {
-        gap: 4px;
+    .sticky-bottom-wrapper {
+        position: sticky;
+        bottom: 0;
+        left: 8px;
+        right: 8px;
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: var(--secondary-color);
-        color: var(--primary-color);
-        border-radius: 100px;
-        padding: 6px 24px;
-        font-weight: 600;
-        font-size: 1rem;
-        font-family: "Bricolage Grotesque", sans-serif;
+        padding: 16px 0;
+        flex-direction: column;
+        background: linear-gradient(to top, rgba(255, 255, 255, 1) 75%, rgba(255, 255, 255, 0) 100%);
 
         .total-price {
             text-align: center;
             letter-spacing: -1px;
             font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 0;
             font-family: "Bricolage Grotesque", sans-serif;
         }
 
-        .icon {
-            font-size: 2.5rem;
-            color: #635BFF;
-        }
-    }
-
-    .pay-btn:disabled {
-        filter: brightness(0.85);
-    }
-}
-
-.content-container:has(.empty-container) {
-    margin-top: auto;
-    margin-bottom: auto;
-
-    .empty-container {
-        display: flex;
-        flex-direction: column;
-
-        .empty-text {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .view-cart-btn {
-            width: 100%;
-            text-align: center;
-            padding: 12px 24px;
-            background: black;
-            color: white;
-            text-decoration: none;
+        .pay-btn {
+            gap: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--secondary-color);
+            color: var(--primary-color);
             border-radius: 100px;
-            font-weight: 700;
+            padding: 4px;
+            font-weight: 600;
+            font-size: 1.1rem;
             font-family: "Bricolage Grotesque", sans-serif;
+            
+            .icon {
+                font-size: 2.6rem;
+                color: #635BFF;
+            }
         }
     }
 }
@@ -173,7 +100,8 @@
 @media only screen and (max-width: 768px) {
     .checkout-container {
         .section-title {
-            display: none;
+            margin-top: 0;
+            margin-bottom: 8px;
         }
     }
 }

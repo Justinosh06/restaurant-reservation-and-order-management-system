@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Collections.Generic;
 
 namespace RestaurantReservation.Models
 {
@@ -39,11 +38,10 @@ namespace RestaurantReservation.Models
         [ForeignKey(nameof(SessionId))]
         public Session? Session { get; set; }
 
-        public string? CustomerId { get; set; }
+        [Required]
+        public string CustomerId { get; set; } = string.Empty;
 
         [ForeignKey(nameof(CustomerId))]
         public Customer? Customer { get; set; }
-
-        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

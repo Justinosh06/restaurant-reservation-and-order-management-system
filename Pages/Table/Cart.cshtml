@@ -1,18 +1,26 @@
 @page "/Table/{tableId}/Cart"
+@using RestaurantReservation.Models.Enums
 @model RestaurantReservation.Pages.Table.CartModel
 @{
     ViewData["Title"] = $"Table {Model.TableId} Cart";
     ViewData["CartItemCount"] = Model.CartItems.Sum(i => i.Quantity);
+    double subtotal = Model.CartItems.Sum(i => i.UnitPrice * i.Quantity);
+    double discount = 0.00;
+    double total = subtotal - discount;
+
+    var menuItems = new[]
+    {
+        new { Id = "SPAG-01", Name = "Spaghetti Bolognaise", Price = "RM 24.90", Type = MenuItemType.Pasta, ImageUrl = "/image/Menu/matcha.png" },
+        new { Id = "PAST-02", Name = "Creamy Carbonara", Price = "RM 22.50", Type = MenuItemType.Pasta, ImageUrl = "/image/Menu/matcha.png" },
+        new { Id = "BEV-01", Name = "Iced Cappuccino", Price = "RM 12.90", Type = MenuItemType.Beverage, ImageUrl = "/image/Menu/matcha.png" },
+        new { Id = "BEV-02", Name = "Matcha Latte", Price = "RM 14.00", Type = MenuItemType.Beverage, ImageUrl = "/image/Menu/matcha.png" }
+    };
 }
 
-<link rel="stylesheet" href="~/css/cart_page.css" asp-append-version="true">
+<link rel="stylesheet" href="~/css/cart_page.css">
 
 <div class="cart-container">
     <h1 class="page-title">Your Cart</h1>
-    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-    {
-        <p class="alert alert-info" role="status">@Model.StatusMessage</p>
-    }
 
     <div class="content-container">
         <div class="item-container">
@@ -25,17 +33,14 @@
                 {
                     <div class="item-card" data-item-id="@item.Id" data-price="@item.UnitPrice">
                         <div class="thumbnail-container">
-                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
-                            {
-                                <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
-                            }
+                            <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
                         </div>
 
                         <div class="info-container">
                             <div class="top-section">
                                 <h3 class="item-title">@item.Name</h3>
                                 <span class="category">
-                                    @if(item.Type == "Beverage")
+                                    @if(@item.Type.ToString() == "Beverage")
                                     {
                                         <i class="fa-solid fa-martini-glass-citrus"></i>
                                     }
@@ -43,18 +48,14 @@
                                     {
                                         <i class="fa-solid fa-utensils me-1"></i>
                                     }
-                                    @item.Type
+                                    @item.Type.ToString()
                                 </span>
                             </div>
 
-                            @if (!string.IsNullOrEmpty(item.Options))
-                            {
-                                <small class="text-muted">@item.Options</small>
-                            }
-                            @if (!string.IsNullOrEmpty(item.Remarks))
+                            @if (!string.IsNullOrEmpty(item.Remark))
                             {
                                 <small class="text-muted">
-                                    <i class="fa-regular"></i>@item.Remarks
+                                    <i class="fa-regular"></i>@item.Remark
                                 </small>
                             }
 
@@ -62,38 +63,27 @@
                         </div>
 
                         <div class="quantity-wrapper">
-                            <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
-                                <input type="hidden" name="cartItemId" value="@item.Id" />
-                                <input type="hidden" name="quantityDelta" value="-1" />
-                                <button type="submit" class="quantity-btn" aria-label="Decrease @item.Name quantity">
-                                    <i class="fa-solid fa-minus"></i>
-                                </button>
-                            </form>
+                            <button type="button" class="quantity-btn btn-decrease">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
                             <span class="quantity-val fw-bold mx-2">@item.Quantity</span>
-                            <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
-                                <input type="hidden" name="cartItemId" value="@item.Id" />
-                                <input type="hidden" name="quantityDelta" value="1" />
-                                <button type="submit" class="quantity-btn" aria-label="Increase @item.Name quantity">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-                            </form>
-                            <form method="post" asp-page-handler="Remove" asp-route-tableId="@Model.TableId">
-                                <input type="hidden" name="cartItemId" value="@item.Id" />
-                                <button type="submit" class="quantity-btn" aria-label="Remove @item.Name from cart">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </form>
+                            <button type="button" class="quantity-btn btn-increase">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
                         </div>
                     </div>
-                }
-                @if (Model.CartItems.Count == 0)
-                {
-                    <p class="empty-text">Your cart is empty. Browse the menu to add items.</p>
                 }
             </div>
         </div>
 
         <div class="summary-container">
+            <div class="summary-card">
+                <div class="data-row p-2">
+                    <span>Order Code</span>
+                    <span class="text-secondary">@Model.OrderCode</span>
+                </div>
+            </div>
+
             <div class="summary-card">
                 <div class="inner-card" id="summary-items-list">
                     @foreach (var item in Model.CartItems)
@@ -109,18 +99,22 @@
 
                 <div class="inner-card">
                     <div class="data-row">
-                        <span>Subtotal</span>
-                        <span id="grand-total">RM @Model.Subtotal.ToString("F2")</span>
+                        <span>Discount</span>
+                        <span class="normal">- RM @discount.ToString("F2")</span>
+                    </div>
+                </div>
+
+                <div class="inner-card">
+                    <div class="data-row">
+                        <span>Total</span>
+                        <span id="grand-total">RM @total.ToString("F2")</span>
                     </div>
                 </div>
             </div>
 
-            @if (Model.CartItems.Count > 0)
-            {
-                <form method="post" asp-page-handler="PlaceOrder" asp-route-tableId="@Model.TableId">
-                    <button type="submit" class="order-btn">Place Order</button>
-                </form>
-            }
+            <button type="button" class="order-btn">
+                Place Order
+            </button>
         </div>
     </div>
 
@@ -128,29 +122,26 @@
         <h4 class="section-title">You might also like</h4>
 
         <div class="item-wrapper">
-            @foreach (var item in Model.Recommendations)
+            @foreach (var item in menuItems)
             {
                 <a asp-page="/Table/MenuItem/Index" 
                     asp-route-tableId="@Model.TableId" 
                     asp-route-menuItemId="@item.Id" 
                     class="item-card-link text-decoration-none text-reset"
-                    data-category="@item.MenuItemType.ToString().ToLower()">
+                    data-category="@item.Type.ToString().ToLower()">
                         
                     <div class="item-card">
                         <div class="thumbnail-container">
-                            @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
-                            {
-                                <img class="thumbnail-img" src="@item.ThumbnailImage" alt="@item.Name" />
-                            }
+                            <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
                         </div>
 
                         <div class="info-container">
                             <h3 class="item-title">@item.Name</h3>
 
                             <div class="bottom-section">
-                                <span class="price">RM @item.PriceInMainUnit.ToString("F2")</span>
+                                <span class="price">@item.Price</span>
                                 <span class="category">
-                                    @if(item.MenuItemType.ToString() == "Beverage")
+                                    @if(@item.Type.ToString() == "Beverage")
                                     {
                                         <i class="fa-solid fa-martini-glass-citrus"></i>
                                     }
@@ -158,7 +149,7 @@
                                     {
                                         <i class="fa-solid fa-utensils me-1"></i>
                                     }
-                                    @item.MenuItemType
+                                    @item.Type.ToString()
                                 </span>
                             </div>
                         </div>
@@ -169,3 +160,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/cart.js" asp-append-version="true"></script>
+}
