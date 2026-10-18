@@ -53,6 +53,12 @@ public class ReservationManagementModel(
 
     public Dictionary<string, int> TabCounts { get; private set; } = [];
 
+    // For each upcoming or pending reservation on the open tab: the tables free at its time
+    // (its own tables included) and the tables suggested for it.
+    public Dictionary<string, List<string>> FreeTables { get; private set; } = [];
+
+    public Dictionary<string, List<string>> SuggestedTables { get; private set; } = [];
+
     public static string TabOf(ReservationSummary reservation, DateTime now) =>
         reservation.Status == ReservationStatus.Cancelled ? "cancelled"
         : reservation.Status == ReservationStatus.Completed || reservation.EndsAt <= now ? "past"
@@ -163,6 +169,81 @@ public class ReservationManagementModel(
         return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
     }
 
+    // Seats a reservation at the given tables (several for a large party), or takes it off its
+    // tables when none are given. Staff stay on the tab they were working through.
+    public async Task<IActionResult> OnPostAssignAsync(string[] tableIds)
+    {
+        var reservation = ReservationId is null ? null : await db.Reservations
+            .Include(item => item.Customer)
+            .Include(item => item.ReservationTables)
+            .FirstOrDefaultAsync(item => item.Id == ReservationId);
+        if (reservation is null || reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed)
+        {
+            StatusMessage = "That reservation can no longer be seated.";
+            return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+        }
+
+        var summary = ReservationSummary.From(reservation);
+        var label = $"{summary.CustomerName} ({summary.PartySize} guests, "
+            + $"{summary.ReservationAt.ToString("ddd d MMM, h:mm tt", CultureInfo.CurrentCulture)})";
+
+        var wanted = tableIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+        if (wanted.Count == 0)
+        {
+            reservation.ReservationTables.Clear();
+            await db.SaveChangesAsync();
+            StatusMessage = $"{label} no longer has a table, so it is back in Pending.";
+            return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+        }
+
+        var tables = await db.Tables.Where(table => wanted.Contains(table.Id)).ToListAsync();
+        if (tables.Count != wanted.Count)
+        {
+            StatusMessage = "One of those tables no longer exists.";
+            return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+        }
+
+        var seats = tables.Sum(table => table.Capacity);
+        if (reservation.Pax > seats)
+        {
+            StatusMessage = $"{label} needs {reservation.Pax} seats, but {TablesLabel(wanted)} only seat{(wanted.Count == 1 ? "s" : "")} {seats}.";
+            return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+        }
+
+        var others = (await db.Reservations.AsNoTracking()
+                .Include(item => item.Customer)
+                .Include(item => item.ReservationTables)
+                .Where(item => item.Id != reservation.Id
+                    && item.ReservationTables.Any(link => wanted.Contains(link.TableId)))
+                .ToListAsync())
+            .Select(ReservationSummary.From)
+            .ToList();
+        foreach (var tableId in wanted)
+        {
+            var clash = ReservationSummary.FindClash(others, tableId, summary.ReservationAt, reservation.Id);
+            if (clash is not null)
+            {
+                StatusMessage = $"Table {tableId} is already booked by {clash.CustomerName} at "
+                    + $"{clash.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)}.";
+                return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+            }
+        }
+
+        var wasPending = !summary.HasTable;
+        reservation.ReservationTables.RemoveAll(link => !wanted.Contains(link.TableId));
+        foreach (var tableId in wanted.Where(id => reservation.ReservationTables.All(link => link.TableId != id)))
+        {
+            // Id is set here, not on save: EF cannot track two new links that both have an empty Id.
+            reservation.ReservationTables.Add(new ReservationTable { Id = Guid.NewGuid().ToString("N"), TableId = tableId });
+        }
+        await db.SaveChangesAsync();
+        StatusMessage = $"{label} is now at {TablesLabel(wanted)}" + (wasPending ? " and has moved to Upcoming." : ".");
+        return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
+    }
+
+    private static string TablesLabel(IReadOnlyCollection<string> tableIds) =>
+        (tableIds.Count == 1 ? "table " : "tables ") + string.Join(" + ", tableIds);
+
     // Cancels a booking but keeps it (it moves to the Cancelled tab). A paid deposit is refunded in full.
     public async Task<IActionResult> OnPostCancelAsync()
     {
@@ -239,6 +320,50 @@ public class ReservationManagementModel(
                 ? onTab.OrderByDescending(reservation => reservation.ReservationAt)
                 : onTab.OrderBy(reservation => reservation.ReservationAt))
             .ToList();
+
+        FreeTables = [];
+        SuggestedTables = [];
+        if (Tab is "upcoming" or "pending")
+        {
+            foreach (var reservation in TabReservations)
+            {
+                var free = Tables
+                    .Where(table => ReservationSummary.FindClash(Reservations, table.Id, reservation.ReservationAt, reservation.Id) is null)
+                    .ToList();
+                FreeTables[reservation.Id] = free.Select(table => table.Id).ToList();
+                SuggestedTables[reservation.Id] = reservation.HasTable
+                    ? reservation.TableIds.ToList()
+                    : Suggest(free, reservation.PartySize);
+            }
+        }
+    }
+
+    // The smallest free table that seats the whole party; when none does, the biggest free
+    // tables until everyone fits. Empty when even all free tables together are too small.
+    private static List<string> Suggest(List<DiningTable> free, int partySize)
+    {
+        var single = free
+            .Where(table => table.Capacity >= partySize)
+            .OrderBy(table => table.Capacity)
+            .FirstOrDefault();
+        if (single is not null)
+        {
+            return [single.Id];
+        }
+
+        var picked = new List<string>();
+        var seats = 0;
+        foreach (var table in free.OrderByDescending(table => table.Capacity))
+        {
+            picked.Add(table.Id);
+            seats += table.Capacity;
+            if (seats >= partySize)
+            {
+                return picked;
+            }
+        }
+
+        return [];
     }
 
     // existing is the reservation being edited, or null when creating one.
