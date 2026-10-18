@@ -1084,15 +1084,15 @@ body:has(.service-app) {
 .table-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 310px;
-    align-items: start;
+    align-items: stretch;
     gap: 20px;
 }
 
+/* The floor plan sets the row height; the sidebar fills exactly that and scrolls its list inside. */
 .reservation-queue {
-    position: sticky;
-    top: 16px;
     display: flex;
-    max-height: calc(100dvh - 32px);
+    height: 0;
+    min-height: 100%;
     flex-direction: column;
     overflow: hidden;
     border: 1px solid #e9eae6;
@@ -1291,8 +1291,8 @@ body:has(.service-app) {
     }
 
     .reservation-queue {
-        position: static;
-        max-height: none;
+        height: auto;
+        min-height: 0;
     }
 }
 
