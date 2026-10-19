@@ -1,0 +1,92 @@
+@page "/Admin/Settings"
+@model RestaurantReservation.Pages.Admin.Settings.SettingModel
+@using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Models
+@{
+    ViewData["Title"] = "Restaurant Settings";
+}
+
+<div class="admin-page px-3 pt-3 pb-4">
+    <form id="settings-form" novalidate>
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+            <div>
+                <h1 class="h4 fw-semibold mb-1">Restaurant Settings</h1>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary" id="reset-settings">Discard changes</button>
+                <button type="submit" class="btn btn-dark" id="save-settings"><i class="fa-solid fa-floppy-disk me-1"></i> Save settings</button>
+            </div>
+        </div>
+
+        <div class="alert alert-danger d-none" id="settings-error" role="alert"></div>
+        <div class="alert alert-info d-none" id="settings-first-time" role="status">
+            No restaurant settings saved yet. Fill in the details below and press <strong>Save settings</strong>.
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <section class="card h-100 border-0 bg-body-tertiary rounded-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 pt-3 pb-2">
+                        <span class="small text-body-secondary fw-medium">Operating hours</span>
+                        <button type="button" class="btn btn-sm btn-light border" id="copy-monday">
+                            <i class="fa-regular fa-copy me-1"></i> Apply Monday to all days
+                        </button>
+                    </div>
+                    <div class="card bg-body border-0 rounded-4 m-1 mt-0 flex-grow-1">
+                        <div class="card-body">
+                            <div class="row g-2 small text-muted fw-semibold d-none d-sm-flex mb-1">
+                                <div class="col-sm-3">Day</div>
+                                <div class="col-sm-3">Opens</div>
+                                <div class="col-sm-3">Closes</div>
+                                <div class="col-sm-3">Open?</div>
+                            </div>
+                            <div id="hours-list"></div>
+                            <small class="text-danger d-block mt-2" id="hours-error"></small>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-lg-5">
+                <section class="card h-100 border-0 bg-body-tertiary rounded-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 pt-3 pb-2">
+                        <span class="small text-body-secondary fw-medium">Restaurant details</span>
+                        <small class="text-body-secondary" id="settings-updated"></small>
+                    </div>
+                    <div class="card bg-body border-0 rounded-4 m-1 mt-0 flex-grow-1">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="set-name" class="form-label">Restaurant name</label>
+                                <input type="text" class="form-control" id="set-name" maxlength="@(ModelRules.MaxLength<RestaurantSettings>(nameof(RestaurantSettings.Name)))" required />
+                                <div class="invalid-feedback">Name is required.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="set-address" class="form-label">Address</label>
+                                <textarea class="form-control" id="set-address" rows="2" maxlength="@(ModelRules.MaxLength<RestaurantSettings>(nameof(RestaurantSettings.Address)))" required></textarea>
+                                <div class="invalid-feedback">Address is required.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="set-phone" class="form-label">Phone number <span class="text-muted">(optional)</span></label>
+                                <input type="tel" class="form-control" id="set-phone" maxlength="@(ModelRules.MaxLength<RestaurantSettings>(nameof(RestaurantSettings.PhoneNumber)))" />
+                            </div>
+                            <div>
+                                <label for="set-currency" class="form-label">Default currency</label>
+                                <select class="form-select" id="set-currency">
+                                    @foreach (var currency in Model.CurrencyOptions)
+                                    {
+                                        <option value="@currency.Value">@currency.Label</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
+    <script src="~/js/admin/settings.js" asp-append-version="true"></script>
+}

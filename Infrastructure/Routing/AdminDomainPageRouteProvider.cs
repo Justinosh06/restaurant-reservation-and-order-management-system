@@ -76,8 +76,8 @@ public class AdminDomainPageRouteProvider : IPageRouteModelProvider
                     selector.ActionConstraints.Add(new HostNameConstraintAttribute(_adminSubdomain));
                 }
 
-                // Map /Pages/Admin/Index.cshtml to serve as the root path "/" on the admin subdomain
-                if (model.RelativePath.Equals("/Pages/Admin/Index.cshtml", StringComparison.OrdinalIgnoreCase))
+                // Map /Pages/Admin/Dashboard/Dashboard.cshtml to serve as the root path "/" on the admin subdomain
+                if (model.RelativePath.Equals("/Pages/Admin/Dashboard/Dashboard.cshtml", StringComparison.OrdinalIgnoreCase))
                 {
                     model.Selectors.Add(new SelectorModel
                     {

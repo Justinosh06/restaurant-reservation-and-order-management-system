@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
 using RestaurantReservation.Infrastructure.Authentication;
+using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Infrastructure.Navigation;
 using RestaurantReservation.Infrastructure.Stripe;
 
@@ -33,6 +33,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<SidebarNavService>();
+builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
+builder.Services.AddSingleton<RestaurantClock>();
+builder.Services.AddScoped<RestaurantCurrency>();
 builder.Services.AddScoped<DiningSessionService>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
@@ -42,7 +45,6 @@ builder.Services.AddControllers();
 
 // 2. Configure HTTP Pipeline
 // Login / Register
-builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddScoped<IPasswordHasher<RestaurantReservation.Models.Customer>, PasswordHasher<RestaurantReservation.Models.Customer>>();
 builder.Services.AddSingleton<CaptchaService>();
 builder.Services.AddSingleton<AdminSignInTicketService>();
@@ -85,6 +87,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminPortal", policy => policy.RequireRole(AppRoles.Administrator, AppRoles.Staff));
+    options.AddPolicy("AdministratorOnly", policy => policy.RequireRole(AppRoles.Administrator));
     options.AddPolicy("CustomerOnly", policy => policy.RequireRole(AppRoles.Customer));
 });
 
@@ -92,6 +95,12 @@ builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin", "AdminPortal");
     options.Conventions.AllowAnonymousToPage("/Admin/SignIn");
+
+    options.Conventions.AuthorizeFolder("/Admin/Dashboard", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Promotions", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Settings", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
 });
 // Custom subdomain route provider. Register once: a second copy maps Admin/Index to "/" twice.
