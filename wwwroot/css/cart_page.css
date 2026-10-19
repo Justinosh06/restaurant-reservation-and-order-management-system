@@ -18,13 +18,17 @@
         display: flex;
         gap: 16px;
         width: 100%;
-        max-width: 1600px;
+        min-height: 300px;
 
         .item-container {
             flex: 2;
+            display: flex;
+            flex-direction: column;
 
             .cart-item-title {
-                color: #888888;
+                gap: 6px;
+                display: flex;
+                align-items: start;
                 letter-spacing: -1px;
                 font-size: 1.4rem;
                 font-weight: 500;
@@ -33,18 +37,18 @@
                 .cart-item-count {
                     padding: 2px 4px;
                     border-radius: 8px;
-                    font-weight: 500;
+                    font-weight: 700;
                     font-size: 1.2rem;
-                    margin-top: 8px;
                     color: #444444;
                     background: #F2F2F3;
+                    font-family: "Bricolage Grotesque", sans-serif;
                 }
             }
 
             .cart-column {
                 .item-card {
                     position: relative;
-                    height: 200px;
+                    height: 220px;
                     width: 100%;
                     padding: 12px;
                     display: flex;
@@ -71,18 +75,19 @@
 
                             .item-title {
                                 font-size: 2.5rem;
-                                font-weight: 500;
                                 letter-spacing: -1px;
+                                font-family: "Bricolage Grotesque", sans-serif;
                             }
 
                             .category {
-                                background: #F2F2F3;
+                                background: var(--secondary-color);
                                 border-radius: 100px;
                                 padding: 4px 12px;
                                 width: fit-content;
                                 font-size: 0.8rem;
-                                font-weight: 500;
-                                color: #444444;
+                                font-weight: 600;
+                                font-family: "Bricolage Grotesque", sans-serif;
+                                color: var(--primary-color);
                             }
                         }
 
@@ -120,7 +125,10 @@
         }
 
         .summary-container {
+            position: sticky;
+            top: 85px;
             flex: 1;
+            height: fit-content;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -142,15 +150,18 @@
                 .data-row {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
+                    align-items: start;
 
                     span:first-child {
-                        font-weight: 600;   
+                        font-weight: 600;
+                        font-family: "Bricolage Grotesque", sans-serif
                     }
 
                     span:last-child {
+                        text-wrap: nowrap;
                         font-weight: 600;
-                        color: green;
+                        color: var(--primary-color);
+                        font-family: "Bricolage Grotesque", sans-serif
                     }
 
                     span.normal {
@@ -161,13 +172,25 @@
 
             .order-btn {
                 margin-top: 8px;
-                padding: 8px 12px;
+                padding: 12px;
                 width: 100%;
-                background: black;
-                color: white;
-                border-radius: 25px;
+                background: var(--secondary-color);
+                color: var(--primary-color);
+                font-family: "Bricolage Grotesque", sans-serif;
+                border-radius: 24px;
                 font-weight: 700;
             }
+        }
+    }
+
+    .cart-column:has(.empty-text) {
+        margin-top: auto;
+        margin-bottom: auto;
+
+        .empty-text {
+            text-align: center;
+            margin-bottom: 0;
+            font-family: "Bricolage Grotesque", sans-serif;
         }
     }
 
@@ -176,6 +199,7 @@
         width: 100%;
 
         .section-title {
+            margin-bottom: 20px;
             letter-spacing: -1px;
             font-family: "Bricolage Grotesque", sans-serif;
         }
@@ -194,7 +218,6 @@
 
             .item-card {
                 position: relative;
-                background: #F2F2F3;
                 border-radius: 20px;
                 aspect-ratio: 9/10;
                 width: 300px;
@@ -213,17 +236,30 @@
                     }
                 }
 
-                .plus-icon {
-                    position: absolute;
-                    top: 8px;
-                    right: 8px;
-                    background: white;
-                    border-radius: 100%;
-                    width: 30px;
-                    height: 30px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                .info-container {
+                    .item-title {
+                        font-family: "Bricolage Grotesque", sans-serif;
+                        text-align: center;
+                    }
+
+                    .bottom-section {
+                        gap: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        .price {
+                            font-weight: 500;
+                        }
+
+                        .category {
+                            background: var(--secondary-color);
+                            color: var(--primary-color);
+                            font-weight: 600;
+                            padding: 4px 12px;
+                            border-radius: 30px;
+                        }
+                    }
                 }
             }
         }
@@ -246,12 +282,12 @@
                 height: 100%;
                 .cart-column {
                     .item-card {
-                        height: 120px;
+                        height: 160px;
 
                         .info-container {
                             .top-section {
                                 .item-title {
-                                    font-size: 1.2rem;
+                                    font-size: 2rem;
                                 }
 
                                 .category {

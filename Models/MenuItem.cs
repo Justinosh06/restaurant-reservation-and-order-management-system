@@ -28,6 +28,8 @@ namespace RestaurantReservation.Models
 
         public string? ThumbnailImage { get; set; }
 
+        public Dictionary<string, string> Options { get; set; } = new();
+
         [Required]
         public bool Availability { get; set; } = true;
     }

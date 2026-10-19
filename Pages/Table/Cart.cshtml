@@ -1,25 +1,18 @@
 @page "/Table/{tableId}/Cart"
-@using RestaurantReservation.Models.Enums
 @model RestaurantReservation.Pages.Table.CartModel
 @{
     ViewData["Title"] = $"Table {Model.TableId} Cart";
-    double subtotal = Model.CartItems.Sum(i => i.UnitPrice * i.Quantity);
-    double discount = 0.00;
-    double total = subtotal - discount;
-
-    var menuItems = new[]
-    {
-        new { Id = "SPAG-01", Name = "Spaghetti Bolognaise", Price = "RM 24.90", Type = MenuItemType.Pasta, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
-        new { Id = "PAST-02", Name = "Creamy Carbonara", Price = "RM 22.50", Type = MenuItemType.Pasta, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
-        new { Id = "BEV-01", Name = "Iced Cappuccino", Price = "RM 12.90", Type = MenuItemType.Beverage, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" },
-        new { Id = "BEV-02", Name = "Matcha Latte", Price = "RM 14.00", Type = MenuItemType.Beverage, ImageUrl = "https://static.vecteezy.com/system/resources/previews/046/853/420/non_2x/an-empty-coffee-cup-on-a-transparent-background-free-png.png" }
-    };
+    ViewData["CartItemCount"] = Model.CartItems.Sum(i => i.Quantity);
 }
 
-<link rel="stylesheet" href="~/css/cart_page.css">
+<link rel="stylesheet" href="~/css/cart_page.css" asp-append-version="true">
 
 <div class="cart-container">
     <h1 class="page-title">Your Cart</h1>
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <p class="alert alert-info" role="status">@Model.StatusMessage</p>
+    }
 
     <div class="content-container">
         <div class="item-container">
@@ -32,21 +25,36 @@
                 {
                     <div class="item-card" data-item-id="@item.Id" data-price="@item.UnitPrice">
                         <div class="thumbnail-container">
-                            <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                            {
+                                <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
+                            }
                         </div>
 
                         <div class="info-container">
                             <div class="top-section">
                                 <h3 class="item-title">@item.Name</h3>
                                 <span class="category">
-                                    <i class="fa-solid fa-utensils"></i> @item.Type.ToString()
+                                    @if(item.Type == "Beverage")
+                                    {
+                                        <i class="fa-solid fa-martini-glass-citrus"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa-solid fa-utensils me-1"></i>
+                                    }
+                                    @item.Type
                                 </span>
                             </div>
 
-                            @if (!string.IsNullOrEmpty(item.Remark))
+                            @if (!string.IsNullOrEmpty(item.Options))
+                            {
+                                <small class="text-muted">@item.Options</small>
+                            }
+                            @if (!string.IsNullOrEmpty(item.Remarks))
                             {
                                 <small class="text-muted">
-                                    <i class="fa-regular"></i>@item.Remark
+                                    <i class="fa-regular"></i>@item.Remarks
                                 </small>
                             }
 
@@ -54,27 +62,38 @@
                         </div>
 
                         <div class="quantity-wrapper">
-                            <button type="button" class="quantity-btn btn-decrease">
-                                <i class="fa-solid fa-minus"></i>
-                            </button>
+                            <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
+                                <input type="hidden" name="cartItemId" value="@item.Id" />
+                                <input type="hidden" name="quantityDelta" value="-1" />
+                                <button type="submit" class="quantity-btn" aria-label="Decrease @item.Name quantity">
+                                    <i class="fa-solid fa-minus"></i>
+                                </button>
+                            </form>
                             <span class="quantity-val fw-bold mx-2">@item.Quantity</span>
-                            <button type="button" class="quantity-btn btn-increase">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+                            <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
+                                <input type="hidden" name="cartItemId" value="@item.Id" />
+                                <input type="hidden" name="quantityDelta" value="1" />
+                                <button type="submit" class="quantity-btn" aria-label="Increase @item.Name quantity">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </form>
+                            <form method="post" asp-page-handler="Remove" asp-route-tableId="@Model.TableId">
+                                <input type="hidden" name="cartItemId" value="@item.Id" />
+                                <button type="submit" class="quantity-btn" aria-label="Remove @item.Name from cart">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
+                }
+                @if (Model.CartItems.Count == 0)
+                {
+                    <p class="empty-text">Your cart is empty. Browse the menu to add items.</p>
                 }
             </div>
         </div>
 
         <div class="summary-container">
-            <div class="summary-card">
-                <div class="data-row p-2">
-                    <span>Order Code</span>
-                    <span class="text-secondary">@Model.OrderCode</span>
-                </div>
-            </div>
-
             <div class="summary-card">
                 <div class="inner-card" id="summary-items-list">
                     @foreach (var item in Model.CartItems)
@@ -90,22 +109,18 @@
 
                 <div class="inner-card">
                     <div class="data-row">
-                        <span>Discount</span>
-                        <span class="normal">- RM @discount.ToString("F2")</span>
-                    </div>
-                </div>
-
-                <div class="inner-card">
-                    <div class="data-row">
-                        <span>Total</span>
-                        <span id="grand-total">RM @total.ToString("F2")</span>
+                        <span>Subtotal</span>
+                        <span id="grand-total">RM @Model.Subtotal.ToString("F2")</span>
                     </div>
                 </div>
             </div>
 
-            <button type="button" class="order-btn">
-                Place Order
-            </button>
+            @if (Model.CartItems.Count > 0)
+            {
+                <form method="post" asp-page-handler="PlaceOrder" asp-route-tableId="@Model.TableId">
+                    <button type="submit" class="order-btn">Place Order</button>
+                </form>
+            }
         </div>
     </div>
 
@@ -113,29 +128,39 @@
         <h4 class="section-title">You might also like</h4>
 
         <div class="item-wrapper">
-            @foreach (var item in menuItems)
+            @foreach (var item in Model.Recommendations)
             {
                 <a asp-page="/Table/MenuItem/Index" 
                     asp-route-tableId="@Model.TableId" 
                     asp-route-menuItemId="@item.Id" 
                     class="item-card-link text-decoration-none text-reset"
-                    data-category="@item.Type.ToString().ToLower()">
+                    data-category="@item.MenuItemType.ToString().ToLower()">
                         
                     <div class="item-card">
                         <div class="thumbnail-container">
-                            <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
-                        </div>
-
-                        <div class="plus-icon">
-                            <i class="fa-solid fa-plus"></i>
+                            @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
+                            {
+                                <img class="thumbnail-img" src="@item.ThumbnailImage" alt="@item.Name" />
+                            }
                         </div>
 
                         <div class="info-container">
-                            <div class="top-section">
-                                <span class="price">@item.Price</span>
-                                <h3 class="item-title">@item.Name</h3>
+                            <h3 class="item-title">@item.Name</h3>
+
+                            <div class="bottom-section">
+                                <span class="price">RM @item.PriceInMainUnit.ToString("F2")</span>
+                                <span class="category">
+                                    @if(item.MenuItemType.ToString() == "Beverage")
+                                    {
+                                        <i class="fa-solid fa-martini-glass-citrus"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa-solid fa-utensils me-1"></i>
+                                    }
+                                    @item.MenuItemType
+                                </span>
                             </div>
-                            <span class="category"><i class="fa-solid fa-utensils me-1"></i> @item.Type.ToString()</span>
                         </div>
                     </div>
 
@@ -144,57 +169,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const cards = document.querySelectorAll(".item-card");
-
-            cards.forEach(card => {
-                const itemId = card.getAttribute("data-item-id");
-                const price = parseFloat(card.getAttribute("data-price"));
-                const btnDecrease = card.querySelector(".btn-decrease");
-                const btnIncrease = card.querySelector(".btn-increase");
-                const qtyValEl = card.querySelector(".quantity-val");
-
-                btnIncrease.addEventListener("click", () => {
-                    let qty = parseInt(qtyValEl.textContent) + 1;
-                    qtyValEl.textContent = qty;
-                    updateSummary(itemId, price, qty);
-                });
-
-                btnDecrease.addEventListener("click", () => {
-                    let qty = parseInt(qtyValEl.textContent);
-                    if (qty > 1) {
-                        qty--;
-                        qtyValEl.textContent = qty;
-                        updateSummary(itemId, price, qty);
-                    }
-                });
-            });
-
-            function updateSummary(itemId, unitPrice, quantity) {
-                // Update item breakdown in summary
-                const summaryRow = document.getElementById(`summary-item-${itemId}`);
-                if (summaryRow) {
-                    summaryRow.querySelector(".summary-qty").textContent = quantity;
-                    summaryRow.querySelector(".summary-price").textContent = `RM ${(unitPrice * quantity).toFixed(2)}`;
-                }
-
-                // Recalculate grand total and count
-                let total = 0;
-                let totalItems = 0;
-
-                document.querySelectorAll(".item-card").forEach(card => {
-                    const price = parseFloat(card.getAttribute("data-price"));
-                    const qty = parseInt(card.querySelector(".quantity-val").textContent);
-                    total += price * qty;
-                    totalItems += qty;
-                });
-
-                document.getElementById("grand-total").textContent = `RM ${total.toFixed(2)}`;
-                document.getElementById("cart-item-count").textContent = totalItems;
-            }
-        });
-    </script>
-}

@@ -1,14 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
 
-@font-face {
-  font-family: "Brand Font";
-  src: url('../font/August-Memories.otf');
-  font-weight: normal;
-  font-style: none;
-}
-
 :root {
-  --primary-color: #02261e;
+  --primary-color: #0e5847;
   --secondary-color: #dafc92;
 }
 
@@ -49,4 +42,9 @@ html {
 button {
   border: none;
   background: none;
+}
+
+::selection {
+  background: var(--primary-color);
+  color: var(--secondary-color);
 }

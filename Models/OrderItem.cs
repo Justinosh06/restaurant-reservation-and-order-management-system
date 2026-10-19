@@ -13,7 +13,17 @@ namespace RestaurantReservation.Models
         [Range(1, 20)]
         public int Quantity { get; set; }
 
+        [Required]
+        [Range(0, 10000000)]
+        public int UnitPrice { get; set; }
+
+        [Required]
+        [StringLength(200)]
+        public string ItemName { get; set; } = string.Empty;
+
         public string? Remarks { get; set; }
+
+        public Dictionary<string, string> Options { get; set; } = new();
 
         // Foreign Keys
         [Required]

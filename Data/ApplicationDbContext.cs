@@ -1,5 +1,8 @@
 using System.Linq;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Data
@@ -16,7 +19,9 @@ namespace RestaurantReservation.Data
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<Table> Tables => Set<Table>();
         public DbSet<Reservation> Reservations => Set<Reservation>();
+        public DbSet<ReservationTable> ReservationTables => Set<ReservationTable>();
         public DbSet<Session> Sessions => Set<Session>();
+        public DbSet<CartItem> CartItems => Set<CartItem>();
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<MenuItem> MenuItems => Set<MenuItem>();
@@ -118,15 +123,45 @@ namespace RestaurantReservation.Data
             });
 
             // -------------------------------------------------------------
-            // 5. SESSION
+            // 5. RESERVATION TABLE
+            // -------------------------------------------------------------
+            modelBuilder.Entity<ReservationTable>(entity =>
+            {
+                entity.HasKey(rt => rt.Id);
+
+                // Foreign Key to Reservation
+                entity.HasOne(rt => rt.Reservation)
+                    .WithMany() // Or .WithMany(r => r.ReservationTables) if navigation collection exists on Reservation
+                    .HasForeignKey(rt => rt.ReservationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Foreign Key to Table
+                entity.HasOne(rt => rt.Table)
+                    .WithMany() // Or .WithMany(t => t.ReservationTables) if navigation collection exists on Table
+                    .HasForeignKey(rt => rt.TableId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(rt => new { rt.ReservationId, rt.TableId })
+                    .IsUnique();
+            });
+
+            // -------------------------------------------------------------
+            // 6. SESSION
             // -------------------------------------------------------------
             modelBuilder.Entity<Session>(entity =>
             {
                 entity.HasKey(s => s.Id);
+                entity.HasOne(s => s.Table)
+                      .WithMany()
+                      .HasForeignKey(s => s.TableId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(s => s.TableId)
+                      .IsUnique()
+                      .HasFilter("[TableId] IS NOT NULL AND [EndingTime] IS NULL");
             });
 
             // -------------------------------------------------------------
-            // 6. ORDER & ORDERITEM
+            // 7. ORDER & ORDERITEM
             // -------------------------------------------------------------
             modelBuilder.Entity<Order>(entity =>
             {
@@ -135,23 +170,24 @@ namespace RestaurantReservation.Data
                       .HasConversion<string>()
                       .HasMaxLength(20);
 
-                // 1-to-1 Relationship: Session <-> Order
                 entity.HasOne(o => o.Session)
-                      .WithOne(s => s.Order)
-                      .HasForeignKey<Order>(o => o.SessionId)
+                      .WithMany(s => s.Orders)
+                      .HasForeignKey(o => o.SessionId)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(o => o.Customer)
                       .WithMany()
                       .HasForeignKey(o => o.CustomerId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
             });
 
             modelBuilder.Entity<OrderItem>(entity =>
             {
                 entity.HasKey(oi => oi.Id);
+                ConfigureOptions(entity.Property(oi => oi.Options));
                 entity.HasOne(oi => oi.Order)
-                      .WithMany()
+                      .WithMany(order => order.OrderItems)
                       .HasForeignKey(oi => oi.OrderId)
                       .OnDelete(DeleteBehavior.Cascade);
 
@@ -162,7 +198,7 @@ namespace RestaurantReservation.Data
             });
 
             // -------------------------------------------------------------
-            // 7. MENUITEM
+            // 8. MENUITEM
             // -------------------------------------------------------------
             modelBuilder.Entity<MenuItem>(entity =>
             {
@@ -170,10 +206,11 @@ namespace RestaurantReservation.Data
                 entity.Property(m => m.MenuItemType)
                       .HasConversion<string>()
                       .HasMaxLength(30);
+                ConfigureOptions(entity.Property(m => m.Options));
             });
 
             // -------------------------------------------------------------
-            // 8. TRANSACTION (Stripe Sandbox Integration)
+            // 9. TRANSACTION (Stripe Sandbox Integration)
             // -------------------------------------------------------------
             modelBuilder.Entity<Transaction>(entity =>
             {
@@ -186,10 +223,13 @@ namespace RestaurantReservation.Data
                       .WithMany()
                       .HasForeignKey(t => t.OrderId)
                       .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(t => new { t.OrderId, t.StripeCheckoutSessionId })
+                      .IsUnique()
+                      .HasFilter("[StripeCheckoutSessionId] IS NOT NULL");
             });
 
             // -------------------------------------------------------------
-            // 9. FEEDBACK
+            // 10. FEEDBACK
             // -------------------------------------------------------------
             modelBuilder.Entity<Feedback>(entity =>
             {
@@ -206,7 +246,7 @@ namespace RestaurantReservation.Data
             });
 
             // -------------------------------------------------------------
-            // 10. RESTAURANT SETTINGS & BUSINESS HOURS
+            // 11. RESTAURANT SETTINGS & BUSINESS HOURS
             // -------------------------------------------------------------
             modelBuilder.Entity<RestaurantSettings>(entity =>
             {
@@ -230,7 +270,7 @@ namespace RestaurantReservation.Data
             });
 
             // -------------------------------------------------------------
-            // 11. ANNOUNCEMENT
+            // 12. ANNOUNCEMENT
             // -------------------------------------------------------------
             modelBuilder.Entity<Announcement>(entity =>
             {
@@ -238,7 +278,7 @@ namespace RestaurantReservation.Data
             });
 
             // -------------------------------------------------------------
-            // 12. PROMOTION
+            // 13. PROMOTION
             // -------------------------------------------------------------
             modelBuilder.Entity<Promotion>(entity =>
             {
@@ -249,8 +289,44 @@ namespace RestaurantReservation.Data
                 //       .HasMaxLength(20);
             });
 
+            // -------------------------------------------------------------
+            // 14. CART ITEM
+            // -------------------------------------------------------------
+            modelBuilder.Entity<CartItem>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                ConfigureOptions(entity.Property(c => c.Options));
+
+                entity.HasOne(c => c.Session)
+                    .WithMany()
+                    .HasForeignKey(c => c.SessionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.MenuItem)
+                    .WithMany()
+                    .HasForeignKey(c => c.MenuItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
             ConfigureStringPrimaryKeys(modelBuilder);
         }
+
+        private static void ConfigureOptions(PropertyBuilder<Dictionary<string, string>> property)
+        {
+            property.HasConversion(
+                options => SerializeOptions(options),
+                json => DeserializeOptions(json));
+            property.Metadata.SetValueComparer(new ValueComparer<Dictionary<string, string>>(
+                (left, right) => SerializeOptions(left) == SerializeOptions(right),
+                options => SerializeOptions(options).GetHashCode(),
+                options => DeserializeOptions(SerializeOptions(options))));
+        }
+
+        private static string SerializeOptions(Dictionary<string, string> options) =>
+            JsonSerializer.Serialize(options);
+
+        private static Dictionary<string, string> DeserializeOptions(string json) =>
+            JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
 
         private static void ConfigureStringPrimaryKeys(ModelBuilder modelBuilder)
         {
