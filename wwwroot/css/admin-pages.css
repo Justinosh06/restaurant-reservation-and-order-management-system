@@ -1,0 +1,73 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
+/* Font for the admin page content and pop-ups only, so the header menu keeps the layout's own font. */
+.admin-page,
+.modal,
+#admin-toast {
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Switches, checkboxes and focus rings use the dark admin colour instead of Bootstrap's default blue. */
+.admin-page .form-check-input:checked,
+.modal .form-check-input:checked {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-dark);
+}
+
+.admin-page :is(.form-control, .form-select, .form-check-input, .btn):focus,
+.modal :is(.form-control, .form-select, .form-check-input, .btn):focus {
+    border-color: var(--bs-secondary);
+    box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.15);
+}
+
+.admin-page .form-switch .form-check-input:focus:not(:checked),
+.modal .form-switch .form-check-input:focus:not(:checked) {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2833, 37, 41, 0.25%29'/%3e%3c/svg%3e");
+}
+
+/* Date range calendar (js/admin/date-range-picker.js): 7 equal columns, square day buttons. */
+.date-range-calendar {
+    width: 19rem;
+    padding: 0.75rem;
+}
+
+.date-range-calendar .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.125rem;
+}
+
+.date-range-calendar .calendar-day {
+    aspect-ratio: 1 / 1;
+}
+
+.date-range-calendar .calendar-years {
+    max-height: 15rem;
+    overflow-y: auto;
+}
+
+/* Sidebar profile menu (Profile / Logout): styled like the sidebar's nav buttons in admin_layout.css. */
+.sidebar .profile-menu {
+    --bs-dropdown-border-width: 0;
+    --bs-dropdown-border-radius: 16px;
+    --bs-dropdown-padding-x: 0.375rem;
+    --bs-dropdown-padding-y: 0.375rem;
+    --bs-dropdown-link-color: #888888;
+    --bs-dropdown-link-hover-color: black;
+    --bs-dropdown-link-hover-bg: #f2f2f3;
+    --bs-dropdown-link-active-color: black;
+    --bs-dropdown-link-active-bg: #f2f2f3;
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 500;
+}
+
+.sidebar .profile-menu .dropdown-item {
+    border-radius: 12px;
+    padding: 8px 12px;
+    transition: 300ms ease-in-out;
+}
+
+.sidebar .profile-menu .logout-item:hover,
+.sidebar .profile-menu .logout-item:focus-visible {
+    color: var(--bs-danger);
+}
