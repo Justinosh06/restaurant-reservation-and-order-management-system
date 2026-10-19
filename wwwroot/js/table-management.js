@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("panelCapacity").textContent =
             table.dataset.capacity + " seats";
         manageLink.href =
-            "/Admin/Reservation/Management?tableId=" + encodeURIComponent(id);
+            "/Admin/Reservations?tableId=" + encodeURIComponent(id);
         removeTableId.value = id;
         removeTableId.dataset.reservationCount = table.dataset.reservationCount || "0";
         removeTableId.dataset.sharedCount = table.dataset.sharedCount || "0";
