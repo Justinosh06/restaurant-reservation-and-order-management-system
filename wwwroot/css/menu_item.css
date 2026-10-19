@@ -93,13 +93,6 @@
                 }
             }
 
-            .price {
-                font-size: 1.25rem;
-                font-weight: 600;
-                margin-bottom: 0;
-                font-family: "Bricolage Grotesque", sans-serif;
-            }
-
             .menu-item-options {
                 .option {
                     margin-top: 12px;
@@ -184,34 +177,53 @@
 
             .data-row {
                 display: flex;
-                margin-bottom: 16px;
                 align-items: center;
-                justify-content: space-between;
 
                 .quantity-wrapper {
-                    gap: 2px;
+                    gap: 0;
                     display: flex;
+                    margin-right: 8px;
+
+                    .quantity-val {
+                        background: #F2F2F3;
+                        padding: 16px;
+                    }
 
                     .quantity-btn {
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         background: #F2F2F3;
-                        border-radius: 100%;
-                        width: 25px;
-                        height: 25px;
+                        padding: 16px;
+                    }
+
+                    .quantity-btn:first-child {
+                        border-radius: 20px 0 0 20px;
+                    }
+
+                    .quantity-btn:last-child {
+                        border-radius: 0 20px 20px 0;
                     }
                 }
-            }
 
-            .add-to-cart-btn {
-                color: white;
-                background: black;
-                font-family: "Bricolage Grotesque", sans-serif;
-                border-radius: 100px;
-                font-weight: 800;
-                padding: 12px;
-                width: 100%;
+                .add-to-cart-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    color: white;
+                    background: black;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                    border-radius: 25px;
+                    font-weight: 800;
+                    padding: 16px 24px;
+                    width: 100%;
+
+                    .price {
+                        font-weight: 500;
+                        margin-bottom: 0;
+                        font-family: "Bricolage Grotesque", sans-serif;
+                    }
+                }
             }
         }
     }

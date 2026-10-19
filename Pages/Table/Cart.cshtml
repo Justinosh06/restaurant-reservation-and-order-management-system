@@ -65,15 +65,15 @@
                             <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
                                 <input type="hidden" name="cartItemId" value="@item.Id" />
                                 <input type="hidden" name="quantityDelta" value="-1" />
-                                <button type="submit" class="quantity-btn" aria-label="Decrease @item.Name quantity">
+                                <button type="submit" class="quantity-btn first" aria-label="Decrease @item.Name quantity">
                                     <i class="fa-solid fa-minus"></i>
                                 </button>
                             </form>
-                            <span class="quantity-val fw-bold mx-2">@item.Quantity</span>
+                            <span class="quantity-val fw-bold">@item.Quantity</span>
                             <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
                                 <input type="hidden" name="cartItemId" value="@item.Id" />
                                 <input type="hidden" name="quantityDelta" value="1" />
-                                <button type="submit" class="quantity-btn" aria-label="Increase @item.Name quantity">
+                                <button type="submit" class="quantity-btn last" aria-label="Increase @item.Name quantity">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
                             </form>

@@ -76,23 +76,22 @@
                     <span class="character-counter">0/300</span>
 
                     <div class="data-row">
-                        <p class="price">RM @Model.Item.PriceInMainUnit.ToString("F2")</p>
-
                         <div class="quantity-wrapper" aria-label="Select quantity">
                             <button type="button" class="quantity-btn" data-quantity-change="-1" aria-label="Decrease @Model.Item.Name quantity">
                                 <i class="fa-solid fa-minus"></i>
                             </button>
-                            <span id="quantity-display" class="quantity-val fw-bold mx-2">@Model.Quantity</span>
+                            <span id="quantity-display" class="quantity-val fw-bold">@Model.Quantity</span>
                             <input type="hidden" id="quantity-input" name="Quantity" value="@Model.Quantity" />
                             <button type="button" class="quantity-btn" data-quantity-change="1" aria-label="Increase @Model.Item.Name quantity">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                         </div>
-                    </div>
 
-                    <button type="submit" class="add-to-cart-btn">
-                        Add to Cart
-                    </button>
+                        <button type="submit" class="add-to-cart-btn">
+                            <span class="price">RM @Model.Item.PriceInMainUnit.ToString("F2")</span>
+                            Add to Cart
+                        </button>
+                    </div>
                 </form>
             }
             else
