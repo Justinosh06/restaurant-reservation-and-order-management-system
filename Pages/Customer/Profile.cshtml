@@ -1,0 +1,112 @@
+@page
+@using RestaurantReservation.Models.Enums
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ProfileModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<section class="profile">
+    <h1 class="section-title">My profile</h1>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <p class="notice">@Model.SuccessMessage</p>
+    }
+
+    @if (!Model.IsEditing)
+    {
+        @* View mode: each field name with its value below it *@
+        <div class="profile-grid">
+            <div class="profile-field wide">
+                <span class="field-label">User ID</span>
+                <span class="field-value">@Model.UserId</span>
+            </div>
+            <div class="profile-field">
+                <span class="field-label">First Name</span>
+                <span class="field-value">@Model.Input.FirstName</span>
+            </div>
+            <div class="profile-field">
+                <span class="field-label">Last Name</span>
+                <span class="field-value">@Model.Input.LastName</span>
+            </div>
+            <div class="profile-field">
+                <span class="field-label">Email</span>
+                <span class="field-value">@Model.Email</span>
+            </div>
+            <div class="profile-field">
+                <span class="field-label">Phone Number</span>
+                <span class="field-value">@Model.Input.PhoneNumber</span>
+            </div>
+            <div class="profile-field">
+                <span class="field-label">Gender</span>
+                <span class="field-value">@(Model.Input.Gender?.ToString() ?? "-")</span>
+            </div>
+            <div class="profile-field">
+                <span class="field-label">Date of Birth</span>
+                <span class="field-value">@(Model.Input.DateOfBirth?.ToString("d MMM yyyy") ?? "-")</span>
+            </div>
+
+            <form method="get" class="profile-actions">
+                <button type="submit" name="edit" value="true" class="pill-btn">Edit</button>
+            </form>
+        </div>
+    }
+    else
+    {
+        @* Edit mode: User ID and Email stay locked *@
+        <form method="post" class="profile-grid">
+            <div asp-validation-summary="ModelOnly" class="field-error"></div>
+
+            <label class="profile-field locked wide">
+                <span class="field-label">User ID</span>
+                <input type="text" value="@Model.UserId" disabled />
+            </label>
+
+            <label class="profile-field">
+                <span class="field-label">First Name</span>
+                <input asp-for="Input.FirstName" autocomplete="given-name" />
+                <span asp-validation-for="Input.FirstName" class="field-error"></span>
+            </label>
+
+            <label class="profile-field">
+                <span class="field-label">Last Name</span>
+                <input asp-for="Input.LastName" autocomplete="family-name" />
+                <span asp-validation-for="Input.LastName" class="field-error"></span>
+            </label>
+
+            <label class="profile-field locked">
+                <span class="field-label">Email</span>
+                <input type="text" value="@Model.Email" disabled />
+            </label>
+
+            <label class="profile-field">
+                <span class="field-label">Phone Number</span>
+                <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" />
+                <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
+            </label>
+
+            <label class="profile-field">
+                <span class="field-label">Gender</span>
+                <select asp-for="Input.Gender" asp-items="Html.GetEnumSelectList<Gender>()" autocomplete="sex">
+                    <option value=""></option>
+                </select>
+            </label>
+
+            <label class="profile-field">
+                <span class="field-label">Date of Birth</span>
+                <input asp-for="Input.DateOfBirth" autocomplete="bday" min="1900-01-01"
+                       max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="Input.DateOfBirth" class="field-error"></span>
+            </label>
+
+            <div class="profile-actions">
+                <a asp-page="/Customer/Profile" class="pill-btn ghost">Cancel</a>
+                <button type="submit" class="pill-btn">Save</button>
+            </div>
+        </form>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
