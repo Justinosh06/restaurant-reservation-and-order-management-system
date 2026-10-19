@@ -29,9 +29,15 @@
                         <label asp-for="Input.Password" class="form-label"></label>
                         <input asp-for="Input.Password" class="form-control" autocomplete="current-password" placeholder="Enter your password" />
                         <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                        <div class="text-left">
+                            <p class="text-muted mb-2">Forgot password? Please email to admin@restaurant.com</p>
+                        </div>
                     </div>
 
+                    
+
                     <button type="button" id="loginButton" class="btn btn-primary w-100">Login</button>
+
 
                     <!-- CAPTCHA step: opens after the Login button is clicked -->
                     <div class="modal fade" id="captchaModal" tabindex="-1" aria-labelledby="captchaModalLabel" aria-hidden="true">

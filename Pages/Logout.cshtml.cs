@@ -13,6 +13,6 @@ public class LogoutModel : PageModel
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         HttpContext.Session.Clear();
-        return RedirectToPage("/Login");
+        return RedirectToPage("/Index");
     }
 }

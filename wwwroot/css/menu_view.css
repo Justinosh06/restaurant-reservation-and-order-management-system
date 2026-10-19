@@ -1,0 +1,239 @@
+/* Online menu item page (/Menu/{menuItemId}): picture on the left, and on the right the name, rating, price,
+   About and the reviews. Same look as the table's menu item page (menu_item.css), but for reading only:
+   no options, remark, quantity or Add to Cart. On phones everything stacks under the picture. */
+.page-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px 48px;
+    font-family: "Bricolage Grotesque", sans-serif;
+
+    .header {
+        padding: 12px 0;
+        background: white;
+
+        .back-btn {
+            width: 80px;
+            height: 60px;
+            font-size: 1.4rem;
+            background: #F2F2F3;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            text-decoration: none;
+            transition: 300ms ease-in-out;
+        }
+
+        .back-btn:hover {
+            background: #DFDFE1;
+        }
+    }
+
+    .menu-item-container {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 48px;
+        align-items: start;
+        padding-top: 12px;
+    }
+
+    /* The picture stays in view while the details and reviews scroll beside it. */
+    .display-container {
+        position: sticky;
+        top: 96px;
+
+        .menu-item-image {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 32px;
+            background: #F2F2F3;
+        }
+
+        .no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: #CCCCCC;
+        }
+    }
+
+    .info-container {
+        display: flex;
+        flex-direction: column;
+
+        .category {
+            width: fit-content;
+            padding: 4px 14px;
+            border-radius: 100px;
+            color: var(--primary-color);
+            background: var(--secondary-color);
+            font-weight: 600;
+
+            i {
+                margin-right: 4px;
+            }
+        }
+
+        .title {
+            margin: 12px 0 8px;
+            font-size: clamp(2.6rem, 4vw, 4rem);
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -2px;
+        }
+
+        .stars {
+            display: inline-flex;
+            gap: 2px;
+            color: black;
+        }
+
+        .rating-summary {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 1.15rem;
+
+            .rating-value {
+                font-weight: 700;
+            }
+
+            .rating-count {
+                color: #888888;
+                font-weight: 500;
+            }
+        }
+
+        .price {
+            margin: 20px 0 0;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #ECECEC;
+            font-size: clamp(2rem, 2.6vw, 2.5rem);
+            font-weight: 700;
+        }
+
+        .info-section {
+            padding-top: 24px;
+        }
+
+        .section-label {
+            margin-bottom: 12px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .description {
+            margin: 0;
+            color: #444444;
+            font-size: 1.25rem;
+            line-height: 1.6;
+
+            p:last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        .description.muted {
+            color: #888888;
+        }
+
+        .review-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .review {
+            padding: 16px 20px;
+            border-radius: 20px;
+            background: #F2F2F3;
+
+            .review-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                font-size: 1.1rem;
+            }
+
+            p {
+                margin: 8px 0 0;
+                color: #444444;
+                font-size: 1.1rem;
+                line-height: 1.5;
+                overflow-wrap: anywhere;
+            }
+        }
+    }
+}
+
+@media only screen and (max-width: 992px) {
+    .page-container {
+        padding: 0 24px 40px;
+
+        .menu-item-container {
+            gap: 32px;
+        }
+    }
+}
+
+/* Phones: one column, the picture on top and everything else below it. */
+@media only screen and (max-width: 768px) {
+    .page-container {
+        padding: 0 16px 32px;
+
+        .header {
+            .back-btn {
+                width: 64px;
+                height: 48px;
+                font-size: 1.2rem;
+            }
+        }
+
+        .menu-item-container {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 20px;
+            padding-top: 4px;
+        }
+
+        .display-container {
+            position: static;
+
+            .menu-item-image {
+                aspect-ratio: 4 / 3;
+                border-radius: 24px;
+            }
+        }
+
+        .info-container {
+            .title {
+                font-size: 2.4rem;
+            }
+
+            .price {
+                font-size: 1.9rem;
+            }
+
+            .section-label {
+                font-size: 1.4rem;
+            }
+
+            .description {
+                font-size: 1.15rem;
+            }
+
+            .review {
+                padding: 14px 16px;
+            }
+        }
+    }
+}
