@@ -8,7 +8,7 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 
 public class LogoutModel : PageModel
 {
-    public IActionResult OnGet() => Redirect("/");
+    public Task<IActionResult> OnGetAsync() => OnPostAsync();
 
     public async Task<IActionResult> OnPostAsync()
     {
