@@ -76,8 +76,12 @@
     }
 }
 
+.content-container {
+    height: 100%;
+    margin-bottom: auto;
+}
+
 .footer {
-    margin-top: auto;
     padding: 16px;
     display: flex;
     align-items: center;

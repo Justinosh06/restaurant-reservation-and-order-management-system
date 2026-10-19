@@ -1,9 +1,6 @@
 (() => {
     const cards = document.querySelectorAll(".cart-column .item-card");
-    const tableId = document.querySelector(".content-number")?.dataset.tableId;
     const cartItemCount = document.getElementById("cart-item-count");
-    const initialCount = cartItemCount.textContent;
-    if (tableId) localStorage.setItem(`cart-item-count-${tableId}`, initialCount);
 
     cards.forEach(card => {
         const itemId = card.getAttribute("data-item-id");
@@ -48,6 +45,5 @@
         document.getElementById("grand-total").textContent = `RM ${total.toFixed(2)}`;
         cartItemCount.textContent = totalItems;
         document.querySelector(".content-number").textContent = totalItems;
-        if (tableId) localStorage.setItem(`cart-item-count-${tableId}`, totalItems);
     }
 })();

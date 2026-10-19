@@ -1,7 +1,7 @@
 @page "/Payment/{paymentId}"
 @model RestaurantReservation.Pages.Payment.IndexModel
 @{
-    ViewData["Title"] = $"{Model.PaymentId} Payment Details";
+    ViewData["Title"] = "Payment Details";
 }
 
 <html>
@@ -16,60 +16,90 @@
     </head>
     <body>
         <div class="page-content">
-            <div class="status-container">
-                <i class="@Model.StatusIcon @Model.StatusIconClass" aria-hidden="true"></i>
-                <span class="payment-status">@Model.StatusLabel</span>
-                <span class="payment-status-msg">@Model.StatusMessage</span>
-            </div>
+            @if (Model.HasPaymentError)
+            {
+                <div class="status-container">
+                    <i class="fa-solid fa-circle-exclamation failed" aria-hidden="true"></i>
+                    <span class="payment-status">Payment details unavailable</span>
+                    <span class="payment-status-msg">@Model.PaymentError</span>
+                </div>
+            }
+            else
+            {
+                <div class="status-container">
+                    <i class="@Model.StatusIcon @Model.StatusIconClass" aria-hidden="true"></i>
+                    <span class="payment-status">@Model.StatusLabel</span>
+                    <span class="payment-status-msg">@Model.StatusMessage</span>
+                </div>
 
-            <div class="payment-container">
-                <div class="inner-container">
-                    <h3 class="amount-header">Amount</h3>
-                    <span class="amount">@Model.CurrencySymbol @Model.AmountWhole<span>.@Model.AmountFraction</span></span>
+                <div class="payment-container">
+                    <div class="inner-container">
+                        <h3 class="amount-header">Amount</h3>
+                        <span class="amount">@Model.CurrencySymbol @Model.AmountWhole<span>.@Model.AmountFraction</span></span>
 
-                    <div class="data-row">
-                        <span><i class="fa-solid fa-receipt"></i> Payment ID</span>
-                        <span>@Model.PaymentId</span>
-                    </div>
-                    <div class="data-row">
-                        <span><i class="fa-solid fa-cash-register"></i> Payment Method</span>
-                        <span>@Model.PaymentMethodLabel</span>
-                    </div>
-                    <div class="data-row">
-                        <span><i class="fa-regular fa-user"></i> Customer</span>
-                        <span>@Model.CustomerName</span>
-                    </div>
-                    <div class="data-row">
-                        <span><i class="fa-regular fa-calendar"></i> Date</span>
-                        <span>@Model.CreatedAtDisplay</span>
+                        <div class="data-row">
+                            <span><i class="fa-solid fa-receipt"></i> Stripe Checkout ID</span>
+                            <span>@Model.PaymentId</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.PaymentIntentId))
+                        {
+                            <div class="data-row">
+                                <span><i class="fa-solid fa-credit-card"></i> Payment intent</span>
+                                <span>@Model.PaymentIntentId</span>
+                            </div>
+                        }
+                        <div class="data-row">
+                            <span><i class="fa-solid fa-cash-register"></i> Payment method</span>
+                            <span>@Model.PaymentMethodLabel</span>
+                        </div>
+                        <div class="data-row">
+                            <span><i class="fa-regular fa-user"></i> Customer</span>
+                            <span>@Model.CustomerName</span>
+                        </div>
+                        <div class="data-row">
+                            <span><i class="fa-regular fa-envelope"></i> Email</span>
+                            <span>@Model.CustomerEmail</span>
+                        </div>
+                        <div class="data-row">
+                            <span><i class="fa-regular fa-calendar"></i> Date</span>
+                            <span>@Model.CreatedAtDisplay</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="btn-container">
-                @if (!Model.ShowRetryButton && !Model.ShowRefreshButton)
-                {
-                    <a class="back-btn" href="@Model.BackUrl">@Model.BackLabel</a>
-                }
-                @if (Model.ShowReceiptButton)
-                {
-                    <a class="receipt-btn" href="@Model.ReceiptUrl" target="_blank" rel="noopener noreferrer">View Receipt</a>
-                }
-                @if (Model.ShowRetryButton)
-                {
-                    @if (Model.RetryUrl is not null)
+
+                <div class="btn-container">
+                    @if (!Model.ShowRetryButton && !Model.ShowRefreshButton)
                     {
-                        <a class="retry-btn" href="@Model.RetryUrl">Retry</a>
+                        @if (Model.BackUrl is not null)
+                        {
+                            <a class="back-btn" href="@Model.BackUrl">@Model.BackLabel</a>
+                        }
+                        else
+                        {
+                            <a class="back-btn" asp-page="/Table/Index" asp-route-tableId="@Model.TableId">Back to Table</a>
+                        }
                     }
-                    else
+                    @if (Model.ShowReceiptButton)
                     {
-                        <button type="button" class="retry-btn">Retry</button>
+                        <a class="receipt-btn" href="@Model.ReceiptUrl" target="_blank" rel="noopener noreferrer">View Receipt</a>
                     }
-                }
-                @if (Model.ShowRefreshButton)
-                {
-                    <button type="button" class="refresh-btn" onclick="window.location.reload()">Refresh Status</button>
-                }
-            </div>
+                    @if (Model.ShowRetryButton)
+                    {
+                        @if (Model.RetryUrl is not null)
+                        {
+                            <a class="retry-btn" href="@Model.RetryUrl">Retry</a>
+                        }
+                        else
+                        {
+                            <button type="button" class="retry-btn">Retry</button>
+                        }
+                    }
+                    @if (Model.ShowRefreshButton)
+                    {
+                        <button type="button" class="refresh-btn" onclick="window.location.reload()">Refresh Status</button>
+                    }
+                </div>
+            }
         </div>
     </body>
 
