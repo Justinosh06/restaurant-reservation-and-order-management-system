@@ -44,7 +44,7 @@ public sealed record ReservationSummary(
             && item.Status != ReservationStatus.Cancelled
             && item.Overlaps(start));
 
-    public static ReservationSummary From(Reservation reservation) =>
+    public static ReservationSummary From(RestaurantReservation.Models.Reservation reservation) =>
         new(
             reservation.Id,
             reservation.ReservationTables

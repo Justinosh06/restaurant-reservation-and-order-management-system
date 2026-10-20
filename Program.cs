@@ -91,6 +91,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CustomerOnly", policy => policy.RequireRole(AppRoles.Customer));
 });
 
+// Razor Pages, plus the route provider that keeps /Admin pages on the admin subdomain (registered once only:
+// a second copy adds a second "/" route to Admin/Index and every request to it fails as ambiguous).
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin", "AdminPortal");

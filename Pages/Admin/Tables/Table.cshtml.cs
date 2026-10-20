@@ -190,7 +190,7 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         return RedirectToPage();
     }
 
-    private async Task<Reservation?> FindReservationAsync(string? reservationId) =>
+    private async Task<RestaurantReservation.Models.Reservation?> FindReservationAsync(string? reservationId) =>
         reservationId is null ? null : await db.Reservations
             .Include(item => item.Customer)
             .Include(item => item.ReservationTables)

@@ -28,5 +28,9 @@ namespace RestaurantReservation.Models
 
         [ForeignKey(nameof(CustomerId))]
         public Customer? Customer { get; set; }
+
+        // The order the feedback was written on. A customer has one feedback per menu item: it is locked on that
+        // order, and can only be replaced from a later order of the same item. Empty for feedback saved before this was kept.
+        public string? OrderId { get; set; }
     }
 }

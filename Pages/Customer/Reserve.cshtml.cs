@@ -125,7 +125,7 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
         }
 
         // Saved first so the seats are held while the customer pays; it only counts once paid.
-        var reservation = new Reservation
+        var reservation = new RestaurantReservation.Models.Reservation
         {
             Id = Guid.NewGuid().ToString("N"),
             Date = Input.Date,
@@ -234,7 +234,7 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
             .ToList();
     }
 
-    private Task<Reservation?> FindOwnBookingAsync(System.Linq.Expressions.Expression<Func<Reservation, bool>> match)
+    private Task<RestaurantReservation.Models.Reservation?> FindOwnBookingAsync(System.Linq.Expressions.Expression<Func<RestaurantReservation.Models.Reservation, bool>> match)
     {
         var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return db.Reservations.IgnoreQueryFilters()
@@ -243,7 +243,7 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
     }
 
     // Asks Stripe whether the deposit was paid (the customer may have closed the tab before coming back).
-    private async Task<bool> MarkPaidIfStripeSaysSoAsync(Reservation reservation)
+    private async Task<bool> MarkPaidIfStripeSaysSoAsync(RestaurantReservation.Models.Reservation reservation)
     {
         if (reservation.StripeSessionId is null)
         {
@@ -286,7 +286,7 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
         await db.SaveChangesAsync();
     }
 
-    private static string Describe(Reservation reservation) =>
+    private static string Describe(RestaurantReservation.Models.Reservation reservation) =>
         reservation.Date.ToDateTime(reservation.TimeSlot).ToString("dddd d MMMM 'at' h:mm tt", CultureInfo.CurrentCulture);
 
     private Task<List<BusinessHours>> LoadHoursAsync() =>

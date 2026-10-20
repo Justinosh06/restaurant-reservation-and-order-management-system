@@ -30,10 +30,15 @@ public class RegisterModel : PageModel
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Full name is required.")]
-        [StringLength(100)]
-        [Display(Name = "Full Name")]
-        public string FullName { get; set; } = string.Empty;
+        [Required(ErrorMessage = "First name is required.")]
+        [StringLength(50)]
+        [Display(Name = "First Name")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last name is required.")]
+        [StringLength(50)]
+        [Display(Name = "Last Name")]
+        public string LastName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
@@ -63,7 +68,7 @@ public class RegisterModel : PageModel
     {
         if (User.IsInRole(AppRoles.Customer))
         {
-            return RedirectToPage("/Customer/Index");
+            return RedirectToPage("/Index");
         }
 
         return Page();
@@ -86,7 +91,8 @@ public class RegisterModel : PageModel
         var customer = new CustomerAccount
         {
             Id = Guid.NewGuid().ToString("N"),
-            FullName = Input.FullName.Trim(),
+            FirstName = Input.FirstName.Trim(),
+            LastName = Input.LastName.Trim(),
             Email = email,
             PhoneNumber = Input.PhoneNumber.Trim()
         };

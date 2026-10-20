@@ -1,0 +1,53 @@
+@page "/Customer/Dining/{id}"
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Models
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.Dining.VisitModel
+@{
+    // Order and session times are stored in UTC.
+    DateTime ToLocal(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
+
+    var session = Model.Visit.Session;
+    ViewData["Title"] = $"Dining on {ToLocal(session.StartingTime):d MMM yyyy}";
+}
+
+<section class="detail-page">
+    <a asp-page="/Customer/Dining/Index" class="back-link"><i class="fa-solid fa-arrow-left me-1"></i> Back to dining history</a>
+
+    <h1 class="section-title">Dining on @ToLocal(session.StartingTime).ToString("d MMM yyyy")</h1>
+
+    <dl class="order-meta">
+        <div>
+            <dt>Started</dt>
+            <dd>@ToLocal(session.StartingTime).ToString("HH:mm")</dd>
+        </div>
+        <div>
+            <dt>Orders</dt>
+            <dd>@Model.Visit.Orders.Count</dd>
+        </div>
+        <div>
+            <dt>Total spent</dt>
+            <dd>@Model.Currency.FormatCents(Model.Visit.TotalAmount)</dd>
+        </div>
+    </dl>
+
+    <h2 class="sub-title">Order history</h2>
+
+    <div class="order-list">
+        @foreach (var order in Model.Visit.Orders)
+        {
+            <a class="order-card" asp-page="/Customer/Order" asp-route-id="@order.Id">
+                <div>
+                    <span class="order-code">Order #@order.Id</span>
+                    <span class="hint">Qty: @Model.OrderItems[order.Id].Sum(i => i.Quantity)</span>
+                </div>
+                <div class="order-side">
+                    <span class="hint">@ToLocal(order.CreatedAt).ToString("HH:mm")</span>
+                    <div class="order-total-row">
+                        <span class="order-total">@Model.Currency.FormatCents(order.TotalAmount)</span>
+                        <span class="status-pill @(order.Status == OrderStatus.Cancelled ? "muted" : "")">@order.Status</span>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+</section>

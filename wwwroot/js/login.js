@@ -1,3 +1,10 @@
+// Going Back to this page after logging in loads it again, which sends the customer to their dashboard.
+window.addEventListener('pageshow', function (e) {
+    if (e.persisted) {
+        location.reload();
+    }
+});
+
 (function () {
     const form = document.getElementById('loginForm');
     const loginButton = document.getElementById('loginButton');

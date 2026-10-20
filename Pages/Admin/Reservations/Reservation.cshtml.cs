@@ -116,7 +116,7 @@ public class ReservationManagementModel(
             return Page();
         }
 
-        var reservation = new Reservation { Status = ReservationStatus.Confirmed };
+        var reservation = new RestaurantReservation.Models.Reservation { Status = ReservationStatus.Confirmed };
         ApplyInput(reservation);
         db.Reservations.Add(reservation);
         await db.SaveChangesAsync();
@@ -367,7 +367,7 @@ public class ReservationManagementModel(
     }
 
     // existing is the reservation being edited, or null when creating one.
-    private bool ValidateReservation(Reservation? existing)
+    private bool ValidateReservation(RestaurantReservation.Models.Reservation? existing)
     {
         // Tables are optional here; staff can assign them later on Table Management.
         // A large party can take several tables as long as they seat everyone together.
@@ -410,7 +410,7 @@ public class ReservationManagementModel(
         return ModelState.IsValid;
     }
 
-    private void ApplyInput(Reservation reservation)
+    private void ApplyInput(RestaurantReservation.Models.Reservation reservation)
     {
         reservation.ReservationTables.RemoveAll(link => !Input.TableIds.Contains(link.TableId));
         foreach (var tableId in Input.TableIds.Where(id => reservation.ReservationTables.All(link => link.TableId != id)))

@@ -15,7 +15,7 @@
             <h1>Book a table</h1>
             <p>Pick a day and a time, then pay a RM@(ReserveModel.Deposit.ToString("0")) deposit to hold your table.</p>
         </div>
-        <a asp-page="/Customer/Index" class="reserve-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</a>
+        <a asp-page="/Customer/Reservations" class="reserve-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to reservations</a>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
