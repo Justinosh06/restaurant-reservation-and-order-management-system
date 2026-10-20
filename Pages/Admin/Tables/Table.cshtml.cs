@@ -12,7 +12,7 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 public class TableManagementModel(ApplicationDbContext db) : PageModel
 {
     // Table sizes staff can add. Chairs are drawn half above and half below the table.
-    public static readonly int[] SeatOptions = [2, 4, 6, 8, 10, 12];
+    public static readonly int[] SeatOptions = [2, 4, 6];
 
     // Tables per row on the floor plan, used to place a new table after the last one.
     private const int FloorColumns = 6;
