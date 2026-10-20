@@ -36,6 +36,23 @@ body:has(.landing) {
         color: white;
     }
 
+    /* Outlined button for the second choice next to a black one (Cancel, Log in instead, ...). */
+    .pill-btn.ghost {
+        background: transparent;
+        color: black;
+        outline: 1px solid black;
+    }
+
+    .pill-btn.ghost:hover {
+        background: #F2F2F3;
+        color: black;
+    }
+
+    .pill-btn.small-btn {
+        padding: 6px 14px;
+        font-size: 0.85rem;
+    }
+
     .section-title {
         font-size: 2.2rem;
         font-weight: 700;
@@ -446,6 +463,124 @@ body:has(.landing) {
         }
     }
 
+    /* Login and Register: one column in the middle of the page on every screen size,
+       a short welcome headline above the form card. */
+    .auth-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+
+        .auth-card {
+            width: 100%;
+            max-width: 520px;
+        }
+    }
+
+    /* The headline may run wider than the card so it does not wrap onto a short last line. */
+    .auth-intro {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        max-width: 760px;
+        text-align: center;
+
+        .auth-headline {
+            margin: 0;
+            font-size: clamp(2.4rem, 4vw, 3.6rem);
+            line-height: 1.05;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            letter-spacing: -2px;
+        }
+
+        .auth-tagline {
+            margin: 0;
+            color: #444444;
+            font-size: 1.05rem;
+        }
+    }
+
+    .auth-card {
+        padding: 28px;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+        .card-title {
+            margin-bottom: 4px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        a:not(.pill-btn) {
+            color: black;
+            font-weight: 600;
+        }
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .pill-btn {
+            margin-top: 4px;
+        }
+    }
+
+    .auth-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    /* Field name above the box, like My profile. Also used in the CAPTCHA step. */
+    .auth-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+
+        label {
+            color: #666666;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #CCCCCC;
+            border-radius: 8px;
+            background: #F2F2F3;
+            color: #444444;
+        }
+
+        input:focus {
+            outline: 2px solid black;
+            border-color: transparent;
+            background: white;
+        }
+    }
+
+    .auth-page .field-error:empty,
+    .auth-page .validation-summary-valid {
+        display: none;
+    }
+
+    .auth-switch {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #ECECEC;
+    }
+
     .status-pill {
         display: inline-block;
         padding: 2px 10px;
@@ -738,11 +873,6 @@ body:has(.landing) {
             outline-offset: 2px;
         }
 
-        .modal-footer .pill-btn.ghost {
-            background: transparent;
-            color: black;
-            outline: 1px solid black;
-        }
 
         /* Stars are radio buttons listed 5 to 1 and shown reversed, so a checked star also fills the ones before it. */
         .star-input {
@@ -914,17 +1044,6 @@ body:has(.landing) {
             flex-wrap: wrap;
             gap: 12px;
             margin-top: 8px;
-        }
-
-        .pill-btn.ghost {
-            background: transparent;
-            color: black;
-            outline: 1px solid black;
-        }
-
-        .pill-btn.ghost:hover {
-            background: #F2F2F3;
-            color: black;
         }
     }
 
@@ -1142,6 +1261,19 @@ body:has(.landing) {
 @media only screen and (max-width: 576px) {
     .landing .landing-nav .greeting {
         display: none;
+    }
+
+    .landing .auth-card {
+        padding: 20px 16px;
+    }
+
+    .landing .auth-intro .auth-headline {
+        font-size: 2rem;
+        letter-spacing: -1px;
+    }
+
+    .landing .auth-row {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     /* Earlier and new feedback stack in the reminder. */
