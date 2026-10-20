@@ -1854,3 +1854,84 @@ body:has(.service-app) {
     opacity: 1;
     transform: translate(-50%, -50%);
 }
+
+/* Floor-plan status icons: table number in the corner, the status icon in the middle. */
+.floor-table .table-top {
+    padding-top: 24px;
+}
+
+.floor-table .table-name {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-size: 13px;
+}
+
+.table-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 14px;
+    box-shadow: 0 3px 8px rgb(37 39 35 / 14%);
+}
+
+.reserved .table-icon {
+    background: var(--amber);
+}
+
+.soon .table-icon {
+    background: var(--red);
+}
+
+.occupied .table-icon {
+    background: #3a63b8;
+}
+
+.soon .table-booking {
+    margin-right: 0;
+}
+
+.legend-icon {
+    display: inline-grid;
+    width: 18px;
+    height: 18px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 9px;
+}
+
+.legend-icon.reserved {
+    background: var(--amber);
+}
+
+.legend-icon.soon {
+    background: var(--red);
+}
+
+.legend-icon.occupied {
+    background: #3a63b8;
+}
+
+/* The legend's general span style would otherwise make these icons grey. */
+.legend .legend-icon,
+.legend-inline .legend-icon {
+    display: inline-grid;
+    gap: 0;
+    color: #fff;
+    font-size: 9px;
+}
+
+/* Live time since check-in. */
+.seated-timer {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.occupied .table-booking .seated-timer {
+    color: #3a63b8;
+    font-size: 12px;
+}

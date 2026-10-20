@@ -133,3 +133,32 @@ document.addEventListener("DOMContentLoaded", function () {
         openTable(app.dataset.selectedTable);
     }
 });
+
+// Seated timers: count up from each check-in time, once a second (H:MM:SS, or M:SS under an hour).
+(function () {
+    const timers = Array.from(document.querySelectorAll(".seated-timer[data-since]"));
+    if (timers.length === 0) {
+        return;
+    }
+
+    function format(totalSeconds) {
+        const seconds = Math.max(0, Math.floor(totalSeconds));
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = String(seconds % 60).padStart(2, "0");
+        return h > 0 ? h + ":" + String(m).padStart(2, "0") + ":" + s : m + ":" + s;
+    }
+
+    function tick() {
+        const now = Date.now();
+        timers.forEach(function (timer) {
+            const since = Date.parse(timer.dataset.since);
+            if (!Number.isNaN(since)) {
+                timer.textContent = format((now - since) / 1000);
+            }
+        });
+    }
+
+    tick();
+    setInterval(tick, 1000);
+})();

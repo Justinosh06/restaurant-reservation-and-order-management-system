@@ -389,15 +389,25 @@
             {
                 var nextReservation = upcomingSeated.FirstOrDefault(reservation => reservation.TableIds.Contains(table.Id));
                 var startsSoon = nextReservation is not null && nextReservation.ReservationAt <= now.AddMinutes(60);
+                // Same status icons as Table Management: checked in, starting soon, or reserved.
+                var seatedNow = nextReservation is { Status: RestaurantReservation.Models.ReservationStatus.CheckedIn }
+                    && nextReservation.ReservationAt - TableManagementModel.CheckInOpensBefore <= now;
+                var statusIcon = nextReservation is null ? null
+                    : seatedNow ? "fa-utensils"
+                    : startsSoon ? "fa-clock"
+                    : "fa-calendar-check";
                 <button type="button"
-                        class="floor-table @(nextReservation is null ? "available" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
+                        class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
                         data-table-id="@table.Id"
                         data-capacity="@table.Capacity"
                         aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : "reserved")">
                     @{ Chairs((table.Capacity + 1) / 2); }
                     <span class="table-top">
-                        <span class="table-status-mark" aria-hidden="true"></span>
                         <span class="table-name">@table.Id</span>
+                        @if (statusIcon is not null)
+                        {
+                            <span class="table-icon" aria-hidden="true"><i class="fa-solid @statusIcon"></i></span>
+                        }
                         @if (nextReservation is not null)
                         {
                             <span class="table-booking">
@@ -417,8 +427,9 @@
         <div class="floorplan-footer">
             <span>
                 <span class="legend-inline"><i class="legend-dot available"></i>Available</span>
-                <span class="legend-inline"><i class="legend-dot reserved"></i>Reserved</span>
-                <span class="legend-inline"><i class="legend-dot soon"></i>Starting soon</span>
+                <span class="legend-inline"><span class="legend-icon reserved" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>Reserved</span>
+                <span class="legend-inline"><span class="legend-icon soon" aria-hidden="true"><i class="fa-solid fa-clock"></i></span>Starting soon</span>
+                <span class="legend-inline"><span class="legend-icon occupied" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span>Checked in</span>
             </span>
             <a class="floor-status-count" asp-page="/Admin/Tables/Table">Manage tables</a>
         </div>

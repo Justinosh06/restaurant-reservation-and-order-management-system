@@ -14,7 +14,8 @@ public sealed record ReservationSummary(
     string? Notes,
     ReservationStatus Status,
     DepositStatus Deposit = DepositStatus.None,
-    int? DepositAmount = null)
+    int? DepositAmount = null,
+    DateTime? CheckedInAt = null)
 {
     // "RM20 deposit paid", or null when the booking has no deposit.
     public string? DepositLabel => Deposit switch
@@ -59,7 +60,8 @@ public sealed record ReservationSummary(
             reservation.Notes,
             reservation.Status,
             reservation.DepositStatus,
-            reservation.DepositAmount);
+            reservation.DepositAmount,
+            reservation.CheckedInAt);
 
     private static string? FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));

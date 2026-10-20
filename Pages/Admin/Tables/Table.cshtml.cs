@@ -169,6 +169,7 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         }
 
         reservation.Status = ReservationStatus.CheckedIn;
+        reservation.CheckedInAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         StatusMessage = $"{summary.CustomerName} ({summary.PartySize} guests) checked in at {summary.TableLabel}.";
         return RedirectToPage();
@@ -185,6 +186,7 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         }
 
         reservation.Status = ReservationStatus.Confirmed;
+        reservation.CheckedInAt = null;
         await db.SaveChangesAsync();
         StatusMessage = $"Check-in undone for {ReservationSummary.From(reservation).CustomerName}.";
         return RedirectToPage();

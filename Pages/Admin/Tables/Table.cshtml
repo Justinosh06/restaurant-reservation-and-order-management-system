@@ -43,9 +43,9 @@
                 </div>
                 <div class="legend" aria-label="Table availability">
                     <span><i class="legend-dot available"></i>Available</span>
-                    <span><i class="legend-dot reserved"></i>Reserved</span>
-                    <span><i class="legend-dot soon"></i>Starting soon</span>
-                    <span><i class="legend-dot occupied"></i>Checked in</span>
+                    <span><span class="legend-icon reserved" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>Reserved</span>
+                    <span><span class="legend-icon soon" aria-hidden="true"><i class="fa-solid fa-clock"></i></span>Starting soon</span>
+                    <span><span class="legend-icon occupied" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span>Checked in</span>
                 </div>
             </div>
         </div>
@@ -78,6 +78,11 @@
                     // Checked-in guests sit at the table until their slot ends.
                     var seatedNow = nextReservation is { Status: RestaurantReservation.Models.ReservationStatus.CheckedIn }
                         && nextReservation.ReservationAt - TableManagementModel.CheckInOpensBefore <= now;
+                    // The icon in the middle of the table: checked in, starting soon, or reserved.
+                    var statusIcon = nextReservation is null ? null
+                        : seatedNow ? "fa-utensils"
+                        : startsSoon ? "fa-clock"
+                        : "fa-calendar-check";
 
                     <button type="button"
                             class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
@@ -88,13 +93,23 @@
                             aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">
-                            <span class="table-status-mark" aria-hidden="true"></span>
                             <span class="table-name">@table.Id</span>
+                            @if (statusIcon is not null)
+                            {
+                                <span class="table-icon" aria-hidden="true"><i class="fa-solid @statusIcon"></i></span>
+                            }
                             @if (nextReservation is not null)
                             {
                                 <span class="table-booking">
                                     <span>@nextReservation.PartySize guests</span>
-                                    <span>@(seatedNow ? "Checked in" : nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture))</span>
+                                    @if (seatedNow && nextReservation.CheckedInAt is { } seatedSince)
+                                    {
+                                        <span class="seated-timer" data-since="@DateTime.SpecifyKind(seatedSince, DateTimeKind.Utc).ToString("o")" title="Time since check-in">0:00</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@(seatedNow ? "Checked in" : nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture))</span>
+                                    }
                                 </span>
                             }
                             else
@@ -147,7 +162,14 @@
                                 <div class="checkin-actions">
                                     @if (checkedIn)
                                     {
-                                        <span class="checkin-done"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Checked in</span>
+                                        <span class="checkin-done">
+                                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Checked in
+                                            @if (reservation.CheckedInAt is { } since)
+                                            {
+                                                <span>·</span>
+                                                <span class="seated-timer" data-since="@DateTime.SpecifyKind(since, DateTimeKind.Utc).ToString("o")" title="Time since check-in">0:00</span>
+                                            }
+                                        </span>
                                         <form method="post" asp-page-handler="UndoCheckIn" class="undo-checkin-form">
                                             <input type="hidden" name="reservationId" value="@reservation.Id" />
                                             <button type="submit" class="checkin-undo">Undo</button>

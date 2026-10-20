@@ -72,5 +72,8 @@ namespace RestaurantReservation.Models
 
         [StringLength(255)]
         public string? StripeSessionId { get; set; }
+
+        // When staff checked the guests in (UTC); drives the timer on Table Management.
+        public DateTime? CheckedInAt { get; set; }
     }
 }
