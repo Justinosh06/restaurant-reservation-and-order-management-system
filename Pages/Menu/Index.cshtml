@@ -8,20 +8,53 @@
 
 <link rel="stylesheet" href="~/css/table_page.css" asp-append-version="true" />
 
+@* Same header, search and filters as the table menu (Pages/Table/Index), driven by tableMenu.js. *@
 <div class="menu-container">
-    <h1 class="title">Menu<span class="content-number" id="menu-total-count">@Model.Items.Count</span></h1>
+    <div class="menu-header">
+        <h1 class="title">Menu<span class="content-number" id="menu-total-count">@Model.Items.Count</span></h1>
 
-    <div class="pill-filter-row">
-        <span class="filter-pill active" data-category="all">
-            All<span class="content-number">@Model.Items.Count</span>
-        </span>
+        <div class="pill-filter-row">
+            <div class="menu-search">
+                <button type="button" class="searchbar-btn" aria-label="Search menu" aria-expanded="false">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                </button>
 
-        @foreach (var type in Enum.GetValues<MenuItemType>())
-        {
-            <span class="filter-pill" data-category="@type.ToString().ToLower()">
-                @type<span class="content-number">@Model.Items.Count(i => i.MenuItemType == type)</span>
-            </span>
-        }
+                <div class="search-modal" role="dialog" aria-modal="true" aria-label="Search menu" hidden>
+                    <form class="searchbar-popup">
+                        <input id="menu-search-input" class="searchbar-input" type="search" placeholder="Search menu items" autocomplete="off" />
+                        <button type="submit" class="searchbar-submit">Search</button>
+                        <button type="button" class="searchbar-close" aria-label="Close search">&times;</button>
+                    </form>
+                    <div class="search-recommendations" hidden>
+                        <div class="search-recommendation-group search-recent-searches" hidden>
+                            <h2>Recent searches</h2>
+                            <ul class="search-recommendation-list"></ul>
+                        </div>
+                        <div class="search-recommendation-group search-top-rated" hidden>
+                            <h2>Top rated</h2>
+                            <ul class="search-recommendation-list"></ul>
+                        </div>
+                        <div class="search-recommendation-group search-matches" hidden>
+                            <h2>Suggestions</h2>
+                            <ul class="search-recommendation-list"></ul>
+                            <p class="search-recommendation-empty" hidden>No matching menu items.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="active-search" hidden>
+                    <button type="button" class="active-search-query"></button>
+                    <button type="button" class="clear-search" aria-label="Clear search">&times;</button>
+                </div>
+            </div>
+
+            <button type="button" class="filter-pill active" data-category="all">All</button>
+
+            @foreach (var type in Enum.GetValues<MenuItemType>())
+            {
+                <button type="button" class="filter-pill" data-category="@type.ToString().ToLower()">@type</button>
+            }
+        </div>
     </div>
 
     @if (Model.Items.Count == 0)
@@ -35,7 +68,9 @@
             <a asp-page="/Menu/Item"
                asp-route-menuItemId="@item.Id"
                class="item-card-link text-decoration-none text-reset"
-               data-category="@item.MenuItemType.ToString().ToLower()">
+               data-category="@item.MenuItemType.ToString().ToLower()"
+               data-search-name="@item.Name"
+               data-top-rated-order="@Model.TopRatedMenuItemIds.IndexOf(item.Id)">
 
                 <div class="item-card">
                     <div class="thumbnail-container">
