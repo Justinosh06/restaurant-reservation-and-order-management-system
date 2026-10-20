@@ -25,21 +25,27 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.querySelectorAll(".delete-reservation-form").forEach(function (form) {
-        form.addEventListener("submit", function (event) {
-            if (!window.confirm("Delete this reservation? This cannot be undone.")) {
-                event.preventDefault();
-            }
+        AppDialog.guardSubmit(form, {
+            title: "Delete this reservation?",
+            message: "It is removed for good. This can't be undone.",
+            confirmText: "Delete",
+            cancelText: "Keep it",
+            danger: true,
+            icon: "fa-trash"
         });
     });
 
     document.querySelectorAll(".cancel-reservation-form").forEach(function (form) {
-        form.addEventListener("submit", function (event) {
-            const refund = form.dataset.deposit === "paid"
-                ? "\n\nTheir RM20 deposit will be refunded to their card."
-                : "";
-            if (!window.confirm("Cancel this reservation? It will move to the Cancelled tab." + refund)) {
-                event.preventDefault();
-            }
+        AppDialog.guardSubmit(form, function () {
+            return {
+                title: "Cancel this reservation?",
+                message: "It moves to the Cancelled tab."
+                    + (form.dataset.deposit === "paid" ? "\nTheir RM20 deposit is refunded to their card." : ""),
+                confirmText: "Cancel reservation",
+                cancelText: "Keep it",
+                danger: true,
+                icon: "fa-ban"
+            };
         });
     });
 
@@ -191,9 +197,21 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
     assignClear.addEventListener("click", function () {
-        if (assigning && window.confirm("Take this reservation off its tables? It goes back to Pending.")) {
-            submitAssign([]);
+        if (!assigning) {
+            return;
         }
+        AppDialog.confirm({
+            title: "Take it off its tables?",
+            message: "The booking goes back to Pending so you can seat it again.",
+            confirmText: "Remove from tables",
+            cancelText: "Keep tables",
+            danger: true,
+            icon: "fa-chair"
+        }).then(function (ok) {
+            if (ok && assigning) {
+                submitAssign([]);
+            }
+        });
     });
     document.getElementById("closeAssignPanel").addEventListener("click", closeAssign);
     backdrop.addEventListener("click", closeAssign);

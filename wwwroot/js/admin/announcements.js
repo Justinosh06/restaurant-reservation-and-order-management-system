@@ -222,7 +222,7 @@
     };
 
     const deleteAnnouncement = async (button) => {
-        if (!confirm("Delete this announcement?")) return;
+        if (!(await AppDialog.confirm({ title: "Delete this announcement?", message: "This can't be undone.", confirmText: "Delete", cancelText: "Keep it", danger: true, icon: "fa-trash" }))) return;
 
         AdminUI.setBusy(button, true);
         try {

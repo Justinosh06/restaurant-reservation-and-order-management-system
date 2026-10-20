@@ -242,10 +242,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.querySelectorAll(".cancel-booking-form").forEach(function (cancelForm) {
-        cancelForm.addEventListener("submit", function (event) {
-            if (!window.confirm("Cancel this booking?")) {
-                event.preventDefault();
-            }
+        AppDialog.guardSubmit(cancelForm, {
+            title: "Cancel this booking?",
+            message: "If you paid a deposit, it goes back to your card (usually 5–10 working days).",
+            confirmText: "Cancel booking",
+            cancelText: "Keep booking",
+            danger: true,
+            icon: "fa-calendar-xmark"
         });
     });
 });

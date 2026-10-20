@@ -92,10 +92,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.querySelectorAll(".undo-checkin-form").forEach(function (form) {
-        form.addEventListener("submit", function (event) {
-            if (!window.confirm("Undo this check-in?")) {
-                event.preventDefault();
-            }
+        AppDialog.guardSubmit(form, {
+            title: "Undo this check-in?",
+            message: "The booking goes back to waiting for its guests and the timer stops.",
+            confirmText: "Undo check-in",
+            cancelText: "Keep",
+            icon: "fa-rotate-left"
         });
     });
 
@@ -115,29 +117,37 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    removeForm.addEventListener("submit", function (event) {
+    AppDialog.guardSubmit(removeForm, function () {
         if (removeTableId.dataset.seatedNow === "true") {
-            event.preventDefault();
-            window.alert("Guests are checked in at " + removeTableId.value
-                + " right now. Remove the table once they have left.");
-            return;
+            AppDialog.alert({
+                title: "Guests are at " + removeTableId.value,
+                message: "Someone is checked in at this table right now. Remove it once they have checked out.",
+                confirmText: "OK",
+                icon: "fa-utensils"
+            });
+            return null;
         }
 
         // Bookings are never deleted with a table; they only lose it.
         const unseat = Number(removeTableId.dataset.unseatCount);
         const shared = Number(removeTableId.dataset.sharedCount);
-        let warning = "";
+        const notes = [];
         if (unseat > 0) {
-            warning += "\n\n" + unseat + (unseat === 1 ? " upcoming booking will go" : " upcoming bookings will go")
-                + " back to Pending so you can seat " + (unseat === 1 ? "it" : "them") + " elsewhere.";
+            notes.push(unseat + (unseat === 1 ? " upcoming booking goes" : " upcoming bookings go")
+                + " back to Pending so you can seat " + (unseat === 1 ? "it" : "them") + " elsewhere.");
         }
         if (shared > 0) {
-            warning += "\n\n" + shared + (shared === 1 ? " booking also uses" : " bookings also use")
-                + " other tables and will keep them.";
+            notes.push(shared + (shared === 1 ? " booking also uses" : " bookings also use")
+                + " other tables and keeps them.");
         }
-        if (!window.confirm("Remove table " + removeTableId.value + " from the floor plan?" + warning)) {
-            event.preventDefault();
-        }
+        return {
+            title: "Remove table " + removeTableId.value + "?",
+            message: notes.length > 0 ? notes.join("\n") : "No upcoming bookings use this table.",
+            confirmText: "Remove table",
+            cancelText: "Keep table",
+            danger: true,
+            icon: "fa-trash"
+        };
     });
 
     if (app.dataset.selectedTable) {
@@ -180,11 +190,16 @@ document.addEventListener("DOMContentLoaded", function () {
     setInterval(tick, 1000);
 })();
 
-// Check out: confirm before freeing the table.
-document.querySelectorAll(".checkout-form").forEach(function (form) {
-    form.addEventListener("submit", function (event) {
-        if (!window.confirm("Check out " + form.dataset.name + "? Their table becomes free.")) {
-            event.preventDefault();
-        }
+// Check out: confirm before freeing the table. Waits for the page to load because the layout
+// loads the pop-up script (confirm-dialog.js) after this one.
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".checkout-form").forEach(function (form) {
+        AppDialog.guardSubmit(form, {
+            title: "Check out " + form.dataset.name + "?",
+            message: "Their table becomes free and the booking is marked Completed.",
+            confirmText: "Check out",
+            cancelText: "Not yet",
+            icon: "fa-right-from-bracket"
+        });
     });
 });
