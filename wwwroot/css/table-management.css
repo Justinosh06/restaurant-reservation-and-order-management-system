@@ -1958,3 +1958,35 @@ body:has(.service-app) {
 .reservation-filter[hidden] {
     display: none;
 }
+
+/* Check out, overdue timers, and the Past tab's Completed / No-show badges. */
+.checkout-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: #3a63b8;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.checkout-button:hover {
+    background: #2f529b;
+}
+
+.checkin-actions {
+    flex-wrap: wrap;
+}
+
+.seated-timer.overdue,
+.occupied .table-booking .seated-timer.overdue {
+    color: var(--amber);
+}
+
+.booking-badge.noshow {
+    background: var(--red-soft);
+    color: #b34336;
+}

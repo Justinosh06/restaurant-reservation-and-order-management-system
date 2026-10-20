@@ -9,7 +9,7 @@
     var now = DateTime.Now;
     // A booking holds its table from its start time until its slot ends.
     var upcomingReservations = Model.Reservations
-        .Where(reservation => reservation.EndsAt > now)
+        .Where(reservation => reservation.IsActive(now))
         .OrderBy(reservation => reservation.ReservationAt)
         .ToList();
 
@@ -179,6 +179,10 @@
                                                 <span class="seated-timer" data-since="@DateTime.SpecifyKind(since, DateTimeKind.Utc).ToString("o")" title="Time since check-in">0:00</span>
                                             }
                                         </span>
+                                        <form method="post" asp-page-handler="CheckOut" class="checkout-form" data-name="@reservation.CustomerName">
+                                            <input type="hidden" name="reservationId" value="@reservation.Id" />
+                                            <button type="submit" class="checkout-button"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Check out</button>
+                                        </form>
                                         <form method="post" asp-page-handler="UndoCheckIn" class="undo-checkin-form">
                                             <input type="hidden" name="reservationId" value="@reservation.Id" />
                                             <button type="submit" class="checkin-undo">Undo</button>

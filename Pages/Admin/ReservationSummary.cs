@@ -30,6 +30,11 @@ public sealed record ReservationSummary(
 
     public DateTime EndsAt => ReservationAt + SlotLength;
 
+    // Guests who are checked in keep their table until staff check them out, even past the slot.
+    public bool IsSeated => Status == ReservationStatus.CheckedIn;
+
+    public bool IsActive(DateTime now) => IsSeated || EndsAt > now;
+
     public bool HasTable => TableIds.Count > 0;
 
     // "T3" or "T3 + T4" for a party spread over several tables.

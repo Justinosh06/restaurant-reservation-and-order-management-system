@@ -67,7 +67,7 @@ public class ReservationManagementModel(
 
     public static string TabOf(ReservationSummary reservation, DateTime now) =>
         reservation.Status == ReservationStatus.Cancelled ? "cancelled"
-        : reservation.Status == ReservationStatus.Completed || reservation.EndsAt <= now ? "past"
+        : reservation.Status == ReservationStatus.Completed || !reservation.IsActive(now) ? "past"
         : reservation.HasTable ? "upcoming"
         : "pending";
 

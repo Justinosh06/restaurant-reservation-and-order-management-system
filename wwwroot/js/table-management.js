@@ -160,12 +160,18 @@ document.addEventListener("DOMContentLoaded", function () {
         return h > 0 ? h + ":" + String(m).padStart(2, "0") + ":" + s : m + ":" + s;
     }
 
+    // Matches ReservationSummary.SlotLength: after this the table is overdue (timer turns orange).
+    const slotSeconds = 2 * 60 * 60;
+
     function tick() {
         const now = Date.now();
         timers.forEach(function (timer) {
             const since = Date.parse(timer.dataset.since);
             if (!Number.isNaN(since)) {
-                timer.textContent = format((now - since) / 1000);
+                const seconds = (now - since) / 1000;
+                timer.textContent = format(seconds);
+                timer.classList.toggle("overdue", seconds >= slotSeconds);
+                timer.title = seconds >= slotSeconds ? "Over the 2-hour booking time" : "Time since check-in";
             }
         });
     }
@@ -173,3 +179,12 @@ document.addEventListener("DOMContentLoaded", function () {
     tick();
     setInterval(tick, 1000);
 })();
+
+// Check out: confirm before freeing the table.
+document.querySelectorAll(".checkout-form").forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+        if (!window.confirm("Check out " + form.dataset.name + "? Their table becomes free.")) {
+            event.preventDefault();
+        }
+    });
+});

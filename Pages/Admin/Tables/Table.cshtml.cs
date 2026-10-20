@@ -62,7 +62,7 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         Reservations = reservations.Select(ReservationSummary.From).ToList();
 
         var now = DateTime.Now;
-        var upcoming = Reservations.Where(reservation => reservation.EndsAt > now).ToList();
+        var upcoming = Reservations.Where(reservation => reservation.IsActive(now)).ToList();
         UnseatCounts = upcoming
             .Where(reservation => reservation.TableIds.Count == 1)
             .GroupBy(reservation => reservation.TableIds[0])
@@ -78,7 +78,7 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
             .ToHashSet();
 
         Queue = Reservations
-            .Where(reservation => reservation.HasTable && reservation.EndsAt > now)
+            .Where(reservation => reservation.HasTable && reservation.IsActive(now))
             .OrderBy(reservation => reservation.ReservationAt)
             .ToList();
 
@@ -132,7 +132,7 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         var now = DateTime.Now;
         var upcoming = reservations
             .Select(ReservationSummary.From)
-            .Where(summary => summary.EndsAt > now
+            .Where(summary => summary.IsActive(now)
                 && summary.Status != ReservationStatus.Cancelled
                 && summary.Status != ReservationStatus.Completed)
             .ToList();
@@ -189,6 +189,26 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
         reservation.CheckedInAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         StatusMessage = $"{summary.CustomerName} ({summary.PartySize} guests) checked in at {summary.TableLabel}.";
+        return RedirectToPage();
+    }
+
+    // The guests have left: the booking is Completed and its tables are free again.
+    public async Task<IActionResult> OnPostCheckOutAsync(string? reservationId)
+    {
+        var reservation = await FindReservationAsync(reservationId);
+        if (reservation is not { Status: ReservationStatus.CheckedIn })
+        {
+            StatusMessage = "That reservation isn't checked in.";
+            return RedirectToPage();
+        }
+
+        var summary = ReservationSummary.From(reservation);
+        var stayed = reservation.CheckedInAt is { } since ? DateTime.UtcNow - since : (TimeSpan?)null;
+        reservation.Status = ReservationStatus.Completed;
+        await db.SaveChangesAsync();
+        StatusMessage = $"{summary.CustomerName} checked out"
+            + (stayed is { } time ? $" after {(int)time.TotalHours}:{time.Minutes:00}" : "")
+            + $". {(summary.TableIds.Count == 1 ? "Table" : "Tables")} {summary.TableLabel} {(summary.TableIds.Count == 1 ? "is" : "are")} free.";
         return RedirectToPage();
     }
 

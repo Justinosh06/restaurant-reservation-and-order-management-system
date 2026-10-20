@@ -19,7 +19,7 @@
     // For the Pending floor plan: each table shows its next seated booking, like Table Management.
     var upcomingSeated = Model.Reservations
         .Where(reservation => reservation.HasTable
-            && reservation.EndsAt > now
+            && reservation.IsActive(now)
             && reservation.Status != RestaurantReservation.Models.ReservationStatus.Cancelled
             && reservation.Status != RestaurantReservation.Models.ReservationStatus.Completed)
         .OrderBy(reservation => reservation.ReservationAt)
@@ -143,6 +143,12 @@
                                 }
                             </span>
                         </div>
+                        @if (Model.Tab == "past")
+                        {
+                            // Completed = checked in and out; anything else that ended was never checked in.
+                            var came = reservation.Status == RestaurantReservation.Models.ReservationStatus.Completed;
+                            <span class="booking-badge @(came ? "confirmed" : "noshow")">@(came ? "Completed" : "No-show")</span>
+                        }
                         @if (reservation.DepositLabel is not null)
                         {
                             <span class="booking-badge @(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "refunded")">@reservation.DepositLabel</span>
