@@ -1831,3 +1831,26 @@ body:has(.service-app) {
     font-size: 11px;
 }
 
+
+/* Add table opens as a centred pop-up instead of sliding in from the side. */
+.reservation-panel.add-table-panel {
+    top: 50%;
+    right: auto;
+    left: 50%;
+    width: min(480px, calc(100vw - 32px));
+    height: auto;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    visibility: hidden;
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgb(24 30 24 / 22%);
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(.98);
+    transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+}
+
+.reservation-panel.add-table-panel.open {
+    visibility: visible;
+    opacity: 1;
+    transform: translate(-50%, -50%);
+}
