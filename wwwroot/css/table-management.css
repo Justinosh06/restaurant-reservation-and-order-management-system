@@ -1953,3 +1953,8 @@ body:has(.service-app) {
     color: var(--muted);
     font-size: 11px;
 }
+
+/* The Table filter is hidden on the Pending tab (pending bookings have no table yet). */
+.reservation-filter[hidden] {
+    display: none;
+}

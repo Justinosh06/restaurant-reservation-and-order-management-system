@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
 using Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
@@ -22,14 +23,8 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
     // checkout after 30 minutes; the extra 5 covers a payment that finishes right at the end.
     private static readonly TimeSpan UnpaidHold = TimeSpan.FromMinutes(35);
 
-    // Used when the restaurant has not set its business hours yet.
-    private static readonly TimeOnly DefaultOpen = new(8, 0);
-    private static readonly TimeOnly DefaultClose = new(22, 0);
-
+    // Opening hours (and their defaults) come from OpeningHours, shared with the staff form.
     private static readonly TimeSpan SlotStep = TimeSpan.FromHours(1);
-
-    // The last booking starts this long before closing.
-    private static readonly TimeSpan LastBookingBeforeClose = TimeSpan.FromHours(1);
 
     public const int MaxPartySize = 20;
 
@@ -120,6 +115,22 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
 
         if (!ModelState.IsValid)
         {
+            await LoadPageAsync();
+            return Page();
+        }
+
+        // One booking per customer per time slot (a booking still being paid for counts too).
+        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var holdCutoff = DateTime.UtcNow - UnpaidHold;
+        var alreadyBooked = await db.Reservations.IgnoreQueryFilters().AnyAsync(item =>
+            item.CustomerId == customerId
+            && item.Date == Input.Date
+            && item.TimeSlot == Input.Time
+            && item.Status != ReservationStatus.Cancelled
+            && (item.DepositStatus != DepositStatus.Unpaid || item.CreatedAt >= holdCutoff));
+        if (alreadyBooked)
+        {
+            ModelState.AddModelError("Input.Time", "You already have a booking at this time. See it under Upcoming reservations.");
             await LoadPageAsync();
             return Page();
         }
@@ -296,15 +307,14 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
     // (tables not held by an overlapping booking, minus guests still waiting for a table) fit the party.
     private async Task<List<Slot>> GetSlotsAsync(DateOnly date, int guests)
     {
-        var hours = (await LoadHoursAsync()).FirstOrDefault(day => day.DayOfWeek == date.DayOfWeek);
-        if (hours is { IsClosed: true })
+        var hours = await OpeningHours.ForDateAsync(db, date);
+        if (hours.IsClosed)
         {
             return [];
         }
 
-        var open = hours?.OpenTime ?? DefaultOpen;
-        var close = hours?.CloseTime ?? DefaultClose;
-        var last = close.Add(-LastBookingBeforeClose);
+        var open = hours.Open;
+        var last = hours.LastBooking;
 
         var tables = await db.Tables.AsNoTracking().ToListAsync();
         // Bookings still being paid for hold their seats too, until the hold runs out.

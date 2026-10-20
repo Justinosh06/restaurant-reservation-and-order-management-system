@@ -124,9 +124,17 @@
             </div>
             <div class="floorplan-footer">
                 <span>Tap a table to see its reservations.</span>
-                <a class="floor-status-count" href="/Admin/Reservations">
-                    @upcomingReservations.Count upcoming reservations
-                </a>
+                @{ var withoutTable = upcomingReservations.Count(reservation => !reservation.HasTable); }
+                @if (withoutTable > 0)
+                {
+                    <a class="floor-status-count" href="/Admin/Reservations?tab=pending">
+                        @withoutTable @(withoutTable == 1 ? "booking" : "bookings") without a table →
+                    </a>
+                }
+                else
+                {
+                    <span class="floor-status-count">Every booking has a table</span>
+                }
             </div>
         </section>
 

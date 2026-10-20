@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
 using Stripe;
@@ -47,6 +48,11 @@ public class ReservationManagementModel(
 
     [BindProperty(SupportsGet = true)]
     public string Tab { get; set; } = "upcoming";
+
+    // Set when staff were warned that the time is outside opening hours; saving again with the same
+    // time keeps it (walk-ins and phone bookings sometimes need that).
+    [BindProperty]
+    public string? OutsideHoursOkFor { get; set; }
 
     // The reservations on the open tab (after the table filter), in the order they are listed.
     public List<ReservationSummary> TabReservations { get; private set; } = [];
@@ -111,7 +117,7 @@ public class ReservationManagementModel(
         IsFormOpen = true;
         await LoadPageAsync();
 
-        if (!ValidateReservation(existing: null))
+        if (!ValidateReservation(existing: null) || !await CheckOpeningHoursAsync())
         {
             return Page();
         }
@@ -140,7 +146,7 @@ public class ReservationManagementModel(
             return Page();
         }
 
-        if (!ValidateReservation(reservation))
+        if (!ValidateReservation(reservation) || !await CheckOpeningHoursAsync())
         {
             return Page();
         }
@@ -235,6 +241,11 @@ public class ReservationManagementModel(
         }
 
         var wasPending = !summary.HasTable;
+        // Seating a booking confirms it, so the customer sees "Confirmed" instead of waiting.
+        if (reservation.Status == ReservationStatus.Pending)
+        {
+            reservation.Status = ReservationStatus.Confirmed;
+        }
         reservation.ReservationTables.RemoveAll(link => !wanted.Contains(link.TableId));
         foreach (var tableId in wanted.Where(id => reservation.ReservationTables.All(link => link.TableId != id)))
         {
@@ -242,7 +253,7 @@ public class ReservationManagementModel(
             reservation.ReservationTables.Add(new ReservationTable { Id = Guid.NewGuid().ToString("N"), TableId = tableId });
         }
         await db.SaveChangesAsync();
-        StatusMessage = $"{label} is now at {TablesLabel(wanted)}" + (wasPending ? " and has moved to Upcoming." : ".");
+        StatusMessage = $"{label} is now at {TablesLabel(wanted)}" + (wasPending ? ", confirmed, and has moved to Upcoming." : ".");
         return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
     }
 
@@ -415,6 +426,33 @@ public class ReservationManagementModel(
         return ModelState.IsValid;
     }
 
+    // Warns once when the time is outside opening hours (or the restaurant is closed that day).
+    private async Task<bool> CheckOpeningHoursAsync()
+    {
+        var at = Input.ReservationAt.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+        if (OutsideHoursOkFor == at)
+        {
+            return true;
+        }
+
+        var hours = await OpeningHours.ForDateAsync(db, DateOnly.FromDateTime(Input.ReservationAt));
+        var time = TimeOnly.FromDateTime(Input.ReservationAt);
+        var warning = hours.IsClosed
+            ? $"The restaurant is closed on {Input.ReservationAt:dddd}s."
+            : time < hours.Open || time > hours.LastBooking
+                ? $"This is outside opening hours ({hours.Open.ToString("h:mm tt", CultureInfo.CurrentCulture)} – "
+                    + $"{hours.LastBooking.ToString("h:mm tt", CultureInfo.CurrentCulture)} for the last booking)."
+                : null;
+        if (warning is null)
+        {
+            return true;
+        }
+
+        OutsideHoursOkFor = at;
+        ModelState.AddModelError("Input.ReservationAt", warning + " Press Save again to keep this time.");
+        return false;
+    }
+
     private void ApplyInput(RestaurantReservation.Models.Reservation reservation)
     {
         reservation.ReservationTables.RemoveAll(link => !Input.TableIds.Contains(link.TableId));
@@ -429,6 +467,12 @@ public class ReservationManagementModel(
         reservation.Date = DateOnly.FromDateTime(Input.ReservationAt);
         reservation.TimeSlot = TimeOnly.FromDateTime(Input.ReservationAt);
         reservation.Notes = NormalizeOptional(Input.Notes);
+
+        // Seating a booking confirms it.
+        if (Input.TableIds.Count > 0 && reservation.Status == ReservationStatus.Pending)
+        {
+            reservation.Status = ReservationStatus.Confirmed;
+        }
     }
 
     private static string? NormalizeOptional(string? value) =>

@@ -50,7 +50,9 @@
                 <p class="subheading">Create, update, and cancel guest reservations.</p>
             </div>
             <div class="reservation-list-toolbar">
-                <form method="get" class="reservation-filter">
+                @* Pending bookings have no table yet, so filtering them by table would always show none. *@
+                <form method="get" class="reservation-filter" hidden="@(Model.Tab == "pending")">
+                    <input type="hidden" name="tab" value="@Model.Tab" />
                     <label for="tableFilter">Table</label>
                     <select id="tableFilter" name="tableId" onchange="this.form.submit()">
                         <option value="">All tables</option>
@@ -229,6 +231,7 @@
               hidden="@(Model.FormMode == "edit")">
             <input type="hidden" asp-for="FilterTableId" />
             <input type="hidden" asp-for="Tab" />
+            <input type="hidden" asp-for="OutsideHoursOkFor" />
             <div asp-validation-summary="All" class="validation-summary"></div>
 
             <fieldset class="table-choices">
@@ -279,6 +282,7 @@
             <input type="hidden" asp-for="ReservationId" />
             <input type="hidden" asp-for="FilterTableId" />
             <input type="hidden" asp-for="Tab" />
+            <input type="hidden" asp-for="OutsideHoursOkFor" />
             <div asp-validation-summary="All" class="validation-summary"></div>
 
             <fieldset class="table-choices">
