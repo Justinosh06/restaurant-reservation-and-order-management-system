@@ -187,7 +187,17 @@
                                     <input type="hidden" name="ReservationId" value="@reservation.Id" />
                                     <input type="hidden" name="FilterTableId" value="@Model.FilterTableId" />
                                     <input type="hidden" name="Tab" value="@Model.Tab" />
-                                    <button type="submit" class="danger"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+                                    @if (reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid)
+                                    {
+                                        <button type="button" class="danger" disabled title="This booking has a paid deposit. Cancel it to refund the deposit.">
+                                            <i class="fa-solid fa-trash" aria-hidden="true"></i> Delete
+                                            <small class="menu-hint">Cancel first to refund the deposit</small>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="danger"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+                                    }
                                 </form>
                             </div>
                         </details>

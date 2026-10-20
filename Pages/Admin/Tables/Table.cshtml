@@ -88,8 +88,9 @@
                             class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
-                            data-reservation-count="@Model.ReservationCounts.GetValueOrDefault(table.Id)"
-                            data-shared-count="@Model.SharedReservationCounts.GetValueOrDefault(table.Id)"
+                            data-unseat-count="@Model.UnseatCounts.GetValueOrDefault(table.Id)"
+                            data-shared-count="@Model.SharedCounts.GetValueOrDefault(table.Id)"
+                            data-seated-now="@(Model.SeatedNowTableIds.Contains(table.Id) ? "true" : "false")"
                             aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">

@@ -36,8 +36,9 @@ document.addEventListener("DOMContentLoaded", function () {
         manageLink.href =
             "/Admin/Reservations?tableId=" + encodeURIComponent(id);
         removeTableId.value = id;
-        removeTableId.dataset.reservationCount = table.dataset.reservationCount || "0";
+        removeTableId.dataset.unseatCount = table.dataset.unseatCount || "0";
         removeTableId.dataset.sharedCount = table.dataset.sharedCount || "0";
+        removeTableId.dataset.seatedNow = table.dataset.seatedNow || "false";
 
         let visibleCount = 0;
         reservationItems.forEach(function (item) {
@@ -115,13 +116,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     removeForm.addEventListener("submit", function (event) {
-        const count = Number(removeTableId.dataset.reservationCount);
+        if (removeTableId.dataset.seatedNow === "true") {
+            event.preventDefault();
+            window.alert("Guests are checked in at " + removeTableId.value
+                + " right now. Remove the table once they have left.");
+            return;
+        }
+
+        // Bookings are never deleted with a table; they only lose it.
+        const unseat = Number(removeTableId.dataset.unseatCount);
         const shared = Number(removeTableId.dataset.sharedCount);
-        let warning = count > 0
-            ? "\n\nThis also deletes its " + count + (count === 1 ? " reservation." : " reservations.")
-            : "";
+        let warning = "";
+        if (unseat > 0) {
+            warning += "\n\n" + unseat + (unseat === 1 ? " upcoming booking will go" : " upcoming bookings will go")
+                + " back to Pending so you can seat " + (unseat === 1 ? "it" : "them") + " elsewhere.";
+        }
         if (shared > 0) {
-            warning += "\n\n" + shared + (shared === 1 ? " reservation also uses" : " reservations also use")
+            warning += "\n\n" + shared + (shared === 1 ? " booking also uses" : " bookings also use")
                 + " other tables and will keep them.";
         }
         if (!window.confirm("Remove table " + removeTableId.value + " from the floor plan?" + warning)) {

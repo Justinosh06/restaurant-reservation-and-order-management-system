@@ -1935,3 +1935,21 @@ body:has(.service-app) {
     color: #3a63b8;
     font-size: 12px;
 }
+
+/* A menu action that isn't allowed for this booking (e.g. Delete with a paid deposit). */
+.booking-menu-list button:disabled {
+    flex-wrap: wrap;
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+.booking-menu-list button:disabled:hover {
+    background: transparent;
+}
+
+.menu-hint {
+    flex-basis: 100%;
+    padding-left: 24px;
+    color: var(--muted);
+    font-size: 11px;
+}

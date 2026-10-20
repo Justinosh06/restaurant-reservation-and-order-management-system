@@ -23,12 +23,15 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
 
     public string? SelectedTableId { get; private set; }
 
-    // Reservations (any status) that would be deleted with each table because it is their only table,
-    // so staff are warned before removing a booked table.
-    public Dictionary<string, int> ReservationCounts { get; private set; } = [];
+    // For each table, the upcoming bookings it is the only table of: removing the table sends them
+    // back to Pending (they are never deleted), so staff are told before they confirm.
+    public Dictionary<string, int> UnseatCounts { get; private set; } = [];
 
-    // Reservations that also use other tables; removing the table only takes it off them.
-    public Dictionary<string, int> SharedReservationCounts { get; private set; } = [];
+    // Upcoming bookings that also use other tables; removing the table only takes it off them.
+    public Dictionary<string, int> SharedCounts { get; private set; } = [];
+
+    // Tables with guests checked in right now; these can't be removed until the guests have left.
+    public HashSet<string> SeatedNowTableIds { get; private set; } = [];
 
     // Upcoming bookings that already have a table, soonest first, for the check-in sidebar.
     // Assigning tables happens on Reservation Management's Pending tab.
@@ -58,22 +61,22 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
             .ToListAsync();
         Reservations = reservations.Select(ReservationSummary.From).ToList();
 
-        var links = await db.ReservationTables.AsNoTracking()
-            .Select(link => new { link.TableId, link.ReservationId })
-            .ToListAsync();
-        var tablesPerReservation = links
-            .GroupBy(link => link.ReservationId)
-            .ToDictionary(group => group.Key, group => group.Count());
-        ReservationCounts = links
-            .Where(link => tablesPerReservation[link.ReservationId] == 1)
-            .GroupBy(link => link.TableId)
-            .ToDictionary(group => group.Key, group => group.Count());
-        SharedReservationCounts = links
-            .Where(link => tablesPerReservation[link.ReservationId] > 1)
-            .GroupBy(link => link.TableId)
-            .ToDictionary(group => group.Key, group => group.Count());
-
         var now = DateTime.Now;
+        var upcoming = Reservations.Where(reservation => reservation.EndsAt > now).ToList();
+        UnseatCounts = upcoming
+            .Where(reservation => reservation.TableIds.Count == 1)
+            .GroupBy(reservation => reservation.TableIds[0])
+            .ToDictionary(group => group.Key, group => group.Count());
+        SharedCounts = upcoming
+            .Where(reservation => reservation.TableIds.Count > 1)
+            .SelectMany(reservation => reservation.TableIds)
+            .GroupBy(tableId => tableId)
+            .ToDictionary(group => group.Key, group => group.Count());
+        SeatedNowTableIds = upcoming
+            .Where(reservation => reservation.Status == ReservationStatus.CheckedIn)
+            .SelectMany(reservation => reservation.TableIds)
+            .ToHashSet();
+
         Queue = Reservations
             .Where(reservation => reservation.HasTable && reservation.EndsAt > now)
             .OrderBy(reservation => reservation.ReservationAt)
@@ -119,26 +122,40 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
             return RedirectToPage();
         }
 
-        // A reservation with only this table is removed with it (staff confirm this first);
-        // one spread over several tables keeps its other tables.
+        // Bookings are never deleted with a table: each one just loses this table. Upcoming bookings
+        // that had no other table go back to Pending so staff can seat them elsewhere.
         var reservations = await db.Reservations
+            .Include(reservation => reservation.Customer)
             .Include(reservation => reservation.ReservationTables)
             .Where(reservation => reservation.ReservationTables.Any(link => link.TableId == table.Id))
             .ToListAsync();
-        var deleted = reservations.Where(reservation => reservation.ReservationTables.Count == 1).ToList();
-        db.Reservations.RemoveRange(deleted);
+        var now = DateTime.Now;
+        var upcoming = reservations
+            .Select(ReservationSummary.From)
+            .Where(summary => summary.EndsAt > now
+                && summary.Status != ReservationStatus.Cancelled
+                && summary.Status != ReservationStatus.Completed)
+            .ToList();
+
+        var seated = upcoming.FirstOrDefault(summary => summary.Status == ReservationStatus.CheckedIn);
+        if (seated is not null)
+        {
+            StatusMessage = $"{seated.CustomerName} is checked in at table {table.Id} right now. "
+                + "Remove the table once they have left, or undo the check-in if it was a mistake.";
+            return RedirectToPage();
+        }
+
         db.ReservationTables.RemoveRange(reservations
-            .Except(deleted)
             .SelectMany(reservation => reservation.ReservationTables)
             .Where(link => link.TableId == table.Id));
         db.Tables.Remove(table);
         await db.SaveChangesAsync();
 
-        var shared = reservations.Count - deleted.Count;
-        StatusMessage = $"Table {table.Id} removed"
-            + (deleted.Count == 0 ? "" : $" with its {deleted.Count} reservation{(deleted.Count == 1 ? "" : "s")}")
-            + (shared == 0 ? "" : $"; {shared} reservation{(shared == 1 ? " keeps its" : "s keep their")} other tables")
-            + ".";
+        var backToPending = upcoming.Count(summary => summary.TableIds.Count == 1);
+        var shared = upcoming.Count - backToPending;
+        StatusMessage = $"Table {table.Id} removed."
+            + (backToPending == 0 ? "" : $" {backToPending} upcoming booking{(backToPending == 1 ? " is" : "s are")} back in Pending — seat {(backToPending == 1 ? "it" : "them")} on Reservation Management.")
+            + (shared == 0 ? "" : $" {shared} booking{(shared == 1 ? " keeps its" : "s keep their")} other tables.");
         return RedirectToPage();
     }
 

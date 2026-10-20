@@ -155,7 +155,12 @@ public class ReservationManagementModel(
     public async Task<IActionResult> OnPostDeleteAsync()
     {
         var reservation = ReservationId is null ? null : await db.Reservations.FindAsync(ReservationId);
-        if (reservation is not null)
+        if (reservation is { DepositStatus: DepositStatus.Paid })
+        {
+            // Deleting would keep the customer's money with no booking; Cancel refunds it first.
+            StatusMessage = "This booking has a paid deposit, so it can't be deleted. Cancel it instead — the deposit is refunded automatically.";
+        }
+        else if (reservation is not null)
         {
             db.Reservations.Remove(reservation);
             await db.SaveChangesAsync();
