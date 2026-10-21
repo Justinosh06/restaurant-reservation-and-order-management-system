@@ -7,6 +7,9 @@
 
 <link rel="stylesheet" href="~/css/table_page.css" asp-append-version="true" />
 
+@* Today's promotions pop up once per browser tab. *@
+<partial name="_PromotionPopup" />
+
 @if (!Model.HasActiveSession)
 {
     <main class="dining-session-start">

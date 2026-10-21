@@ -1073,22 +1073,144 @@ body:has(.landing) {
 
         .location-info {
             align-self: start;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+
+            .section-title {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Address, Phone and Opening hours: icon on the left, small grey label, then the value in bold. */
+        .info-block {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .info-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #DFDFE1;
+            font-size: 1.05rem;
+        }
+
+        .info-label {
+            margin: 0 0 4px;
+            color: #666666;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            margin: 0;
+            color: black;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            overflow-wrap: anywhere;
+        }
+
+        a.info-value:hover {
+            text-decoration: underline;
         }
 
         .address {
-            margin-bottom: 12px;
+            white-space: pre-line;
         }
 
+        .hours-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px 12px;
+            margin-bottom: 8px;
+
+            .info-label {
+                margin: 0;
+            }
+        }
+
+        .open-status {
+            padding: 2px 10px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .open-status.open {
+            color: var(--primary-color);
+            background: var(--secondary-color);
+        }
+
+        .open-status.closed {
+            color: #666666;
+            background: #DFDFE1;
+        }
+
+        /* Monday to Sunday; today's row is white and bold. */
         .hours-list {
             list-style: none;
             margin: 0;
             padding: 0;
 
+            /* On narrow screens the time drops under the day instead of running off the edge. */
             li {
                 display: flex;
+                flex-wrap: wrap;
                 justify-content: space-between;
-                gap: 16px;
-                padding: 2px 0;
+                gap: 2px 16px;
+                padding: 7px 10px;
+                border-radius: 8px;
+                color: #444444;
+            }
+
+            li + li {
+                border-top: 1px solid #DFDFE1;
+            }
+
+            li.today {
+                border-color: transparent;
+                background: white;
+                color: black;
+                font-weight: 600;
+            }
+
+            li.today + li {
+                border-top-color: transparent;
+            }
+
+            .day {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .today-tag {
+                padding: 0 8px;
+                border-radius: 100px;
+                background: black;
+                color: white;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+
+            .time {
+                margin-left: auto;
+                white-space: nowrap;
+            }
+
+            .time.closed {
+                color: #B3261E;
             }
         }
 

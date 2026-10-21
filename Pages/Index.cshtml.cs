@@ -41,7 +41,8 @@ public class IndexModel : PageModel
         {
             RestaurantName = Settings.Name;
             Currency = Settings.DefaultCurrency;
-            OpeningHours = Settings.BusinessHours.OrderBy(h => h.DayOfWeek).ToList();
+            // Monday first, Sunday last (DayOfWeek counts Sunday as 0).
+            OpeningHours = Settings.BusinessHours.OrderBy(h => ((int)h.DayOfWeek + 6) % 7).ToList();
         }
 
         var available = _db.MenuItems.AsNoTracking().Where(m => m.Availability);
