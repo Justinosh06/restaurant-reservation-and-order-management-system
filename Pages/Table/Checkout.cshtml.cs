@@ -45,6 +45,7 @@ public class CheckoutModel : PageModel
     }
 
     public string TableId { get; private set; } = string.Empty;
+    public bool IsCustomerBound { get; private set; }
     public List<SessionOrderViewModel> SessionOrders { get; private set; } = [];
     public decimal TotalAmount => SessionOrders
         .Where(order => order.IsPayable)
@@ -63,6 +64,7 @@ public class CheckoutModel : PageModel
             return session.Result;
         }
 
+        IsCustomerBound = session.Session!.CustomerId is not null;
         await LoadSessionOrdersAsync(session.Session!.Id);
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(session.Session.Id);
         return Page();

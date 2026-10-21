@@ -56,12 +56,25 @@
                     .thumbnail-container {
                         height: 100%;
                         aspect-ratio: 1/1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
 
                         .thumbnail-img {
                             height: 100%;
                             width: 100%;
                             object-fit: contain;
                         }
+
+                        .icon {
+                            font-size: 2rem;
+                            color: #cccccc;
+                        }
+                    }
+
+                    .right-container {
+                        display: flex;
+                        width: 100%;
                     }
 
                     .info-container {
@@ -234,11 +247,19 @@
                 .thumbnail-container {
                     width: 100%;
                     height: 80%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
                     .thumbnail-img {
                         width: 100%;
                         height: 100%;
                         object-fit: contain;
+                    }
+
+                    .icon {
+                        font-size: 2.4rem;
+                        color: #cccccc;
                     }
                 }
 
@@ -287,8 +308,14 @@
                 flex: none;
                 height: 100%;
                 .cart-column {
+                    margin-bottom: 20px;
+
                     .item-card {
                         height: 160px;
+
+                        .right-container {
+                            flex-direction: column;
+                        }
 
                         .info-container {
                             .top-section {
@@ -300,6 +327,11 @@
                                     display: none;
                                 }
                             }
+                        }
+
+                        .quantity-wrapper {
+                            margin-left: 0;
+                            margin-top: 8px;
                         }
                     }
                 }
