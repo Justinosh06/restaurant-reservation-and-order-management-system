@@ -27,7 +27,8 @@
     </div>
     <div>
         <dt>Table</dt>
-        <dd>@(string.IsNullOrEmpty(Model.TableId) ? "Not assigned yet" : $"Table {Model.TableId}")</dd>
+        @{ var tableIds = Model.ReservationTables.Select(link => link.TableId).OrderBy(id => id.Length).ThenBy(id => id).ToList(); }
+        <dd>@(tableIds.Count == 0 ? "Not assigned yet" : (tableIds.Count == 1 ? "Table " : "Tables ") + string.Join(" + ", tableIds))</dd>
     </div>
     <div>
         <dt>Contact</dt>

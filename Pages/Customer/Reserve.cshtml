@@ -1,0 +1,148 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ReserveModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Book a table";
+    var selectedDate = Model.Input.Date == default ? "" : Model.Input.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    var selectedTime = Model.Input.Time == default ? "" : Model.Input.Time.ToString("HH:mm", CultureInfo.InvariantCulture);
+}
+
+<link rel="stylesheet" href="~/css/reserve.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/confirm-dialog.css" asp-append-version="true" />
+
+<div class="reserve-page">
+    <div class="reserve-heading">
+        <div>
+            <h1>Book a table</h1>
+            <p>Pick a day and a time, then pay a RM@(ReserveModel.Deposit.ToString("0")) deposit to hold your table.</p>
+        </div>
+        <a asp-page="/Customer/Reservations" class="reserve-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to reservations</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="reserve-success" role="status">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+            <span>@Model.StatusMessage</span>
+        </div>
+    }
+
+    <form method="post" id="reserveForm"
+          data-today="@Model.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+          data-first-day="@Model.FirstDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+          data-last-day="@Model.LastDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+          data-closed-days="@string.Join(' ', Model.ClosedDays)">
+        <div asp-validation-summary="All" class="reserve-errors"></div>
+        <input type="hidden" asp-for="Input.Date" id="dateInput" value="@selectedDate" />
+        <input type="hidden" asp-for="Input.Time" id="timeInput" value="@selectedTime" />
+
+        <div class="summary-cards">
+            <div class="summary-card">
+                <span class="summary-icon guests" aria-hidden="true"><i class="fa-solid fa-user-group"></i></span>
+                <div>
+                    <span class="summary-label" id="guestsLabel">Guests</span>
+                    <div class="guest-stepper" role="group" aria-labelledby="guestsLabel">
+                        <button type="button" id="guestsDown" aria-label="Fewer guests">−</button>
+                        <input asp-for="Input.Guests" id="guestsInput" type="number" min="1" max="@ReserveModel.MaxPartySize" inputmode="numeric" />
+                        <button type="button" id="guestsUp" aria-label="More guests">+</button>
+                    </div>
+                    <span class="summary-hint">Up to @ReserveModel.MaxPartySize people</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <span class="summary-icon date" aria-hidden="true"><i class="fa-solid fa-calendar-days"></i></span>
+                <div>
+                    <span class="summary-label">Date</span>
+                    <strong class="summary-value" id="dateValue">—</strong>
+                    <span class="summary-hint">Book at least @ReserveModel.MinDaysAhead days ahead</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <span class="summary-icon time" aria-hidden="true"><i class="fa-solid fa-clock"></i></span>
+                <div>
+                    <span class="summary-label">Time</span>
+                    <strong class="summary-value" id="timeValue">—</strong>
+                    <span class="summary-hint">Your table is held for 2 hours</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="booker">
+            <section class="board-panel" aria-label="Choose a date">
+                <div class="panel-head">
+                    <h2 id="monthLabel"></h2>
+                    <div class="calendar-nav">
+                        <button type="button" id="prevMonth" aria-label="Previous month">‹</button>
+                        <button type="button" id="nextMonth" aria-label="Next month">›</button>
+                    </div>
+                </div>
+                <div class="panel-card">
+                    <div class="calendar-weekdays" aria-hidden="true">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+            </section>
+
+            <section class="board-panel" aria-labelledby="dayLabel">
+                <div class="panel-head">
+                    <h2><span id="dayLabel">Times</span> <span class="count-badge" id="slotCount">0</span></h2>
+                    <div class="clock-toggle" role="group" aria-label="Time format">
+                        <button type="button" data-clock="12" class="active">12h</button>
+                        <button type="button" data-clock="24">24h</button>
+                    </div>
+                </div>
+                <div class="time-list" id="timeList" aria-live="polite"></div>
+            </section>
+        </div>
+
+        <div class="reserve-bottom">
+            <div class="notes-field">
+                <label for="notesInput">Notes <span>optional</span></label>
+                <textarea asp-for="Input.Notes" id="notesInput" rows="2" maxlength="500" placeholder="Allergies, birthday, high chair…"></textarea>
+            </div>
+            <div class="reserve-footer">
+                <span id="summary">Choose a date and time.</span>
+                <button type="submit" id="bookButton" disabled><i class="fa-brands fa-cc-stripe" aria-hidden="true"></i> Pay RM@(ReserveModel.Deposit.ToString("0")) deposit</button>
+                <span class="deposit-note">Secure payment by Stripe. Refunded if you cancel by the day before.</span>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.Upcoming.Count > 0)
+    {
+        <section class="board-panel my-bookings" aria-labelledby="myBookingsTitle">
+            <div class="panel-head">
+                <h2><span id="myBookingsTitle">Your upcoming bookings</span> <span class="count-badge">@Model.Upcoming.Count</span></h2>
+                <span class="panel-note">You can cancel up to the day before.</span>
+            </div>
+            <div class="booking-list">
+                @foreach (var booking in Model.Upcoming)
+                {
+                    var confirmed = booking.Status is RestaurantReservation.Models.ReservationStatus.Confirmed or RestaurantReservation.Models.ReservationStatus.CheckedIn;
+                    <article>
+                        <i class="fa-solid @(confirmed ? "fa-circle-check" : "fa-hourglass-half") booking-icon @(confirmed ? "confirmed" : "pending")" aria-hidden="true"></i>
+                        <strong>@booking.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</strong>
+                        <span class="booking-meta">
+                            @booking.PartySize @(booking.PartySize == 1 ? "guest" : "guests") · @(confirmed ? "Confirmed" : "Waiting for confirmation")@(booking.DepositLabel is null ? "" : $" · {booking.DepositLabel}")
+                        </span>
+                        @if (Model.CanCancel(booking))
+                        {
+                            <form method="post" asp-page-handler="Cancel" class="cancel-booking-form">
+                                <input type="hidden" name="reservationId" value="@booking.Id" />
+                                <button type="submit" class="cancel-booking">Cancel</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="cancel-closed" title="Bookings can only be cancelled up to the day before.">Today</span>
+                        }
+                    </article>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+<script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
+<script src="~/js/reserve.js" asp-append-version="true"></script>

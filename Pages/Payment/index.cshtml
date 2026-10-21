@@ -70,7 +70,14 @@
                 <div class="btn-container">
                     @if (!Model.ShowRetryButton && !Model.ShowRefreshButton)
                     {
-                        <a class="back-btn" asp-page="/Table/Index" asp-route-tableId="@Model.TableId">Back to Table</a>
+                        @if (Model.BackUrl is not null)
+                        {
+                            <a class="back-btn" href="@Model.BackUrl">@Model.BackLabel</a>
+                        }
+                        else
+                        {
+                            <a class="back-btn" asp-page="/Table/Index" asp-route-tableId="@Model.TableId">Back to Table</a>
+                        }
                     }
                     @if (Model.ShowReceiptButton)
                     {
@@ -78,7 +85,14 @@
                     }
                     @if (Model.ShowRetryButton)
                     {
-                        <button type="button" class="retry-btn">Retry</button>
+                        @if (Model.RetryUrl is not null)
+                        {
+                            <a class="retry-btn" href="@Model.RetryUrl">Retry</a>
+                        }
+                        else
+                        {
+                            <button type="button" class="retry-btn">Retry</button>
+                        }
                     }
                     @if (Model.ShowRefreshButton)
                     {
