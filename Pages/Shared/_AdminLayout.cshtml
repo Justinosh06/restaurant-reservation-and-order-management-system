@@ -12,6 +12,9 @@
     var navGroups = await NavService.GetNavGroupsForUserAsync(User);
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
     var currency = await Currency.GetAsync();
+    var avatarGender = string.Equals(User.FindFirst("gender")?.Value, "Female", StringComparison.OrdinalIgnoreCase)
+        ? "female"
+        : "male";
 }
 
 <!DOCTYPE html>
@@ -62,8 +65,8 @@
 
             <div class="footer dropup">
                 <button type="button" class="profile-btn w-100 text-start" data-bs-toggle="dropdown" aria-expanded="false">
-                    <div class="avatar male">
-                        <img class="avatar-img" src="~/images/avatar.svg" />
+                    <div class="avatar @avatarGender">
+                        <img class="avatar-img" src="~/images/avatar-@(avatarGender).png" />
                     </div>
                     <div class="right-container">
                         <h4 class="name">@(User.IsInRole("Administrator") ? "Administrator" : "Staff")</h4>

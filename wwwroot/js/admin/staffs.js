@@ -33,6 +33,7 @@
     const staffCard = (s) => {
         const color = ROLE_COLORS[s.role] ?? "secondary";
         const avatar = GENDER_AVATARS[s.gender] ?? NO_GENDER_AVATAR;
+        const avatarImage = s.gender === "Female" ? "female" : "male";
         const email = AdminUI.escapeHtml(s.email);
         const gender = s.gender
             ? AdminUI.escapeHtml(s.gender)
@@ -59,7 +60,7 @@
 
                         <div class="text-center my-3">
                             <span class="d-inline-block rounded-circle bg-${avatar.color}-subtle text-${avatar.color}-emphasis fs-4 p-3">
-                                <i class="fa-solid ${avatar.icon} fa-fw"></i>
+                                <img class="avatar-img" style="width: 50px;" src="/images/avatar-${avatarImage}.png" alt="" />
                             </span>
                             <div class="fw-semibold mt-2 text-truncate" title="${email}">${email}</div>
                             <div class="small text-body-secondary">${AdminUI.escapeHtml(s.role)}</div>
