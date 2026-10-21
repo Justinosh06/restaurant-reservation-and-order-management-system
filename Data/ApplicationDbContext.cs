@@ -123,11 +123,13 @@ namespace RestaurantReservation.Data
                 entity.Property(r => r.Status)
                       .HasConversion<string>()
                       .HasMaxLength(20);
+                entity.Property(r => r.DepositStatus)
+                      .HasConversion<string>()
+                      .HasMaxLength(20);
 
-                entity.HasOne(r => r.Table)
-                      .WithMany()
-                      .HasForeignKey(r => r.TableId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                // A booking whose deposit is still unpaid is not a real booking yet, so every query
+                // skips it. The customer booking page reads them with IgnoreQueryFilters().
+                entity.HasQueryFilter(r => r.DepositStatus != DepositStatus.Unpaid);
 
                 entity.HasOne(r => r.Customer)
                       .WithMany()
@@ -142,9 +144,12 @@ namespace RestaurantReservation.Data
             {
                 entity.HasKey(rt => rt.Id);
 
-                // Foreign Key to Reservation
+                // Matches the Reservation filter above so links never point at a hidden booking.
+                entity.HasQueryFilter(rt => rt.Reservation!.DepositStatus != DepositStatus.Unpaid);
+
+                // Foreign Key to Reservation (a large party can take several tables)
                 entity.HasOne(rt => rt.Reservation)
-                    .WithMany() // Or .WithMany(r => r.ReservationTables) if navigation collection exists on Reservation
+                    .WithMany(r => r.ReservationTables)
                     .HasForeignKey(rt => rt.ReservationId)
                     .OnDelete(DeleteBehavior.Cascade);
 

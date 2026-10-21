@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="~/css/avatar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin_layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/confirm-dialog.css" asp-append-version="true" />
 </head>
 <body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()">
     @Html.AntiForgeryToken()
@@ -94,6 +95,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
     <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
     
     @await RenderSectionAsync("Scripts", required: false)
