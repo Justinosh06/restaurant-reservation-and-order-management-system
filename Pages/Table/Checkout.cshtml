@@ -6,6 +6,32 @@
 
 <link rel="stylesheet" href="~/css/checkout_page.css" asp-append-version="true">
 
+@if (User.Identity?.IsAuthenticated != true && !Model.IsCustomerBound)
+{
+    <div class="modal fade checkout-choice-modal" id="checkoutChoiceModal" tabindex="-1"
+         aria-labelledby="checkoutChoiceModalLabel" aria-hidden="true"
+         data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <h2 class="modal-title" id="checkoutChoiceModalLabel">Ready to check out?</h2>
+                    <p>Continue as a guest, or log in to your account before checkout.</p>
+                    <div class="checkout-choice-actions">
+                        <button type="button" class="checkout-choice-guest" data-bs-dismiss="modal">
+                            Continue as guest
+                        </button>
+                        <a class="checkout-choice-login"
+                           asp-page="/Login"
+                           asp-route-returnUrl="@($"/Table/{Model.TableId}/Checkout")">
+                            Log in
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="checkout-container">
     <h2 class="section-title">Your Orders</h2>
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
@@ -44,8 +70,10 @@
                                         <span class="order-item-remark">@item.Remark</span>
                                     }
                                 </div>
+
                                 <span class="order-item-price">RM @((item.UnitPrice * item.Quantity).ToString("F2"))</span>
                             </div>
+
                             <span class="order-item-quantity">Quantity: @item.Quantity</span>
                         </div>
                     }
@@ -71,3 +99,12 @@
         </form>
     }
 </div>
+
+@if (User.Identity?.IsAuthenticated != true && !Model.IsCustomerBound)
+{
+    @section Scripts {
+        <script>
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("checkoutChoiceModal")).show();
+        </script>
+    }
+}

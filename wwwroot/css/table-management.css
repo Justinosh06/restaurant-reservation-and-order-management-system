@@ -1097,6 +1097,7 @@ body:has(.service-app) {
     overflow: hidden;
     border: 1px solid #e9eae6;
     border-radius: 15px;
+    padding: 0 4px 4px 4px;
     background: #fff;
     box-shadow: 0 10px 35px rgb(32 40 32 / 3%);
 }
@@ -1198,6 +1199,7 @@ body:has(.service-app) {
     color: var(--muted);
     font-size: 12px;
     text-align: center;
+    height: 100%;
 }
 
 .queue-empty strong {

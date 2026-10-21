@@ -187,6 +187,9 @@
             flex-direction: column;
 
             .thumbnail-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 flex-shrink: 0;
                 width: 100%;
                 aspect-ratio: 1/1;
@@ -196,6 +199,11 @@
                     width: 100%;
                     height: 100%;
                     object-fit: contain;
+                }
+
+                .icon {
+                    color: #cccccc;
+                    font-size: 2.2rem;
                 }
             }
 

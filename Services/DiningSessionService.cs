@@ -63,4 +63,39 @@ public sealed class DiningSessionService
             throw;
         }
     }
+
+    public async Task<bool> EndSessionAsync(string tableId)
+    {
+        var session = await _db.Sessions
+            .Include(session => session.Orders)
+            .SingleOrDefaultAsync(session => session.TableId == tableId && session.EndingTime == null);
+
+        if (session is null)
+        {
+            return false;
+        }
+
+        var hasActiveOrders = session.Orders.Any(order =>
+            order.Status != OrderStatus.Cancelled &&
+            order.Status != OrderStatus.Completed);
+
+        if (hasActiveOrders)
+        {
+            return false;
+        }
+
+        session.EndingTime = DateTime.UtcNow;
+
+        var cartItems = await _db.CartItems
+            .Where(item => item.SessionId == session.Id)
+            .ToListAsync();
+
+        if (cartItems.Count > 0)
+        {
+            _db.CartItems.RemoveRange(cartItems);
+        }
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
 }

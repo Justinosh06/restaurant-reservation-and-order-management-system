@@ -10,7 +10,10 @@ using DiningTable = RestaurantReservation.Models.Table;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 
-public class TableManagementModel(ApplicationDbContext db, IConfiguration configuration) : PageModel
+public class TableManagementModel(
+    ApplicationDbContext db,
+    IConfiguration configuration,
+    RestaurantReservation.Services.DiningSessionService diningSessions) : PageModel
 {
     // Table sizes staff can add. Chairs are drawn half above and half below the table.
     public static readonly int[] SeatOptions = [2, 4, 6];
@@ -34,6 +37,8 @@ public class TableManagementModel(ApplicationDbContext db, IConfiguration config
     // Tables with guests checked in right now; these can't be removed until the guests have left.
     public HashSet<string> SeatedNowTableIds { get; private set; } = [];
 
+    public Dictionary<string, RestaurantReservation.Models.Session> ActiveSessions { get; private set; } = [];
+
     // Upcoming bookings that already have a table, soonest first, for the check-in sidebar.
     // Assigning tables happens on Reservation Management's Pending tab.
     public List<ReservationSummary> Queue { get; private set; } = [];
@@ -53,6 +58,12 @@ public class TableManagementModel(ApplicationDbContext db, IConfiguration config
     public async Task OnGetAsync(string? tableId)
     {
         Tables = await LoadTablesAsync();
+
+        var activeSessions = await db.Sessions.AsNoTracking()
+            .Include(session => session.Customer)
+            .Where(session => session.EndingTime == null)
+            .ToListAsync();
+        ActiveSessions = activeSessions.ToDictionary(session => session.TableId, StringComparer.Ordinal);
 
         var reservations = await db.Reservations.AsNoTracking()
             .Include(reservation => reservation.Customer)
@@ -76,6 +87,7 @@ public class TableManagementModel(ApplicationDbContext db, IConfiguration config
         SeatedNowTableIds = upcoming
             .Where(reservation => reservation.Status == ReservationStatus.CheckedIn)
             .SelectMany(reservation => reservation.TableIds)
+            .Concat(ActiveSessions.Keys)
             .ToHashSet();
 
         Queue = Reservations
@@ -123,6 +135,12 @@ public class TableManagementModel(ApplicationDbContext db, IConfiguration config
             return RedirectToPage();
         }
 
+        if (await db.Sessions.AnyAsync(session => session.TableId == table.Id && session.EndingTime == null))
+        {
+            StatusMessage = $"Table {table.Id} has an active dining session. It can't be removed until the session is paid and closed.";
+            return RedirectToPage();
+        }
+
         // Bookings are never deleted with a table: each one just loses this table. Upcoming bookings
         // that had no other table go back to Pending so staff can seat them elsewhere.
         var reservations = await db.Reservations
@@ -160,6 +178,28 @@ public class TableManagementModel(ApplicationDbContext db, IConfiguration config
         return RedirectToPage();
     }
 
+    public async Task<IActionResult> OnPostEndSessionAsync(string? tableId)
+    {
+        if (string.IsNullOrWhiteSpace(tableId))
+        {
+            StatusMessage = "Select a valid table.";
+            return RedirectToPage();
+        }
+
+        var table = await db.Tables.FindAsync(tableId);
+        if (table is null)
+        {
+            StatusMessage = "That table no longer exists.";
+            return RedirectToPage();
+        }
+
+        var ended = await diningSessions.EndSessionAsync(table.Id);
+        StatusMessage = ended
+            ? $"The dining session at table {table.Id} has ended."
+            : $"The dining session at table {table.Id} could not be ended. It may already be closed or still have orders in progress.";
+        return RedirectToPage();
+    }
+
     // Marks the guests as arrived. Their tables show as Checked in until the booking's slot ends.
     public async Task<IActionResult> OnPostCheckInAsync(string? reservationId)
     {
@@ -186,30 +226,53 @@ public class TableManagementModel(ApplicationDbContext db, IConfiguration config
             return RedirectToPage();
         }
 
-        reservation.Status = ReservationStatus.CheckedIn;
-        reservation.CheckedInAt = DateTime.UtcNow;
-        await db.SaveChangesAsync();
-        StatusMessage = $"{summary.CustomerName} ({summary.PartySize} guests) checked in at {summary.TableLabel}.";
-        return RedirectToPage();
-    }
+        var tableIds = reservation.ReservationTables
+            .Select(link => link.TableId)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var activeSessions = await db.Sessions
+            .Include(session => session.Orders)
+            .Where(session => tableIds.Contains(session.TableId) && session.EndingTime == null)
+            .ToListAsync();
 
-    // The guests have left: the booking is Completed and its tables are free again.
-    public async Task<IActionResult> OnPostCheckOutAsync(string? reservationId)
-    {
-        var reservation = await FindReservationAsync(reservationId);
-        if (reservation is not { Status: ReservationStatus.CheckedIn })
+        if (reservation.CustomerId is not null &&
+            activeSessions.Any(session =>
+                session.CustomerId is not null &&
+                session.CustomerId != reservation.CustomerId))
         {
-            StatusMessage = "That reservation isn't checked in.";
+            StatusMessage = $"A table assigned to {summary.CustomerName} already has an active dining session for another customer.";
             return RedirectToPage();
         }
 
-        var summary = ReservationSummary.From(reservation);
-        var stayed = reservation.CheckedInAt is { } since ? DateTime.UtcNow - since : (TimeSpan?)null;
-        reservation.Status = ReservationStatus.Completed;
+        var now = DateTime.UtcNow;
+        foreach (var tableId in tableIds)
+        {
+            var activeSession = activeSessions.FirstOrDefault(session => session.TableId == tableId);
+            if (activeSession is null)
+            {
+                db.Sessions.Add(new RestaurantReservation.Models.Session
+                {
+                    TableId = tableId,
+                    CustomerId = reservation.CustomerId,
+                    StartingTime = now
+                });
+                continue;
+            }
+
+            if (reservation.CustomerId is not null && activeSession.CustomerId is null)
+            {
+                activeSession.CustomerId = reservation.CustomerId;
+                foreach (var order in activeSession.Orders)
+                {
+                    order.CustomerId = reservation.CustomerId;
+                }
+            }
+        }
+
+        reservation.Status = ReservationStatus.CheckedIn;
+        reservation.CheckedInAt = now;
         await db.SaveChangesAsync();
-        StatusMessage = $"{summary.CustomerName} checked out"
-            + (stayed is { } time ? $" after {(int)time.TotalHours}:{time.Minutes:00}" : "")
-            + $". {(summary.TableIds.Count == 1 ? "Table" : "Tables")} {summary.TableLabel} {(summary.TableIds.Count == 1 ? "is" : "are")} free.";
+        StatusMessage = $"{summary.CustomerName} ({summary.PartySize} guests) checked in at {summary.TableLabel}.";
         return RedirectToPage();
     }
 

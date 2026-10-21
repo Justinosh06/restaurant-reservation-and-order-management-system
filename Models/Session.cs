@@ -21,6 +21,11 @@ namespace RestaurantReservation.Models
         [ForeignKey(nameof(TableId))]
         public Table? Table { get; set; }
 
+        public string? CustomerId { get; set; }
+
+        [ForeignKey(nameof(CustomerId))]
+        public Customer? Customer { get; set; }
+
         public ICollection<Order> Orders { get; set; } = new List<Order>();
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
