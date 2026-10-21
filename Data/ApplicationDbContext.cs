@@ -173,6 +173,11 @@ namespace RestaurantReservation.Data
                       .WithMany()
                       .HasForeignKey(s => s.TableId)
                       .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(s => s.Customer)
+                      .WithMany()
+                      .HasForeignKey(s => s.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
                 entity.HasIndex(s => s.TableId)
                       .IsUnique()
                       .HasFilter("[TableId] IS NOT NULL AND [EndingTime] IS NULL");

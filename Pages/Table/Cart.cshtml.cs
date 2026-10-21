@@ -135,6 +135,7 @@ public class CartModel : PageModel
         var order = new Order
         {
             SessionId = session.Session!.Id,
+            CustomerId = session.Session.CustomerId,
             TotalAmount = (int)totalAmount,
             Status = OrderStatus.InQueue,
             CreatedAt = DateTime.UtcNow,
