@@ -257,7 +257,7 @@
     });
 
     const deletePromotion = async (button) => {
-        if (!confirm("Delete this promotion?")) return;
+        if (!(await AppDialog.confirm({ title: "Delete this promotion?", message: "This can't be undone.", confirmText: "Delete", cancelText: "Keep it", danger: true, icon: "fa-trash" }))) return;
 
         AdminUI.setBusy(button, true);
         try {

@@ -32,6 +32,7 @@ public class ReservationsModel : PageModel
         return db.Reservations
             .AsNoTracking()
             .Include(r => r.Customer)
+            .Include(r => r.ReservationTables)
             .Where(r => r.CustomerId == customerId
                 && (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed)
                 && (r.Date > today || (r.Date == today && r.TimeSlot >= now)))

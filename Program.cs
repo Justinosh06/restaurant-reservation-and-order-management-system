@@ -105,6 +105,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin/Settings", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
 });
+// Custom subdomain route provider. Register once: a second copy maps Admin/Index to "/" twice.
 builder.Services.AddSingleton<IPageRouteModelProvider>(new AdminDomainPageRouteProvider(SiteHosts.AdminSubdomain));
 
 var app = builder.Build();
