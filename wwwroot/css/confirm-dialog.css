@@ -22,7 +22,7 @@
     background: #fff;
     box-shadow: 0 24px 60px rgb(24 30 24 / 22%);
     color: #252723;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     text-align: center;
     transform: translateY(6px) scale(.98);
     transition: transform .15s ease;
@@ -39,8 +39,8 @@
     margin-bottom: 12px;
     place-items: center;
     border-radius: 50%;
-    background: #e7f2eb;
-    color: #276c4b;
+    background: #f1f3f5;
+    color: #212529;
     font-size: 19px;
 }
 
@@ -71,10 +71,10 @@
 
 .app-dialog-actions button {
     flex: 1;
-    min-height: 40px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 700;
+    min-height: 38px;
+    border-radius: .375rem;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
 }
 
@@ -93,19 +93,22 @@
 }
 
 .app-dialog-confirm {
-    border: 0;
-    background: #276c4b;
+    border: 1px solid #212529;
+    background: #212529;
     color: #fff;
 }
 
 .app-dialog-confirm:hover {
-    background: #1f5a3e;
+    border-color: #424649;
+    background: #424649;
 }
 
 .app-dialog.danger .app-dialog-confirm {
-    background: #d94d3f;
+    border-color: #dc3545;
+    background: #dc3545;
 }
 
 .app-dialog.danger .app-dialog-confirm:hover {
-    background: #c0392f;
+    border-color: #bb2d3b;
+    background: #bb2d3b;
 }

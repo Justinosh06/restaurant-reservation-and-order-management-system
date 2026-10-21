@@ -2067,3 +2067,338 @@ body:has(.service-app) {
     color: var(--muted);
     font-size: 11px;
 }
+
+/* ==========================================================================
+   Match the other admin pages (Orders, Staffs, ...: Bootstrap with the
+   "admin-page" look). Style only: the same markup, buttons and behaviour.
+   ========================================================================== */
+body:has(.service-app) {
+    background: var(--bs-body-bg, #fff);
+}
+
+.service-app,
+.reservation-panel,
+.floor-assign-dialog {
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.service-app {
+    min-height: 0;
+    color: var(--bs-body-color, #212529);
+}
+
+/* Page spacing like "admin-page px-3 pt-3 pb-4". */
+.service-main {
+    width: auto;
+    margin: 0;
+    padding: 1rem 1rem 1.5rem;
+}
+
+/* Header: title + grey subtitle on the left, the action on the right. */
+.service-app .floor-toolbar {
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.service-app .floor-toolbar .eyebrow {
+    display: none;
+}
+
+.service-app .floor-toolbar h1 {
+    margin: 0 0 .25rem;
+    font-size: calc(1.275rem + .3vw);
+    font-weight: 600;
+    letter-spacing: normal;
+}
+
+@media (min-width: 1200px) {
+    .service-app .floor-toolbar h1 {
+        font-size: 1.5rem;
+    }
+}
+
+.service-app .subheading {
+    margin: 0;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 1rem;
+}
+
+/* Main buttons look like Bootstrap's btn-dark. */
+.new-reservation-button,
+.add-table-button,
+.submit-reservation-button,
+.assign-save,
+.checkin-button,
+.checkout-button,
+.app-dialog-confirm {
+    min-height: 38px;
+    padding: .375rem .75rem;
+    border: 1px solid #212529;
+    border-radius: var(--bs-border-radius, .375rem);
+    background: #212529;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.new-reservation-button:hover,
+.add-table-button:hover,
+.submit-reservation-button:hover,
+.assign-save:hover:not(:disabled),
+.checkin-button:hover,
+.checkout-button:hover,
+.app-dialog-confirm:hover {
+    border-color: #424649;
+    background: #424649;
+    color: #fff;
+}
+
+.new-reservation-button span,
+.add-table-button span {
+    color: inherit;
+}
+
+.checkin-button,
+.checkout-button,
+.assign-save {
+    min-height: 31px;
+    padding: .25rem .5rem;
+    font-size: .875rem;
+}
+
+.app-dialog.danger .app-dialog-confirm {
+    border-color: #dc3545;
+    background: #dc3545;
+}
+
+.app-dialog.danger .app-dialog-confirm:hover {
+    border-color: #bb2d3b;
+    background: #bb2d3b;
+}
+
+.assign-cancel,
+.app-dialog-cancel {
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius, .375rem);
+    background: #f8f9fa;
+    color: #212529;
+    font-weight: 400;
+}
+
+/* Tabs like Orders' "Live orders / Order history": white pill bar, dark active pill. */
+.reservation-tabs {
+    gap: .25rem;
+    margin-bottom: 1rem;
+    padding: .25rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 50rem;
+    background: var(--bs-body-bg, #fff);
+}
+
+.reservation-tab {
+    padding: .25rem .75rem;
+    border-radius: 50rem;
+    color: var(--bs-body-color, #212529);
+    font-size: .875rem;
+    font-weight: 400;
+}
+
+.reservation-tab:hover {
+    background: #f8f9fa;
+    color: var(--bs-body-color, #212529);
+}
+
+.reservation-tab.active,
+.reservation-tab.active:hover {
+    background: #212529;
+    box-shadow: none;
+    color: #fff;
+    font-weight: 400;
+}
+
+.tab-count {
+    padding: .2em .55em;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 50rem;
+    background: #f8f9fa;
+    color: #212529;
+    font-size: .75em;
+    font-weight: 700;
+}
+
+/* Table filter: like a small Bootstrap form-select with a muted label. */
+.reservation-filter label {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+    font-weight: 400;
+}
+
+.reservation-filter select {
+    min-height: 38px;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius, .375rem);
+    font-size: 1rem;
+}
+
+/* Status messages like a Bootstrap success alert. */
+.service-app .status-message {
+    padding: 1rem;
+    border: 1px solid #a3cfbb;
+    border-radius: var(--bs-border-radius, .375rem);
+    background: #d1e7dd;
+    color: #0a3622;
+    font-size: 1rem;
+}
+
+/* Sections: grey rounded panels with white cards inside ("bg-body-tertiary rounded-4"). */
+.booking-rows,
+.empty-reservations,
+.floorplan-shell,
+.reservation-queue {
+    border: 0;
+    border-radius: 1rem;
+    background: var(--bs-tertiary-bg, #f8f9fa);
+    box-shadow: none;
+}
+
+.booking-rows {
+    gap: .25rem;
+    padding: .25rem;
+}
+
+.booking-month {
+    margin: 0;
+    padding: .75rem .75rem .25rem;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.booking-month:first-child {
+    margin: 0;
+}
+
+.booking-row {
+    border: 0;
+    border-radius: 1rem;
+    background: var(--bs-body-bg, #fff);
+}
+
+.empty-reservations {
+    padding: 2rem 1rem;
+}
+
+/* Floor plan: grey panel, white plan inside. */
+.floorplan-shell {
+    padding: .25rem;
+}
+
+.floorplan-label,
+.floorplan-footer {
+    padding: .5rem .75rem;
+    border: 0;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+}
+
+.floorplan-label > span:first-child {
+    color: var(--bs-secondary-color, #6c757d);
+    font-weight: 500;
+}
+
+.floorplan {
+    border-radius: 1rem;
+    background-color: var(--bs-body-bg, #fff);
+}
+
+.floorplan-shell > .assign-banner {
+    border-radius: .75rem;
+    margin-bottom: .25rem;
+}
+
+/* Upcoming sidebar: grey panel, white booking cards. */
+.queue-heading {
+    padding: .75rem .75rem .5rem;
+    border: 0;
+}
+
+.queue-heading h2 {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.queue-heading span {
+    padding: .2em .6em;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 50rem;
+    background: var(--bs-body-bg, #fff);
+    color: #212529;
+    font-size: .75rem;
+}
+
+.queue-hint {
+    padding: 0 .75rem .5rem;
+    font-size: .875rem;
+}
+
+.queue-list {
+    gap: .25rem;
+    padding: .25rem;
+}
+
+.queue-group {
+    margin: .5rem .5rem 0;
+}
+
+.queue-item,
+.queue-empty {
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 1rem;
+    background: var(--bs-body-bg, #fff);
+}
+
+.legend span {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+}
+
+/* Side panels and the floor-plan pop-up headings follow the same type. */
+.panel-heading h2,
+.floor-assign-head h2 {
+    font-weight: 600;
+}
+
+/* Table Management: full width like the other admin pages (overrides the older 1440px cap). */
+.service-app:has(.table-workspace) .service-main {
+    width: auto;
+}
+
+/* Legend sits on one line under the Add table button. */
+.service-app .floor-toolbar-actions {
+    gap: .5rem;
+}
+
+.service-app .legend {
+    flex-wrap: nowrap;
+    gap: .875rem;
+    padding-bottom: 0;
+}
+
+.service-app .legend span {
+    font-size: .8125rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .service-app .legend {
+        flex-wrap: wrap;
+    }
+}
+
+.service-app .legend .legend-icon {
+    font-size: 9px;
+}
