@@ -36,12 +36,12 @@ public class IndexModel : PageModel
         }
 
         var activeSession = await _diningSessions.GetActiveSessionAsync(TableId);
-        HasActiveSession = activeSession is not null;
         if (activeSession is null)
         {
             return Page();
         }
 
+        HasActiveSession = true;
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
 
         MenuItems = await _db.MenuItems
@@ -78,7 +78,7 @@ public class IndexModel : PageModel
             return NotFound();
         }
 
-        TableId = tableId.ToUpper();
+        TableId = tableId.ToUpperInvariant();
         if (!await _db.Tables.AnyAsync(table => table.Id == TableId))
         {
             return NotFound();
@@ -87,4 +87,5 @@ public class IndexModel : PageModel
         await _diningSessions.StartSessionAsync(TableId);
         return RedirectToPage("/Table/Index", new { tableId = TableId });
     }
+
 }

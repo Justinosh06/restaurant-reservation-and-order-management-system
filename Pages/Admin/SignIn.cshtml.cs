@@ -41,6 +41,11 @@ public class SignInModel : PageModel
             new(ClaimTypes.Email, admin.Email),
             new(ClaimTypes.Role, admin.Role.ToString())
         };
+        if (admin.Gender.HasValue)
+        {
+            claims.Add(new Claim("gender", admin.Gender.Value.ToString()));
+        }
+
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 

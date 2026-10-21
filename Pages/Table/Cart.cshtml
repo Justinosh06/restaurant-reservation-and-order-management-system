@@ -29,60 +29,66 @@
                             {
                                 <img class="thumbnail-img" src="@item.ImageUrl" alt="@item.Name" />
                             }
+                            else
+                            {
+                                <i class="fa-solid fa-utensils icon"></i>
+                            }
                         </div>
 
-                        <div class="info-container">
-                            <div class="top-section">
-                                <h3 class="item-title">@item.Name</h3>
-                                <span class="category">
-                                    @if(item.Type == "Beverage")
-                                    {
-                                        <i class="fa-solid fa-martini-glass-citrus"></i>
-                                    }
-                                    else
-                                    {
-                                        <i class="fa-solid fa-utensils me-1"></i>
-                                    }
-                                    @item.Type
-                                </span>
+                        <div class="right-container">
+                            <div class="info-container">
+                                <div class="top-section">
+                                    <h3 class="item-title">@item.Name</h3>
+                                    <span class="category">
+                                        @if(item.Type == "Beverage")
+                                        {
+                                            <i class="fa-solid fa-martini-glass-citrus"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-solid fa-utensils me-1"></i>
+                                        }
+                                        @item.Type
+                                    </span>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(item.Options))
+                                {
+                                    <small class="text-muted">@item.Options</small>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Remarks))
+                                {
+                                    <small class="text-muted">
+                                        <i class="fa-regular"></i>@item.Remarks
+                                    </small>
+                                }
+
+                                <span class="price mt-1">RM @item.UnitPrice.ToString("F2")</span>
                             </div>
 
-                            @if (!string.IsNullOrEmpty(item.Options))
-                            {
-                                <small class="text-muted">@item.Options</small>
-                            }
-                            @if (!string.IsNullOrEmpty(item.Remarks))
-                            {
-                                <small class="text-muted">
-                                    <i class="fa-regular"></i>@item.Remarks
-                                </small>
-                            }
-
-                            <span class="price mt-1">RM @item.UnitPrice.ToString("F2")</span>
-                        </div>
-
-                        <div class="quantity-wrapper">
-                            <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
-                                <input type="hidden" name="cartItemId" value="@item.Id" />
-                                <input type="hidden" name="quantityDelta" value="-1" />
-                                <button type="submit" class="quantity-btn" aria-label="Decrease @item.Name quantity">
-                                    <i class="fa-solid fa-minus"></i>
-                                </button>
-                            </form>
-                            <span class="quantity-val fw-bold mx-2">@item.Quantity</span>
-                            <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
-                                <input type="hidden" name="cartItemId" value="@item.Id" />
-                                <input type="hidden" name="quantityDelta" value="1" />
-                                <button type="submit" class="quantity-btn" aria-label="Increase @item.Name quantity">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-                            </form>
-                            <form method="post" asp-page-handler="Remove" asp-route-tableId="@Model.TableId">
-                                <input type="hidden" name="cartItemId" value="@item.Id" />
-                                <button type="submit" class="quantity-btn" aria-label="Remove @item.Name from cart">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </form>
+                            <div class="quantity-wrapper">
+                                <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
+                                    <input type="hidden" name="cartItemId" value="@item.Id" />
+                                    <input type="hidden" name="quantityDelta" value="-1" />
+                                    <button type="submit" class="quantity-btn first" aria-label="Decrease @item.Name quantity">
+                                        <i class="fa-solid fa-minus"></i>
+                                    </button>
+                                </form>
+                                <span class="quantity-val fw-bold">@item.Quantity</span>
+                                <form method="post" asp-page-handler="UpdateQuantity" asp-route-tableId="@Model.TableId">
+                                    <input type="hidden" name="cartItemId" value="@item.Id" />
+                                    <input type="hidden" name="quantityDelta" value="1" />
+                                    <button type="submit" class="quantity-btn last" aria-label="Increase @item.Name quantity">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="Remove" asp-route-tableId="@Model.TableId">
+                                    <input type="hidden" name="cartItemId" value="@item.Id" />
+                                    <button type="submit" class="quantity-btn" aria-label="Remove @item.Name from cart">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 }
@@ -141,6 +147,10 @@
                             @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
                             {
                                 <img class="thumbnail-img" src="@item.ThumbnailImage" alt="@item.Name" />
+                            }
+                            else
+                            {
+                                <i class="fa-solid fa-utensils icon"></i>
                             }
                         </div>
 

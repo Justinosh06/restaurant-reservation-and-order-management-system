@@ -11,12 +11,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const reservationCount = document.getElementById("tableReservationCount");
     const removeForm = document.getElementById("removeTableForm");
     const removeTableId = document.getElementById("removeTableId");
+    const endSessionForm = document.getElementById("endSessionForm");
+    const endSessionTableId = document.getElementById("endSessionTableId");
+    const activeSessionManagement = document.getElementById("activeSessionManagement");
     const addPanel = document.getElementById("addTablePanel");
     const addButton = document.getElementById("addTableButton");
     const closeAddButton = document.getElementById("closeAddTableButton");
 
     if (!app || !panel || !backdrop || !closeButton || !manageLink
-        || !removeForm || !addPanel || !addButton || !closeAddButton) {
+        || !removeForm || !endSessionForm || !activeSessionManagement
+        || !addPanel || !addButton || !closeAddButton) {
         console.error("Table management page is missing required elements.");
         return;
     }
@@ -43,6 +47,8 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("tableQrLink").textContent = menuUrl;
         document.getElementById("tableQrOpen").href = menuUrl;
         removeTableId.value = id;
+        endSessionTableId.value = id;
+        activeSessionManagement.hidden = table.dataset.activeSession !== "true";
         removeTableId.dataset.unseatCount = table.dataset.unseatCount || "0";
         removeTableId.dataset.sharedCount = table.dataset.sharedCount || "0";
         removeTableId.dataset.seatedNow = table.dataset.seatedNow || "false";
@@ -173,6 +179,15 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelText: "Keep",
             icon: "fa-rotate-left"
         });
+    });
+
+    AppDialog.guardSubmit(endSessionForm, {
+        title: "End this dining session?",
+        message: "This closes the session and clears any items still in the table's cart. Orders still in progress prevent the session from ending.",
+        confirmText: "End session",
+        cancelText: "Keep session",
+        danger: true,
+        icon: "fa-right-from-bracket"
     });
 
     floorTables.forEach(function (button) {

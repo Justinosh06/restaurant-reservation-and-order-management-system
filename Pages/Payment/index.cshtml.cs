@@ -177,7 +177,8 @@ public class IndexModel : PageModel
                 checkoutSession,
                 paymentIntent?.Id,
                 charge,
-                Status);
+                Status,
+                checkoutSession.CustomerDetails?.Email ?? checkoutSession.CustomerEmail);
 
             var orderIds = orders.Select(order => order.Id).ToArray();
             OrderRecords = await _db.Transactions
@@ -379,7 +380,8 @@ public class IndexModel : PageModel
         Stripe.Checkout.Session checkoutSession,
         string? paymentIntentId,
         Stripe.Charge? charge,
-        TransactionStatus status)
+        TransactionStatus status,
+        string? customerEmail)
     {
         var currency = ParseCurrency(checkoutSession.Currency);
         var paymentMethod = ParsePaymentMethod(charge, checkoutSession);
@@ -434,10 +436,79 @@ public class IndexModel : PageModel
         {
             var session = distinctOrders.First().Session
                 ?? throw new InvalidOperationException("A paid order is not associated with a dining session.");
+
+            var customer = await FindOrCreateCustomerAsync(customerEmail);
+            foreach (var order in distinctOrders)
+            {
+                order.Status = OrderStatus.Completed;
+                if (customer is not null)
+                {
+                    order.CustomerId = customer.Id;
+                }
+            }
+
             session.EndingTime ??= DateTime.UtcNow;
+            await CompleteReservationsAfterSessionPaymentAsync(session);
         }
 
         await _db.SaveChangesAsync();
+    }
+
+    private async Task CompleteReservationsAfterSessionPaymentAsync(RestaurantReservation.Models.Session session)
+    {
+        var reservations = await _db.Reservations
+            .Include(reservation => reservation.ReservationTables)
+            .Where(reservation =>
+                reservation.Status == ReservationStatus.CheckedIn &&
+                reservation.CustomerId == session.CustomerId &&
+                reservation.ReservationTables.Any(link => link.TableId == session.TableId))
+            .ToListAsync();
+
+        foreach (var reservation in reservations)
+        {
+            var tableIds = reservation.ReservationTables
+                .Select(link => link.TableId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            var otherActiveTableIds = await _db.Sessions
+                .AsNoTracking()
+                .Where(activeSession =>
+                    activeSession.Id != session.Id &&
+                    activeSession.EndingTime == null &&
+                    tableIds.Contains(activeSession.TableId))
+                .Select(activeSession => activeSession.TableId)
+                .Distinct()
+                .ToListAsync();
+
+            if (tableIds.All(tableId => !otherActiveTableIds.Contains(tableId, StringComparer.Ordinal)))
+            {
+                reservation.Status = ReservationStatus.Completed;
+            }
+        }
+    }
+
+    private async Task<RestaurantReservation.Models.Customer?> FindOrCreateCustomerAsync(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return null;
+        }
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var customer = await _db.Customers
+            .FirstOrDefaultAsync(account => account.Email.ToLower() == normalizedEmail);
+        if (customer is not null)
+        {
+            return customer;
+        }
+
+        customer = new RestaurantReservation.Models.Customer
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Email = normalizedEmail
+        };
+        _db.Customers.Add(customer);
+        return customer;
     }
 
     private static TransactionStatus MapStatus(

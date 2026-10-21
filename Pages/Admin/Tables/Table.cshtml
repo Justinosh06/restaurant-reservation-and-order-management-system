@@ -73,26 +73,30 @@
                 {
                     var nextReservation = upcomingReservations
                         .FirstOrDefault(reservation => reservation.TableIds.Contains(table.Id));
+                    var activeSession = Model.ActiveSessions.GetValueOrDefault(table.Id);
+                    var hasActiveSession = activeSession is not null;
                     var startsSoon = nextReservation is not null
                         && nextReservation.ReservationAt <= now.AddMinutes(60);
                     // Checked-in guests sit at the table until their slot ends.
                     var seatedNow = nextReservation is { Status: RestaurantReservation.Models.ReservationStatus.CheckedIn }
                         && nextReservation.ReservationAt - TableManagementModel.CheckInOpensBefore <= now;
                     // The icon in the middle of the table: checked in, starting soon, or reserved.
-                    var statusIcon = nextReservation is null ? null
+                    var statusIcon = hasActiveSession ? "fa-utensils"
+                        : nextReservation is null ? null
                         : seatedNow ? "fa-utensils"
                         : startsSoon ? "fa-clock"
                         : "fa-calendar-check";
 
                     <button type="button"
-                            class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
+                            class="floor-table @(hasActiveSession ? "occupied" : nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
                             data-menu-url="@Model.MenuUrl(table.Id)"
+                            data-active-session="@(hasActiveSession ? "true" : "false")"
                             data-unseat-count="@Model.UnseatCounts.GetValueOrDefault(table.Id)"
                             data-shared-count="@Model.SharedCounts.GetValueOrDefault(table.Id)"
                             data-seated-now="@(Model.SeatedNowTableIds.Contains(table.Id) ? "true" : "false")"
-                            aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
+                            aria-label="Table @table.Id, @table.Capacity seats, @(hasActiveSession ? "dining session active" : nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">
                             <span class="table-name">@table.Id</span>
@@ -100,7 +104,19 @@
                             {
                                 <span class="table-icon" aria-hidden="true"><i class="fa-solid @statusIcon"></i></span>
                             }
-                            @if (nextReservation is not null)
+                            @if (hasActiveSession)
+                            {
+                                var sessionName = activeSession!.Customer is null
+                                    ? "Walk-in dining"
+                                    : string.IsNullOrWhiteSpace(activeSession.Customer.FullName)
+                                        ? "Reserved dining"
+                                        : activeSession.Customer.FullName;
+                                <span class="table-booking">
+                                    <span>@sessionName</span>
+                                    <span class="seated-timer" data-since="@DateTime.SpecifyKind(activeSession.StartingTime, DateTimeKind.Utc).ToString("o")" title="Dining session duration">0:00</span>
+                                </span>
+                            }
+                            else if (nextReservation is not null)
                             {
                                 <span class="table-booking">
                                     <span>@nextReservation.PartySize guests</span>
@@ -180,10 +196,6 @@
                                                 <span class="seated-timer" data-since="@DateTime.SpecifyKind(since, DateTimeKind.Utc).ToString("o")" title="Time since check-in">0:00</span>
                                             }
                                         </span>
-                                        <form method="post" asp-page-handler="CheckOut" class="checkout-form" data-name="@reservation.CustomerName">
-                                            <input type="hidden" name="reservationId" value="@reservation.Id" />
-                                            <button type="submit" class="checkout-button"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Check out</button>
-                                        </form>
                                         <form method="post" asp-page-handler="UndoCheckIn" class="undo-checkin-form">
                                             <input type="hidden" name="reservationId" value="@reservation.Id" />
                                             <button type="submit" class="checkin-undo">Undo</button>
@@ -249,6 +261,18 @@
                 }
             </div>
             <p class="no-table-reservations" id="noTableReservations">No upcoming reservations for this table.</p>
+        </section>
+
+        <section class="active-session-management" id="activeSessionManagement" hidden>
+            <div class="panel-section-heading">
+                <h3>Dining session</h3>
+                <span>Active</span>
+            </div>
+            <p>End this session if it was started by mistake. Sessions with orders still in progress cannot be ended.</p>
+            <form method="post" asp-page-handler="EndSession" class="end-session-form" id="endSessionForm">
+                <input type="hidden" name="tableId" id="endSessionTableId" />
+                <button type="submit" class="remove-table-button">End dining session</button>
+            </form>
         </section>
 
         <section class="table-qr">
