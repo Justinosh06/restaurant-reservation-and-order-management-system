@@ -3,13 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Models;
 // The Razor pages in Pages/Table compile into a namespace called Table, which hides the model's short name here.
 using DiningTable = RestaurantReservation.Models.Table;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 
-public class TableManagementModel(ApplicationDbContext db) : PageModel
+public class TableManagementModel(ApplicationDbContext db, IConfiguration configuration) : PageModel
 {
     // Table sizes staff can add. Chairs are drawn half above and half below the table.
     public static readonly int[] SeatOptions = [2, 4, 6];
@@ -236,6 +237,19 @@ public class TableManagementModel(ApplicationDbContext db) : PageModel
             .FirstOrDefaultAsync(item => item.Id == reservationId
                 && item.Status != ReservationStatus.Cancelled
                 && item.Status != ReservationStatus.Completed);
+
+    // The page a table's QR code opens: the table's menu on the customer site, e.g. /Table/T1.
+    // The code itself is drawn in the browser by qrcode.js (wwwroot/lib/qrcodejs).
+    // Phones can't reach "localhost", so TableQr:BaseUrl in appsettings can point at this
+    // computer's network address (e.g. http://192.168.1.20:5105); otherwise the site's own address.
+    public string MenuUrl(string tableId)
+    {
+        var configured = configuration["TableQr:BaseUrl"];
+        var site = string.IsNullOrWhiteSpace(configured)
+            ? SiteHosts.MainSiteUrl(Request, string.Empty)
+            : configured.TrimEnd('/');
+        return $"{site}/Table/{Uri.EscapeDataString(tableId)}";
+    }
 
     private Task<List<DiningTable>> LoadTablesAsync() =>
         db.Tables.AsNoTracking()

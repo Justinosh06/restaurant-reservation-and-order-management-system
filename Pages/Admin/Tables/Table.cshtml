@@ -88,6 +88,7 @@
                             class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
+                            data-menu-url="@Model.MenuUrl(table.Id)"
                             data-unseat-count="@Model.UnseatCounts.GetValueOrDefault(table.Id)"
                             data-shared-count="@Model.SharedCounts.GetValueOrDefault(table.Id)"
                             data-seated-now="@(Model.SeatedNowTableIds.Contains(table.Id) ? "true" : "false")"
@@ -250,6 +251,28 @@
             <p class="no-table-reservations" id="noTableReservations">No upcoming reservations for this table.</p>
         </section>
 
+        <section class="table-qr">
+            <div class="panel-section-heading">
+                <h3>Order QR code</h3>
+                <span>Guests scan it to order</span>
+            </div>
+            <div class="table-qr-card">
+                <div id="tableQrCode" class="table-qr-code" role="img"></div>
+                <a id="tableQrLink" class="table-qr-link" target="_blank" rel="noopener"></a>
+            </div>
+            <div class="table-qr-actions">
+                <button type="button" id="tableQrDownload" class="table-qr-button">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i> Download
+                </button>
+                <button type="button" id="tableQrPrint" class="table-qr-button">
+                    <i class="fa-solid fa-print" aria-hidden="true"></i> Print
+                </button>
+                <a id="tableQrOpen" class="table-qr-button" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Open menu
+                </a>
+            </div>
+        </section>
+
         <a class="submit-reservation-button manage-table-reservations"
            id="manageTableReservations"
            href="/Admin/Reservations">
@@ -302,4 +325,5 @@
     </div>
 </aside>
 
+<script src="~/lib/qrcodejs/qrcode.min.js"></script>
 <script src="~/js/table-management.js" asp-append-version="true"></script>

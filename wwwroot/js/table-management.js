@@ -35,6 +35,13 @@ document.addEventListener("DOMContentLoaded", function () {
             table.dataset.capacity + " seats";
         manageLink.href =
             "/Admin/Reservations?tableId=" + encodeURIComponent(id);
+
+        // This table's order QR code, drawn by qrcode.js from the menu link the server worked out.
+        const menuUrl = table.dataset.menuUrl;
+        drawTableQr(id, menuUrl);
+        document.getElementById("tableQrLink").href = menuUrl;
+        document.getElementById("tableQrLink").textContent = menuUrl;
+        document.getElementById("tableQrOpen").href = menuUrl;
         removeTableId.value = id;
         removeTableId.dataset.unseatCount = table.dataset.unseatCount || "0";
         removeTableId.dataset.sharedCount = table.dataset.sharedCount || "0";
@@ -58,6 +65,73 @@ document.addEventListener("DOMContentLoaded", function () {
         panel.setAttribute("aria-hidden", "false");
         closeButton.focus();
     }
+
+    // Table QR codes (qrcode.js): drawn into #tableQrCode whenever a table's panel opens.
+    const qrBox = document.getElementById("tableQrCode");
+    let qrTableId = null;
+
+    function drawTableQr(id, menuUrl) {
+        qrTableId = id;
+        qrBox.replaceChildren();
+        qrBox.setAttribute("aria-label", "QR code for table " + id + ": " + menuUrl);
+        if (typeof QRCode === "undefined") {
+            qrBox.textContent = "QR code unavailable";
+            console.error("qrcode.js did not load.");
+            return;
+        }
+        new QRCode(qrBox, {
+            text: menuUrl,
+            width: 360,
+            height: 360,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    }
+
+    // The drawn code as a PNG (qrcode.js draws on a canvas), for Download and Print.
+    function tableQrPng() {
+        const canvas = qrBox.querySelector("canvas");
+        return canvas ? canvas.toDataURL("image/png") : null;
+    }
+
+    document.getElementById("tableQrDownload").addEventListener("click", function () {
+        const png = tableQrPng();
+        if (!png) {
+            return;
+        }
+        const link = document.createElement("a");
+        link.href = png;
+        link.download = "Table-" + qrTableId + "-QR.png";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    });
+
+    // Prints a card with the table's QR code, for a table stand.
+    document.getElementById("tableQrPrint").addEventListener("click", function () {
+        const id = qrTableId;
+        const image = { src: tableQrPng() };
+        if (!image.src) {
+            return;
+        }
+        const card = window.open("", "_blank", "width=420,height=560");
+        if (!card) {
+            AppDialog.alert({ title: "Pop-up blocked", message: "Allow pop-ups for this site to print the QR code, or use Download.", icon: "fa-print" });
+            return;
+        }
+        const label = document.createElement("div");
+        label.textContent = id;
+        card.document.write(
+            "<!doctype html><title>Table " + label.innerHTML + " QR</title>" +
+            "<style>body{font-family:Inter,system-ui,sans-serif;text-align:center;padding:32px}" +
+            "h1{margin:0 0 4px;font-size:34px}p{margin:0 0 18px;color:#555;font-size:16px}" +
+            "img{width:280px;height:280px}small{display:block;margin-top:12px;color:#888}</style>" +
+            "<h1>Table " + label.innerHTML + "</h1><p>Scan to see the menu and order</p>" +
+            "<img src=\"" + image.src + "\" onload=\"window.print()\" alt=\"\">" +
+            "<small>" + document.getElementById("tableQrLink").textContent.replace(/</g, "&lt;") + "</small>");
+        card.document.close();
+    });
 
     function openAddPanel() {
         addPanel.classList.add("open");

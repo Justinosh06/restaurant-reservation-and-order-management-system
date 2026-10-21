@@ -1990,3 +1990,80 @@ body:has(.service-app) {
     background: var(--red-soft);
     color: #b34336;
 }
+
+/* Table details: the table's order QR code. */
+.table-qr {
+    margin-top: 22px;
+}
+
+.table-qr-card {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+}
+
+/* qrcode.js draws at 360px (sharp for download/print); shown at 180px here. */
+.table-qr-code {
+    display: grid;
+    width: 180px;
+    height: 180px;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.table-qr-code canvas,
+.table-qr-code img {
+    width: 180px !important;
+    height: 180px !important;
+}
+
+.table-qr-code canvas {
+    display: none !important;
+}
+
+.table-qr-link {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-qr-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.table-qr-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.table-qr-button:hover {
+    background: #f4f5f2;
+    color: var(--ink);
+}
+
+.table-qr .panel-section-heading span {
+    color: var(--muted);
+    font-size: 11px;
+}
