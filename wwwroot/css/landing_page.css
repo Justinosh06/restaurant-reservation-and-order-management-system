@@ -205,6 +205,24 @@ body:has(.landing) {
             }
         }
 
+        .menu-name {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+        }
+
+        .menu-rating {
+            color: #666666;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+
+            i {
+                color: #F5B301;
+            }
+        }
+
         .menu-list {
             list-style: none;
             margin: 0 0 16px;
@@ -364,24 +382,47 @@ body:has(.landing) {
             border-radius: 16px;
         }
 
+        /* Same frame as a dish card on the menu page (menu_index.css): white card, soft green picture area,
+           the whole picture shown. */
         .special-card {
-            margin: 0;
+            height: 100%;
+            padding: 10px;
+            border: 1px solid #edf0ee;
+            border-radius: 26px;
+            background: #fff;
+            transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+        }
+
+        .special-frame {
+            display: grid;
+            aspect-ratio: 1.2 / 1;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 19px;
+            background: color-mix(in srgb, var(--primary-color) 8%, white);
 
             img {
                 width: 100%;
-                height: clamp(220px, 30vw, 460px);
-                object-fit: cover;
-                border-radius: 16px;
-                transition: 300ms ease-in-out;
+                height: 100%;
+                padding: 12px;
+                object-fit: contain;
+                transition: transform 220ms ease;
             }
+        }
 
-            figcaption {
-                display: flex;
-                justify-content: space-between;
-                gap: 16px;
-                padding: 8px 4px 0;
-                font-weight: 600;
-            }
+        .special-placeholder {
+            color: color-mix(in srgb, var(--primary-color) 48%, white);
+            font-size: 4rem;
+        }
+
+        .special-link:hover .special-card {
+            transform: translateY(-3px);
+            border-color: color-mix(in srgb, var(--primary-color) 28%, white);
+            box-shadow: 0 14px 32px rgb(14 88 71 / 10%);
+        }
+
+        .special-link:hover .special-frame img {
+            transform: scale(1.04);
         }
     }
 
@@ -1079,9 +1120,6 @@ body:has(.landing) {
         }
     }
 
-    .special-link:hover img {
-        opacity: 0.85;
-    }
 
     .reviews[open] summary i {
         transform: rotate(90deg);

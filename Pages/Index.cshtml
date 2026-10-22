@@ -80,7 +80,15 @@
                     @foreach (var item in Model.ShortMenu)
                     {
                         <li>
-                            <span>@item.Name</span>
+                            <span class="menu-name">
+                                @item.Name
+                                @if (Model.Ratings.TryGetValue(item.Id, out var rating))
+                                {
+                                    <span class="menu-rating" aria-label="Rated @rating.Average.ToString("0.0") out of 5 from @rating.Count reviews">
+                                        <i class="fa-solid fa-star" aria-hidden="true"></i> @rating.Average.ToString("0.0")
+                                    </span>
+                                }
+                            </span>
                             <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
                         </li>
                     }
@@ -98,17 +106,25 @@
         <section class="specials">
             <h2 class="section-title text-center">Chef's specials</h2>
 
+            @* The newest dishes, newest on the left: only the picture, in the same frame as the menu page.
+               from=home makes the dish page's back button return here instead of to the menu. *@
             <div class="specials-grid">
                 @foreach (var item in Model.ChefSpecials)
                 {
-                    <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id">
-                        <figure class="special-card">
-                            <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
-                            <figcaption>
-                                <span>@item.Name</span>
-                                <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
-                            </figcaption>
-                        </figure>
+                    <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id" asp-route-from="home"
+                       aria-label="@item.Name">
+                        <div class="special-card">
+                            <div class="special-frame">
+                                @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
+                                {
+                                    <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                                }
+                                else
+                                {
+                                    <i class="fa-solid @(item.MenuItemType == RestaurantReservation.Models.Enums.MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") special-placeholder" aria-hidden="true"></i>
+                                }
+                            </div>
+                        </div>
                     </a>
                 }
             </div>
