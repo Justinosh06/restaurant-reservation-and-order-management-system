@@ -571,6 +571,38 @@ body:has(.landing) {
         display: none;
     }
 
+    /* Login steps 2a/2b: the email being used, with a link back to step 1. */
+    .auth-email-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #F2F2F3;
+        font-weight: 600;
+
+        span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        a {
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* The 6-digit login code: large and spaced out so it is easy to check against the email. */
+    .auth-field .code-input {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: 0.5em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+
     .auth-switch {
         display: flex;
         flex-direction: column;
