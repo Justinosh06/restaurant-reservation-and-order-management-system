@@ -46,8 +46,16 @@ public class ReservationManagementModel(
     [BindProperty]
     public string? FilterTableId { get; set; }
 
+    // Only remembers which tab to return to, so it is optional (string?) and a blank value
+    // falls back to Upcoming instead of failing the form as a required field.
     [BindProperty(SupportsGet = true)]
-    public string Tab { get; set; } = "upcoming";
+    public string? Tab
+    {
+        get => tab;
+        set => tab = string.IsNullOrWhiteSpace(value) ? "upcoming" : value;
+    }
+
+    private string tab = "upcoming";
 
     // Set when staff were warned that the time is outside opening hours; saving again with the same
     // time keeps it (walk-ins and phone bookings sometimes need that).
