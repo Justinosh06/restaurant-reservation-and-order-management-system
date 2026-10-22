@@ -3,6 +3,11 @@
 @using RestaurantReservation.Infrastructure
 @{
     ViewData["Title"] = Model.Item?.Name ?? "Menu item";
+
+    string StarIcon(double rating, int star) =>
+        rating >= star ? "fa-solid fa-star"
+        : rating >= star - 0.5 ? "fa-solid fa-star-half-stroke"
+        : "fa-regular fa-star";
 }
 
 <link rel="stylesheet" href="~/css/menu_item.css" asp-append-version="true" />
@@ -102,8 +107,29 @@
             {
                 @if (!string.IsNullOrWhiteSpace(Model.Item.Description))
                 {
-                    <p class="description markdown-body">@Model.Item.Description.ToHtml()</p>
+                    <div class="description markdown-body">@Model.Item.Description.ToHtml()</div>
                 }
+
+                <section class="rating-section" aria-labelledby="rating-heading">
+                    <h2 id="rating-heading" class="rating-title">Rating</h2>
+                    @if (Model.RatingCount == 0)
+                    {
+                        <p class="rating-empty">No ratings yet</p>
+                    }
+                    else
+                    {
+                        <div class="rating-summary">
+                            <span class="rating-stars" aria-label="@Model.AverageRating.ToString("0.0") out of 5 stars">
+                                @for (var star = 1; star <= 5; star++)
+                                {
+                                    <i class="@StarIcon(Model.AverageRating, star)" aria-hidden="true"></i>
+                                }
+                            </span>
+                            <span class="rating-value">@Model.AverageRating.ToString("0.0")</span>
+                            <span class="rating-count">(@Model.RatingCount @(Model.RatingCount == 1 ? "review" : "reviews"))</span>
+                        </div>
+                    }
+                </section>
             }
         </div>
     </div>

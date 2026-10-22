@@ -10,6 +10,7 @@ public interface IPaymentService
         string diningSessionId,
         string paymentAttemptId,
         IEnumerable<(string Name, decimal UnitPrice, int Quantity, string Remark)> items,
+        int reservationDepositCredit,
         string domain);
 
     // The checkout page expires after 30 minutes (Stripe's minimum), so an unpaid booking never holds seats for long.

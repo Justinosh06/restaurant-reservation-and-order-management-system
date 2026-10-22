@@ -94,15 +94,20 @@ else
                         }
                         else
                         {
-                            <i class="fa-solid fa-utensils icon"></i>
+                            @if(item.MenuItemType == MenuItemType.Beverage)
+                            {
+                                <i class="fa-solid fa-martini-glass-citrus icon"></i>
+                            }
+                            else
+                            {
+                                <i class="fa-solid fa-utensils icon"></i>
+                            }
                         }
                     </div>
 
                     <div class="info-container">
-                        <h3 class="item-title">@item.Name</h3>
-
-                        <div class="bottom-section">
-                            <span class="price">RM @item.PriceInMainUnit.ToString("F2")</span>
+                        <div class="left-section">
+                            <h3 class="item-title">@item.Name</h3>
                             <span class="category">
                                 @if(item.MenuItemType == MenuItemType.Beverage)
                                 {
@@ -115,7 +120,13 @@ else
                                 @item.MenuItemType
                             </span>
                         </div>
+
+                        <div class="right-section">
+                            <span class="price">RM @item.PriceInMainUnit.ToString("F2")</span>
+                        </div>
                     </div>
+
+                    <i class="fa-solid fa-plus plus-icon"></i>
                 </div>
 
             </a>

@@ -133,6 +133,20 @@
             .order-items {
                 padding: 8px 16px;
 
+                .cancel-order-form {
+                    margin-top: 12px;
+                }
+
+                .cancel-order-btn {
+                    border-radius: 100px;
+                    width: 100%;
+                    padding: 12px 16px;
+                    color: #b42318;
+                    background: #ffbdb8;
+                    font-weight: 600;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
                 .order-item {
                     padding: 12px 0;
                     display: flex;
@@ -155,6 +169,25 @@
                     border-bottom: 1px solid #cccccc;
                 }
             }
+        }
+    }
+
+    .checkout-total-breakdown {
+        display: grid;
+        gap: 8px;
+        margin: 0 8px 16px;
+        font-family: "Bricolage Grotesque", sans-serif;
+
+        > div {
+            display: flex;
+            justify-content: space-between;
+            color: #777777;
+        }
+
+        .checkout-amount-due {
+            padding-top: 8px;
+            border-top: 1px solid #cccccc;
+            color: var(--primary-color);
         }
     }
 

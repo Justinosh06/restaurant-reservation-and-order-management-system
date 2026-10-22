@@ -205,11 +205,27 @@ public class CartModel : PageModel
             .Select(item => item.MenuItemId)
             .Distinct()
             .ToListAsync();
-        Recommendations = await _db.MenuItems
+        var ratings = _db.Feedbacks
             .AsNoTracking()
-            .Where(item => item.Availability && !cartMenuItemIds.Contains(item.Id))
-            .OrderBy(item => item.Name)
-            .Take(4)
+            .GroupBy(feedback => feedback.MenuItemId)
+            .Select(group => new
+            {
+                MenuItemId = group.Key,
+                AverageRating = group.Average(feedback => feedback.Rating),
+                RatingCount = group.Count()
+            });
+
+        Recommendations = await (
+            from item in _db.MenuItems.AsNoTracking()
+            join rating in ratings on item.Id equals rating.MenuItemId into itemRatings
+            from rating in itemRatings.DefaultIfEmpty()
+            where item.Availability && !cartMenuItemIds.Contains(item.Id)
+            orderby (double?)rating.AverageRating descending,
+                (int?)rating.RatingCount descending,
+                item.Name,
+                item.Id
+            select item)
+            .Take(6)
             .ToListAsync();
 
         ViewData["CartItemCount"] = CartItems.Sum(item => item.Quantity);

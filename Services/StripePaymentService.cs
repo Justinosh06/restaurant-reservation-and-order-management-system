@@ -19,6 +19,7 @@ public class StripePaymentService : IPaymentService
         string diningSessionId,
         string paymentAttemptId,
         IEnumerable<(string Name, decimal UnitPrice, int Quantity, string Remark)> items,
+        int reservationDepositCredit,
         string domain)
     {
         var lineItems = items.Select(item => new SessionLineItemOptions
@@ -46,11 +47,35 @@ public class StripePaymentService : IPaymentService
                 { "type", "table_settlement" },
                 { "table_id", tableId },
                 { "dining_session_id", diningSessionId },
-                { "payment_attempt_id", paymentAttemptId }
+                { "payment_attempt_id", paymentAttemptId },
+                { "reservation_deposit_credit", reservationDepositCredit.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture) }
             },
             SuccessUrl = $"{domain}/Payment/{{CHECKOUT_SESSION_ID}}?tableId={tableId}",
             CancelUrl = $"{domain}/Table/{tableId}/Checkout"
         };
+
+        if (reservationDepositCredit > 0)
+        {
+            var coupon = await new CouponService().CreateAsync(
+                new CouponCreateOptions
+                {
+                    AmountOff = reservationDepositCredit,
+                    Currency = "myr",
+                    Duration = "once",
+                    Name = "Reservation deposit"
+                },
+                new RequestOptions
+                {
+                    IdempotencyKey = CreateIdempotencyKey(
+                        "reservation_deposit_credit",
+                        $"{tableId}:{diningSessionId}:{paymentAttemptId}")
+                });
+            options.Discounts =
+            [
+                new SessionDiscountOptions { Coupon = coupon.Id }
+            ];
+        }
 
         return await _sessionService.CreateAsync(options, new RequestOptions
         {

@@ -77,6 +77,17 @@
                             <span class="order-item-quantity">Quantity: @item.Quantity</span>
                         </div>
                     }
+
+                    @if (order.CanCancel)
+                    {
+                        <form method="post"
+                              asp-page-handler="CancelOrder"
+                              asp-route-tableId="@Model.TableId"
+                              asp-route-orderId="@order.OrderId"
+                              class="cancel-order-form">
+                            <button type="submit" class="cancel-order-btn">Cancel order</button>
+                        </form>
+                    }
                 </div>
             </details>
         }
@@ -91,12 +102,31 @@
 
     @if (Model.SessionOrders.Count > 0)
     {
-        <form method="post" asp-page-handler="PayWithStripe" asp-route-tableId="@Model.TableId">
-            <button type="submit" class="pay-btn w-100" disabled="@(!Model.CanPay)">
-                <h4 class="total-price">RM @Model.TotalAmount.ToString("F2")</h4>
-                <span class="d-flex align-items-center gap-1">Pay with <span class="fa-brands fa-stripe icon"></span></span>
-            </button>
-        </form>
+        @if (Model.ReservationDepositCredit > 0)
+        {
+            <div class="checkout-total-breakdown">
+                <div><span>Orders total</span><span>RM @Model.TotalAmount.ToString("F2")</span></div>
+                <div><span>Reservation deposit</span><span>- RM @Model.ReservationDepositCredit.ToString("F2")</span></div>
+                <div class="checkout-amount-due"><strong>Amount due</strong><strong>RM @Model.AmountDue.ToString("F2")</strong></div>
+            </div>
+        }
+
+        @if (!Model.IsSessionClosed)
+        {
+            <form method="post" asp-page-handler="PayWithStripe" asp-route-tableId="@Model.TableId">
+                <button type="submit" class="pay-btn w-100" disabled="@(!Model.CanPay)">
+                    <h4 class="total-price">RM @Model.AmountDue.ToString("F2")</h4>
+                    @if (Model.AmountDue == 0)
+                    {
+                        <span>Complete checkout with deposit</span>
+                    }
+                    else
+                    {
+                        <span class="d-flex align-items-center gap-1">Pay with <span class="fa-brands fa-stripe icon"></span></span>
+                    }
+                </button>
+            </form>
+        }
     }
 </div>
 
