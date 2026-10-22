@@ -6,27 +6,37 @@
     ViewData["Title"] = "Menu";
 }
 
-<link rel="stylesheet" href="~/css/table_page.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/menu_index.css" asp-append-version="true" />
 
 <div class="menu-container">
-    <h1 class="title">Menu<span class="content-number" id="menu-total-count">@Model.Items.Count</span></h1>
+    <section class="menu-intro">
+        <div>
+            <p class="menu-eyebrow">Fresh from our kitchen</p>
+            <h1 class="menu-title">Explore the menu</h1>
+            <p class="menu-description">Find something delicious to make your day.</p>
+        </div>
+        <p class="menu-result-count">
+            <span id="menu-total-count">@Model.Items.Count</span>
+            <span>items</span>
+        </p>
+    </section>
 
-    <div class="pill-filter-row">
-        <span class="filter-pill active" data-category="all">
-            All<span class="content-number">@Model.Items.Count</span>
-        </span>
+    <nav class="pill-filter-row" aria-label="Filter menu by category">
+        <button type="button" class="filter-pill active" data-category="all">
+            All <span class="content-number">@Model.Items.Count</span>
+        </button>
 
         @foreach (var type in Enum.GetValues<MenuItemType>())
         {
-            <span class="filter-pill" data-category="@type.ToString().ToLower()">
-                @type<span class="content-number">@Model.Items.Count(i => i.MenuItemType == type)</span>
-            </span>
+            <button type="button" class="filter-pill" data-category="@type.ToString().ToLower()">
+                @type <span class="content-number">@Model.Items.Count(i => i.MenuItemType == type)</span>
+            </button>
         }
-    </div>
+    </nav>
 
     @if (Model.Items.Count == 0)
     {
-        <p class="text-secondary">Our menu is being updated. Please check back soon.</p>
+        <p class="menu-empty-state">Our menu is being updated. Please check back soon.</p>
     }
 
     <div class="menu-grid">
@@ -43,23 +53,22 @@
                         {
                             <img class="thumbnail-img" src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
                         }
+                        else
+                        {
+                            <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") thumbnail-placeholder" aria-hidden="true"></i>
+                        }
+                        <span class="category">
+                            <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils")" aria-hidden="true"></i>
+                            @item.MenuItemType
+                        </span>
                     </div>
 
                     <div class="info-container">
                         <h3 class="item-title">@item.Name</h3>
-
                         <div class="bottom-section">
                             <span class="price">@Model.Currency.FormatCents(item.Price)</span>
-                            <span class="category">
-                                @if (item.MenuItemType == MenuItemType.Beverage)
-                                {
-                                    <i class="fa-solid fa-martini-glass-citrus"></i>
-                                }
-                                else
-                                {
-                                    <i class="fa-solid fa-utensils me-1"></i>
-                                }
-                                @item.MenuItemType
+                            <span class="item-link-hint" aria-hidden="true">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
                             </span>
                         </div>
                     </div>

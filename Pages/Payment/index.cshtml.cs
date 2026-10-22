@@ -24,15 +24,18 @@ public class IndexModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly IPaymentService _paymentService;
+    private readonly DiningSessionService _diningSessions;
     private readonly ILogger<IndexModel> _logger;
 
     public IndexModel(
         ApplicationDbContext db,
         IPaymentService paymentService,
+        DiningSessionService diningSessions,
         ILogger<IndexModel> logger)
     {
         _db = db;
         _paymentService = paymentService;
+        _diningSessions = diningSessions;
         _logger = logger;
     }
 
@@ -392,7 +395,16 @@ public class IndexModel : PageModel
         var distinctOrders = orders
             .GroupBy(order => order.Id, StringComparer.Ordinal)
             .Select(group => group.First())
+            .OrderBy(order => order.Id, StringComparer.Ordinal)
             .ToList();
+        var depositCreditRemaining = status == TransactionStatus.Succeeded &&
+                                     int.TryParse(
+                                         checkoutSession.Metadata.GetValueOrDefault("reservation_deposit_credit"),
+                                         NumberStyles.Integer,
+                                         CultureInfo.InvariantCulture,
+                                         out var parsedCredit)
+            ? parsedCredit
+            : 0;
 
         foreach (var order in distinctOrders)
         {
@@ -410,7 +422,10 @@ public class IndexModel : PageModel
                 paymentIntentId,
                 stripePaymentStatus = checkoutSession.PaymentStatus,
                 stripeSessionStatus = checkoutSession.Status,
-                receiptUrl = charge?.ReceiptUrl
+                receiptUrl = charge?.ReceiptUrl,
+                reservationDepositCredit = status == TransactionStatus.Succeeded
+                    ? Math.Min(order.TotalAmount, depositCreditRemaining)
+                    : 0
             });
 
             if (transaction is null)
@@ -424,12 +439,16 @@ public class IndexModel : PageModel
                 _db.Transactions.Add(transaction);
             }
 
-            transaction.Amount = order.TotalAmount;
+            var orderDepositCredit = Math.Min(order.TotalAmount, depositCreditRemaining);
+            transaction.Amount = status == TransactionStatus.Succeeded
+                ? order.TotalAmount - orderDepositCredit
+                : order.TotalAmount;
             transaction.Currency = currency;
             transaction.Status = status;
             transaction.PaymentMethod = paymentMethod;
             transaction.CreatedAt = transactionTime;
             transaction.MetadataJson = metadata;
+            depositCreditRemaining -= orderDepositCredit;
         }
 
         if (status == TransactionStatus.Succeeded)
@@ -437,54 +456,27 @@ public class IndexModel : PageModel
             var session = distinctOrders.First().Session
                 ?? throw new InvalidOperationException("A paid order is not associated with a dining session.");
 
-            var customer = await FindOrCreateCustomerAsync(customerEmail);
+            var customer = session.CustomerId is null
+                ? await FindOrCreateCustomerAsync(customerEmail)
+                : await _db.Customers.FindAsync(session.CustomerId)
+                    ?? throw new InvalidOperationException(
+                        $"Dining session {session.Id} references a customer that does not exist.");
+            var customerId = session.CustomerId ?? customer?.Id;
             foreach (var order in distinctOrders)
             {
                 order.Status = OrderStatus.Completed;
-                if (customer is not null)
+                if (customerId is not null)
                 {
-                    order.CustomerId = customer.Id;
+                    order.CustomerId = customerId;
                 }
             }
 
+            session.CustomerId ??= customerId;
             session.EndingTime ??= DateTime.UtcNow;
-            await CompleteReservationsAfterSessionPaymentAsync(session);
+            await _diningSessions.CompleteCheckedInReservationsAsync(session);
         }
 
         await _db.SaveChangesAsync();
-    }
-
-    private async Task CompleteReservationsAfterSessionPaymentAsync(RestaurantReservation.Models.Session session)
-    {
-        var reservations = await _db.Reservations
-            .Include(reservation => reservation.ReservationTables)
-            .Where(reservation =>
-                reservation.Status == ReservationStatus.CheckedIn &&
-                reservation.CustomerId == session.CustomerId &&
-                reservation.ReservationTables.Any(link => link.TableId == session.TableId))
-            .ToListAsync();
-
-        foreach (var reservation in reservations)
-        {
-            var tableIds = reservation.ReservationTables
-                .Select(link => link.TableId)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
-            var otherActiveTableIds = await _db.Sessions
-                .AsNoTracking()
-                .Where(activeSession =>
-                    activeSession.Id != session.Id &&
-                    activeSession.EndingTime == null &&
-                    tableIds.Contains(activeSession.TableId))
-                .Select(activeSession => activeSession.TableId)
-                .Distinct()
-                .ToListAsync();
-
-            if (tableIds.All(tableId => !otherActiveTableIds.Contains(tableId, StringComparer.Ordinal)))
-            {
-                reservation.Status = ReservationStatus.Completed;
-            }
-        }
     }
 
     private async Task<RestaurantReservation.Models.Customer?> FindOrCreateCustomerAsync(string? email)

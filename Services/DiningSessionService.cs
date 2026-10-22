@@ -98,4 +98,42 @@ public sealed class DiningSessionService
         await _db.SaveChangesAsync();
         return true;
     }
+
+    public async Task CompleteCheckedInReservationsAsync(Session session)
+    {
+        if (session.CustomerId is null)
+        {
+            return;
+        }
+
+        var reservations = await _db.Reservations
+            .Include(reservation => reservation.ReservationTables)
+            .Where(reservation =>
+                reservation.Status == ReservationStatus.CheckedIn &&
+                reservation.CustomerId == session.CustomerId &&
+                reservation.ReservationTables.Any(link => link.TableId == session.TableId))
+            .ToListAsync();
+
+        foreach (var reservation in reservations)
+        {
+            var tableIds = reservation.ReservationTables
+                .Select(link => link.TableId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            var otherActiveTableIds = await _db.Sessions
+                .AsNoTracking()
+                .Where(activeSession =>
+                    activeSession.Id != session.Id &&
+                    activeSession.EndingTime == null &&
+                    tableIds.Contains(activeSession.TableId))
+                .Select(activeSession => activeSession.TableId)
+                .Distinct()
+                .ToListAsync();
+
+            if (tableIds.All(tableId => !otherActiveTableIds.Contains(tableId, StringComparer.Ordinal)))
+            {
+                reservation.Status = ReservationStatus.Completed;
+            }
+        }
+    }
 }

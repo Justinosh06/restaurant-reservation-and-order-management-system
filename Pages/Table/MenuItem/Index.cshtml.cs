@@ -31,6 +31,8 @@ public class MenuItemModel : PageModel
     public string MenuItemId { get; set; } = string.Empty;
     public string ActiveTab { get; private set; } = "Order";
     public RestaurantReservation.Models.MenuItem? Item { get; private set; }
+    public double AverageRating { get; private set; }
+    public int RatingCount { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(string tableId, string menuItemId, string? tab = "Order")
     {
@@ -55,6 +57,26 @@ public class MenuItemModel : PageModel
         if (Item is null)
         {
             return NotFound();
+        }
+
+        if (ActiveTab == "About")
+        {
+            var rating = await _db.Feedbacks
+                .AsNoTracking()
+                .Where(feedback => feedback.MenuItemId == Item.Id)
+                .GroupBy(feedback => feedback.MenuItemId)
+                .Select(group => new
+                {
+                    AverageRating = group.Average(feedback => feedback.Rating),
+                    RatingCount = group.Count()
+                })
+                .FirstOrDefaultAsync();
+
+            if (rating is not null)
+            {
+                AverageRating = Math.Round(rating.AverageRating, 1);
+                RatingCount = rating.RatingCount;
+            }
         }
 
         return Page();

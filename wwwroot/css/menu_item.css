@@ -143,6 +143,59 @@
                 font-family: "Bricolage Grotesque", sans-serif;
             }
 
+            .description.markdown-body {
+                font-size: 1.25rem;
+                line-height: 1.6;
+
+                * {
+                    font-family: inherit;
+                }
+
+                :is(p, ul, ol, blockquote, pre) {
+                    margin-bottom: 1rem;
+                }
+            }
+
+            .rating-section {
+                margin-top: 8px;
+                font-family: "Bricolage Grotesque", sans-serif;
+
+                .rating-title {
+                    margin-bottom: 8px;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                }
+
+                .rating-summary {
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    font-size: 1.15rem;
+
+                    .rating-stars {
+                        display: inline-flex;
+                        gap: 2px;
+                        color: black;
+                    }
+
+                    .rating-value {
+                        font-weight: 700;
+                    }
+
+                    .rating-count,
+                    .rating-empty {
+                        color: #888888;
+                        font-weight: 500;
+                    }
+                }
+
+                .rating-empty {
+                    margin: 0;
+                    font-size: 1.15rem;
+                }
+            }
+
             .options-title {
                 font-size: 1.25rem;
                 font-weight: 700;
