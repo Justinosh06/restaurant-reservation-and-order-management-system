@@ -15,6 +15,7 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages;
 // One login page for everyone, in steps:
 //   1. Email. The account decides the next step.
 //   2a. Password, for staff/administrators and customers who have a password (with the CAPTCHA check).
+//       A customer who forgot it can ask for a login code instead (step 2b), then set a new password.
 //   2b. One-time code sent by email, for customers without a password (e.g. created by a guest checkout)
 //       and for emails not in the database yet; a correct code creates their customer account.
 // The role comes from the database:
@@ -172,7 +173,7 @@ public class LoginModel : PageModel
                 await _db.SaveChangesAsync();
             }
 
-            await SignInCustomerAsync(customer);
+            await SignInCustomerAsync(customer, ProfileSetup.PasswordLogin);
             return RedirectToCustomerPage(returnUrl);
         }
 
@@ -219,11 +220,11 @@ public class LoginModel : PageModel
             await _db.SaveChangesAsync();
         }
 
-        await SignInCustomerAsync(customer);
+        await SignInCustomerAsync(customer, ProfileSetup.CodeLogin);
         return RedirectToCustomerPage(returnUrl);
     }
 
-    // "Send a new code" on the code step.
+    // "Send a new code" on the code step, and "Forgot password? Log in with a code instead" on the password step.
     public async Task<IActionResult> OnPostResendAsync()
     {
         if (!ModelState.IsValid)
@@ -231,7 +232,18 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        return await SendCodeAsync(NormalizedEmail());
+        var email = NormalizedEmail();
+
+        // Staff and administrators always use their password.
+        if (await _db.Admins.AnyAsync(a => a.Email == email))
+        {
+            Step = PasswordStep;
+            ModelState.AddModelError(string.Empty,
+                "Staff and administrator accounts log in with their password. Please ask an administrator to reset it.");
+            return Page();
+        }
+
+        return await SendCodeAsync(email);
     }
 
     private async Task<IActionResult> SendCodeAsync(string email)
@@ -285,7 +297,8 @@ public class LoginModel : PageModel
     }
 
     // Customers without a name or phone number are then sent to complete their profile (see ProfileSetup).
-    private Task SignInCustomerAsync(CustomerAccount customer) => ProfileSetup.SignInCustomerAsync(HttpContext, customer);
+    private Task SignInCustomerAsync(CustomerAccount customer, string loginMethod) =>
+        ProfileSetup.SignInCustomerAsync(HttpContext, customer, loginMethod);
 
     // newHash is set when the stored hash uses old settings and should be replaced.
     private static bool CheckPassword<TUser>(IPasswordHasher<TUser> hasher, TUser user, string? storedHash,

@@ -13,6 +13,13 @@ namespace RestaurantReservation.Infrastructure.Authentication;
 public static class ProfileSetup
 {
     public const string ClaimType = "profile_complete";
+
+    // How the customer logged in this time: "code" (emailed login code) or "password". After a code login the
+    // customer has just proven they own the email, so the Password page lets them set a new password without the
+    // old one (the "forgot password" route).
+    public const string LoginMethodClaimType = "login_method";
+    public const string CodeLogin = "code";
+    public const string PasswordLogin = "password";
     public const string SetupPath = "/Customer/Setup";
 
     // Pages a customer can still open before finishing the setup.
@@ -27,18 +34,22 @@ public static class ProfileSetup
     public static string DisplayName(CustomerAccount customer) =>
         string.IsNullOrWhiteSpace(customer.FullName) ? "there" : customer.FullName;
 
-    public static List<Claim> CustomerClaims(CustomerAccount customer) =>
+    public static List<Claim> CustomerClaims(CustomerAccount customer, string loginMethod) =>
     [
         new(ClaimTypes.NameIdentifier, customer.Id),
         new(ClaimTypes.Name, DisplayName(customer)),
         new(ClaimTypes.Email, customer.Email),
         new(ClaimTypes.Role, AppRoles.Customer),
-        new(ClaimType, IsComplete(customer) ? "true" : "false")
+        new(ClaimType, IsComplete(customer) ? "true" : "false"),
+        new(LoginMethodClaimType, loginMethod)
     ];
 
-    public static Task SignInCustomerAsync(HttpContext context, CustomerAccount customer)
+    // loginMethod is given when logging in; when the cookie is only refreshed (new name, profile completed)
+    // the current one is kept.
+    public static Task SignInCustomerAsync(HttpContext context, CustomerAccount customer, string? loginMethod = null)
     {
-        var identity = new ClaimsIdentity(CustomerClaims(customer), CookieAuthenticationDefaults.AuthenticationScheme);
+        loginMethod ??= context.User.FindFirstValue(LoginMethodClaimType) ?? PasswordLogin;
+        var identity = new ClaimsIdentity(CustomerClaims(customer, loginMethod), CookieAuthenticationDefaults.AuthenticationScheme);
         return context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
     }
 

@@ -644,6 +644,23 @@ body:has(.landing) {
         font-variant-numeric: tabular-nums;
     }
 
+    /* "Forgot password? Log in with a code instead" under the password form. */
+    .auth-forgot {
+        margin-top: 12px;
+        text-align: center;
+
+        .link-btn {
+            padding: 0;
+            border: none;
+            background: none;
+            color: black;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    }
+
     .auth-switch {
         display: flex;
         flex-direction: column;

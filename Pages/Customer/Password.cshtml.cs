@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Services;
 // Alias: "Customer" would otherwise resolve to the Pages.Customer folder.
 using CustomerAccount = RestaurantReservation.Models.Customer;
@@ -14,10 +15,10 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 // then passes the same CAPTCHA step as the login page before anything is checked.
 // Customers without a password (they log in with an emailed code, or came from a guest checkout) set one here:
 // there is no current password to type, so that field is hidden and not checked.
+// The same goes for a customer who logged in with an emailed code this time (e.g. "Forgot password?" on the
+// login page): the code proved the email is theirs, so they can choose a new password without the old one.
 public class PasswordModel : PageModel
 {
-    public const string AdminEmail = "admin@restaurant.com";
-
     private readonly ApplicationDbContext _db;
     private readonly IPasswordHasher<CustomerAccount> _passwordHasher;
     private readonly CaptchaService _captcha;
@@ -34,6 +35,9 @@ public class PasswordModel : PageModel
 
     // false = the account has no password yet, so the page sets one instead of changing it.
     public bool HasPassword { get; private set; }
+
+    // true = the current password is asked for: the account has one and this login used the password.
+    public bool NeedsCurrentPassword => HasPassword && User.FindFirstValue(ProfileSetup.LoginMethodClaimType) != ProfileSetup.CodeLogin;
 
     // Set when the current password was wrong, to point the customer to the admin for a reset.
     public bool WrongCurrentPassword { get; private set; }
@@ -102,7 +106,7 @@ public class PasswordModel : PageModel
         }
 
         HasPassword = !string.IsNullOrEmpty(customer.Password);
-        if (HasPassword && string.IsNullOrEmpty(Input.CurrentPassword))
+        if (NeedsCurrentPassword && string.IsNullOrEmpty(Input.CurrentPassword))
         {
             ModelState.AddModelError("Input.CurrentPassword", "Current password is required.");
         }
@@ -119,8 +123,8 @@ public class PasswordModel : PageModel
             return Page();
         }
 
-        // Step 2: the current password must be right (when there is one).
-        if (HasPassword)
+        // Step 2: the current password must be right (when it is asked for).
+        if (NeedsCurrentPassword)
         {
             if (!IsCurrentPassword(customer, Input.CurrentPassword!))
             {

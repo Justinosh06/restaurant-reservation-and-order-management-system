@@ -62,7 +62,6 @@ else
             <label asp-for="Input.Password"></label>
             <input asp-for="Input.Password" autocomplete="current-password" placeholder="Enter your password" autofocus />
             <span asp-validation-for="Input.Password" class="field-error"></span>
-            <span class="hint">Forgot your password? Email <a href="mailto:admin@restaurant.com">admin@restaurant.com</a>.</span>
         </div>
 
         <button type="button" id="loginButton" class="pill-btn w-100">Log in</button>
@@ -94,6 +93,12 @@ else
                 </div>
             </div>
         </div>
+    </form>
+
+    @* Forgot password: email a login code instead (its own form, so the CAPTCHA step is not involved). *@
+    <form method="post" asp-page-handler="Resend" asp-route-returnUrl="@routeReturnUrl" class="auth-forgot">
+        <input type="hidden" asp-for="Input.Email" id="ForgotEmail" />
+        <button type="submit" class="link-btn">Forgot password? Log in with a code instead</button>
     </form>
 }
 else if (Model.Step == LoginModel.CodeStep)
