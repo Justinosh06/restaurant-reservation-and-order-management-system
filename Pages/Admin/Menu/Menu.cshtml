@@ -17,7 +17,13 @@
         <div>
             <h1 class="h4 fw-semibold mb-1">Menu</h1>
         </div>
-        <button type="button" class="btn btn-dark" id="btn-new-item"><i class="fa-solid fa-plus me-1"></i> New menu item</button>
+        <div class="d-flex flex-wrap gap-2">
+            @* Opens the customer menu on the main site, so you can see the dishes as guests do. *@
+            <a class="btn btn-light border" href="@Model.PreviewUrl" target="_blank" rel="noopener">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Preview menu
+            </a>
+            <button type="button" class="btn btn-dark" id="btn-new-item"><i class="fa-solid fa-plus me-1"></i> New menu item</button>
+        </div>
     </div>
 
     <div class="row g-3 mb-4">

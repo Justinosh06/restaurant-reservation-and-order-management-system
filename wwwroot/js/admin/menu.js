@@ -38,13 +38,15 @@
 
     const photo = (m) => m.imageUrl
         ? `<img src="${AdminUI.escapeHtml(m.imageUrl)}" class="object-fit-cover" alt="" />`
-        : `<div class="d-flex align-items-center justify-content-center bg-body-tertiary text-body-secondary"><i class="fa-solid fa-utensils fs-3"></i></div>`;
+        : `<div class="menu-photo-placeholder d-flex flex-column align-items-center justify-content-center gap-2 text-body-secondary">
+               <i class="fa-regular fa-image fs-4"></i><span class="small">Photo coming soon</span>
+           </div>`;
 
-    // Photo, name, price, category and description; the switch shows whether customers can order it.
+    // Photo, category, name, price and description; the switch shows whether customers can order it.
     const itemCard = (m) => {
         const name = AdminUI.escapeHtml(m.name);
         const description = m.description
-            ? `<p class="small text-body-secondary mt-3 mb-0 menu-description">${AdminUI.escapeHtml(m.description)}</p>`
+            ? `<p class="small text-body-secondary mt-2 mb-0 menu-description">${AdminUI.escapeHtml(m.description)}</p>`
             : "";
 
         return `
@@ -52,14 +54,16 @@
                 <div class="card h-100 bg-body border-0 rounded-4 overflow-hidden ${m.available ? "" : "opacity-75"}">
                     <div class="ratio ratio-4x3">${photo(m)}</div>
                     <div class="card-body d-flex flex-column p-4">
-                        <div class="d-flex justify-content-between align-items-start gap-3">
-                            <h2 class="h6 fw-semibold mb-0 text-truncate" title="${name}">${name}</h2>
-                            <span class="fw-semibold text-nowrap">${AdminUI.formatCurrency(m.price)}</span>
+                        <div class="mb-3">
+                            <div class="menu-category text-body-secondary mb-1">${AdminUI.escapeHtml(m.category)}</div>
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <h2 class="h6 fw-semibold mb-0 text-truncate" title="${name}">${name}</h2>
+                                <span class="fw-semibold text-nowrap">${AdminUI.formatCurrency(m.price)}</span>
+                            </div>
+                            ${description}
                         </div>
-                        <div class="small text-body-secondary mt-1">${AdminUI.escapeHtml(m.category)}</div>
-                        ${description}
 
-                        <div class="d-flex align-items-center gap-2 pt-4 mt-auto">
+                        <div class="d-flex align-items-center gap-2 border-top pt-3 mt-auto">
                             <div class="form-check form-switch mb-0 me-auto">
                                 <input class="form-check-input" type="checkbox" role="switch" id="avail-${m.id}" data-toggle="${m.id}" ${m.available ? "checked" : ""} />
                                 <label class="form-check-label small" for="avail-${m.id}">Available</label>

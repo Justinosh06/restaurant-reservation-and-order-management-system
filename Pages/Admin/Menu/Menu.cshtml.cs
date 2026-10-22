@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 
@@ -30,6 +31,9 @@ public class MenuModel : PageModel
     }
 
     public static IReadOnlyList<MenuItemType> Categories { get; } = Enum.GetValues<MenuItemType>();
+
+    // The customer menu page on the main site (the admin portal runs on the admin subdomain).
+    public string PreviewUrl => SiteHosts.MainSiteUrl(Request, "/Menu");
 
     public record MenuItemIdRequest(string Id);
 

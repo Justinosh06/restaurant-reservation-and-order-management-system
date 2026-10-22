@@ -150,3 +150,16 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/* Photo slot for dishes without a photo: a soft gradient, so it reads as an empty frame on the grey panel. */
+.admin-page .menu-photo-placeholder {
+    background: linear-gradient(180deg, var(--bs-secondary-bg) 0%, var(--bs-tertiary-bg) 100%);
+}
+
+/* Small capitals label above the dish name, e.g. "BEVERAGE". */
+.admin-page .menu-category {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
