@@ -46,6 +46,17 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'CheckedInAt') IS NULL ALTER TABLE Reservations ADD CheckedInAt datetime2 NULL");
 
+        // A dining session can belong to a signed-in customer (same column, key and index as EnsureCreated).
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Sessions', 'CustomerId') IS NULL
+            BEGIN
+                ALTER TABLE Sessions ADD CustomerId nvarchar(450) NULL;
+                EXEC(N'CREATE INDEX IX_Sessions_CustomerId ON Sessions (CustomerId);');
+                EXEC(N'ALTER TABLE Sessions ADD CONSTRAINT FK_Sessions_Customers_CustomerId
+                    FOREIGN KEY (CustomerId) REFERENCES Customers (Id);');
+            END
+            """);
+
         // Options is stored as JSON; existing rows get an empty set of options.
         // EF formats raw SQL like string.Format, so the braces of {} are written doubled.
         await db.Database.ExecuteSqlRawAsync(
