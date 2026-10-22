@@ -44,7 +44,14 @@
       "Title": "Management",
       "NavLinks": [
         {
-          "Title": "Staffs",
+          "Title": "Menu",
+          "Icon": "fa-solid fa-utensils",
+          "Page": "/Admin/Menu/Menu",
+          "Roles": [
+            "Administrator"
+          ]
+        },
+        {          "Title": "Staffs",
           "Icon": "fa-regular fa-user",
           "Page": "/Admin/Staffs/Staff",
           "Roles": [

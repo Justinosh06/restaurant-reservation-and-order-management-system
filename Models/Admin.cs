@@ -29,5 +29,14 @@ namespace RestaurantReservation.Models
 
         // Nullable so accounts created before this field existed still load; the Staffs page requires it.
         public Gender? Gender { get; set; }
+
+        // Set on the Profile page. Without a name the portal shows the email; without an image, the gender avatar.
+        [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters.")]
+        public string? Name { get; set; }
+
+        public string? ImageUrl { get; set; }
+
+        // When this account last opened the announcement notifications; newer announcements count as unread.
+        public DateTime? AnnouncementsSeenAt { get; set; }
     }
 }

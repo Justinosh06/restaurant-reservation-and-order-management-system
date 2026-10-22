@@ -10,7 +10,8 @@ namespace RestaurantReservation.Models
         [Required(ErrorMessage = "Menu item ID is required.")]
         public string Id { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Name is required.")]
+        [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters.")]
         public string Name { get; set; } = string.Empty;
 
         [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]

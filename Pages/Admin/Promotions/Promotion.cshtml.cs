@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -8,30 +7,20 @@ using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Pages.Admin.Promotions;
 
-[RequestFormLimits(MultipartBodyLengthLimit = MaxImageBytes + 1024 * 1024)]
+[RequestFormLimits(MultipartBodyLengthLimit = ImageUploadService.MaxRequestBytes)]
 public class PromotionModel : PageModel
 {
-    public const int MaxImageBytes = 5 * 1024 * 1024;
     private const string UploadFolder = "uploads/promotions";
 
-    public static readonly Dictionary<string, string> AllowedImageTypes = new()
-    {
-        ["image/jpeg"] = ".jpg",
-        ["image/png"] = ".png",
-        ["image/webp"] = ".webp"
-    };
-
     private readonly ApplicationDbContext _db;
-    private readonly IWebHostEnvironment _env;
+    private readonly ImageUploadService _images;
     private readonly RestaurantClock _clock;
-    private readonly ILogger<PromotionModel> _logger;
 
-    public PromotionModel(ApplicationDbContext db, IWebHostEnvironment env, RestaurantClock clock, ILogger<PromotionModel> logger)
+    public PromotionModel(ApplicationDbContext db, ImageUploadService images, RestaurantClock clock)
     {
         _db = db;
-        _env = env;
+        _images = images;
         _clock = clock;
-        _logger = logger;
     }
 
     public record PromotionIdRequest(string Id);
@@ -62,12 +51,12 @@ public class PromotionModel : PageModel
 
         if (image is { Length: > 0 })
         {
-            var imageError = await ValidateImageAsync(image);
+            var imageError = await ImageUploadService.ValidateAsync(image);
             if (imageError is not null)
             {
                 return BadRequest(new { error = imageError });
             }
-            promotion.ImageUrl = await SaveImageAsync(image);
+            promotion.ImageUrl = await _images.SaveAsync(image, UploadFolder);
         }
 
         _db.Promotions.Add(promotion);
@@ -77,7 +66,7 @@ public class PromotionModel : PageModel
         }
         catch
         {
-            DeleteImage(promotion.ImageUrl);
+            _images.Delete(promotion.ImageUrl, UploadFolder);
             throw;
         }
 
@@ -109,12 +98,12 @@ public class PromotionModel : PageModel
         var oldImageUrl = promotion.ImageUrl;
         if (image is { Length: > 0 })
         {
-            var imageError = await ValidateImageAsync(image);
+            var imageError = await ImageUploadService.ValidateAsync(image);
             if (imageError is not null)
             {
                 return BadRequest(new { error = imageError });
             }
-            promotion.ImageUrl = await SaveImageAsync(image);
+            promotion.ImageUrl = await _images.SaveAsync(image, UploadFolder);
         }
         else if (removeImage)
         {
@@ -129,14 +118,14 @@ public class PromotionModel : PageModel
         {
             if (promotion.ImageUrl != oldImageUrl)
             {
-                DeleteImage(promotion.ImageUrl);
+                _images.Delete(promotion.ImageUrl, UploadFolder);
             }
             throw;
         }
 
         if (promotion.ImageUrl != oldImageUrl)
         {
-            DeleteImage(oldImageUrl);
+            _images.Delete(oldImageUrl, UploadFolder);
         }
 
         return new JsonResult(ToDto(promotion));
@@ -181,80 +170,9 @@ public class PromotionModel : PageModel
 
         _db.Promotions.Remove(promotion);
         await _db.SaveChangesAsync();
-        DeleteImage(promotion.ImageUrl);
+        _images.Delete(promotion.ImageUrl, UploadFolder);
 
         return new NoContentResult();
-    }
-
-    private static async Task<string?> ValidateImageAsync(IFormFile image)
-    {
-        if (image.Length > MaxImageBytes)
-        {
-            return $"Image must be {MaxImageBytes / (1024 * 1024)} MB or smaller.";
-        }
-        if (!AllowedImageTypes.ContainsKey(image.ContentType))
-        {
-            return "Please choose a JPG, PNG or WebP image.";
-        }
-
-        var header = new byte[12];
-        await using var stream = image.OpenReadStream();
-        await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
-        if (!LooksLikeImage(image.ContentType, header))
-        {
-            return "This file isn't a valid JPG, PNG or WebP image.";
-        }
-        return null;
-    }
-
-    // Checks the first bytes of the file, so a renamed non-image file is rejected.
-    private static bool LooksLikeImage(string contentType, byte[] header)
-    {
-        if (contentType == "image/jpeg")
-        {
-            return header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-        }
-        if (contentType == "image/png")
-        {
-            byte[] pngStart = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-            return header.Take(8).SequenceEqual(pngStart);
-        }
-        if (contentType == "image/webp")
-        {
-            return Encoding.ASCII.GetString(header, 0, 4) == "RIFF" && Encoding.ASCII.GetString(header, 8, 4) == "WEBP";
-        }
-        return false;
-    }
-
-    private async Task<string> SaveImageAsync(IFormFile image)
-    {
-        var folder = Path.Combine(_env.WebRootPath, UploadFolder);
-        Directory.CreateDirectory(folder);
-
-        var fileName = Guid.NewGuid().ToString("N") + AllowedImageTypes[image.ContentType];
-        await using (var output = System.IO.File.Create(Path.Combine(folder, fileName)))
-        {
-            await image.CopyToAsync(output);
-        }
-        return $"/{UploadFolder}/{fileName}";
-    }
-
-    private void DeleteImage(string? imageUrl)
-    {
-        if (string.IsNullOrEmpty(imageUrl) || !imageUrl.StartsWith($"/{UploadFolder}/", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        var path = Path.Combine(_env.WebRootPath, UploadFolder, Path.GetFileName(imageUrl));
-        try
-        {
-            System.IO.File.Delete(path);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _logger.LogWarning(ex, "Could not delete promotion image {Path}", path);
-        }
     }
 
     private object ToDto(Promotion p) => new

@@ -5,7 +5,7 @@
 @using RestaurantReservation.Pages.Admin.Promotions
 @{
     ViewData["Title"] = "Promotions";
-    var maxImageMb = PromotionModel.MaxImageBytes / (1024 * 1024);
+    var maxImageMb = ImageUploadService.MaxImageBytes / (1024 * 1024);
 }
 
 <div class="admin-page px-3 pt-3 pb-4">
@@ -22,11 +22,11 @@
                 <div class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3 pb-2">
                     <span class="small text-body-secondary fw-medium">All promotions</span>
                     <div class="d-flex flex-wrap gap-2 ms-lg-auto">
-                        <div class="input-group input-group-sm w-auto">
-                            <span class="input-group-text bg-body"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+                        <div class="input-group input-group-sm w-auto search-pill">
+                            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
                             <input type="search" id="promo-search" class="form-control" placeholder="Search by title" aria-label="Search promotions by title" />
                         </div>
-                        <select class="form-select form-select-sm w-auto" id="promo-status-filter" aria-label="Filter by status">
+                        <select class="form-select form-select-sm w-auto filter-pill" id="promo-status-filter" aria-label="Filter by status">
                             <option value="">All statuses</option>
                             <option value="Active">Active</option>
                             <option value="Scheduled">Scheduled</option>
@@ -68,8 +68,8 @@
                         </div>
                     </div>
                     <input type="file" id="promo-image" class="d-none"
-                           accept="@string.Join(", ", PromotionModel.AllowedImageTypes.Keys)"
-                           data-max-bytes="@PromotionModel.MaxImageBytes" />
+                           accept="@ImageUploadService.AcceptAttribute"
+                           data-max-bytes="@ImageUploadService.MaxImageBytes" />
                     <div class="d-flex justify-content-between align-items-center mt-1">
                         <small class="form-text">JPG, PNG or WebP, up to @maxImageMb MB</small>
                         <button type="button" class="btn btn-link link-danger btn-sm p-0 d-none" id="remove-image">Remove image</button>

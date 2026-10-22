@@ -44,6 +44,62 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'CheckedInAt') IS NULL ALTER TABLE Reservations ADD CheckedInAt datetime2 NULL");
 
+        // Customers used to have one FullName; it is now FirstName and LastName. Older databases get the two
+        // columns, filled by splitting FullName at the first space, and FullName is dropped (it is required
+        // there and no longer saved, so new customers couldn't register). Dynamic SQL because new databases
+        // have no FullName column at all.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'FirstName') IS NULL ALTER TABLE Customers ADD FirstName nvarchar(50) NOT NULL DEFAULT ''");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'LastName') IS NULL ALTER TABLE Customers ADD LastName nvarchar(50) NOT NULL DEFAULT ''");
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Customers', 'FullName') IS NOT NULL
+            BEGIN
+                EXEC(N'
+                    UPDATE Customers SET
+                        FirstName = LEFT(CASE WHEN CHARINDEX(N'' '', LTRIM(FullName)) > 0
+                            THEN LEFT(LTRIM(FullName), CHARINDEX(N'' '', LTRIM(FullName)) - 1)
+                            ELSE LTRIM(FullName) END, 50),
+                        LastName = LEFT(CASE WHEN CHARINDEX(N'' '', LTRIM(FullName)) > 0
+                            THEN LTRIM(SUBSTRING(LTRIM(FullName), CHARINDEX(N'' '', LTRIM(FullName)) + 1, 200))
+                            ELSE N'''' END, 50)
+                    WHERE FirstName = N'''' AND LastName = N'''';
+                    ALTER TABLE Customers DROP COLUMN FullName;');
+            END
+            """);
+
+        // A dining session can belong to a signed-in customer (same column, index and key as EnsureCreated makes).
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Sessions', 'CustomerId') IS NULL
+            BEGIN
+                ALTER TABLE Sessions ADD CustomerId nvarchar(450) NULL;
+                EXEC(N'CREATE INDEX IX_Sessions_CustomerId ON Sessions (CustomerId);');
+                ALTER TABLE Sessions ADD CONSTRAINT FK_Sessions_Customers_CustomerId
+                    FOREIGN KEY (CustomerId) REFERENCES Customers (Id);
+            END
+            """);
+
+        // Admin portal profile (name and picture) and announcement notifications.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Admins', 'Name') IS NULL ALTER TABLE Admins ADD Name nvarchar(100) NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Admins', 'ImageUrl') IS NULL ALTER TABLE Admins ADD ImageUrl nvarchar(max) NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Admins', 'AnnouncementsSeenAt') IS NULL ALTER TABLE Admins ADD AnnouncementsSeenAt datetime2 NULL");
+
+        // Customer announcement notifications: the bell on the customer site, and the email sent once per announcement.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'AnnouncementsSeenAt') IS NULL ALTER TABLE Customers ADD AnnouncementsSeenAt datetime2 NULL");
+        // Visible announcements posted before emails existed count as already published, so editing one later
+        // doesn't email everyone. Hidden ones are emailed when they are first switched on.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Announcements', 'PublishedAt') IS NULL
+            BEGIN
+                ALTER TABLE Announcements ADD PublishedAt datetime2 NULL;
+                EXEC(N'UPDATE Announcements SET PublishedAt = CreatedAt WHERE IsActive = 1;');
+            END
+            """);
+
         // Options is stored as JSON; existing rows get an empty set of options.
         // EF formats raw SQL like string.Format, so the braces of {} are written doubled.
         await db.Database.ExecuteSqlRawAsync(

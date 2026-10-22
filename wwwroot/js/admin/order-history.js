@@ -2,7 +2,8 @@
     const PAGE_SIZE = 12;
     const ITEMS_SHOWN = 4;
 
-    let orders = [];
+    // Each entry is one visit (dining session) at a table, with all of its orders combined.
+    let visits = [];
     let shownCount = PAGE_SIZE;
 
     const form = document.getElementById("history-form");
@@ -25,6 +26,14 @@
             <td class="text-end pe-0">${AdminUI.formatCurrency(item.unitPrice * item.quantity)}</td>
         </tr>`).join("");
 
+    const orderLabel = (o) => o.orderIds.length === 1
+        ? `Order #${AdminUI.escapeHtml(o.orderIds[0])}`
+        : `${o.orderIds.length} orders`;
+
+    const timeRange = (o) => o.startedAt === o.lastOrderAt
+        ? AdminUI.formatTime(o.startedAt)
+        : `${AdminUI.formatTime(o.startedAt)} - ${AdminUI.formatTime(o.lastOrderAt)}`;
+
     const orderCard = (o) => {
         const more = o.items.length > ITEMS_SHOWN
             ? `<div class="small text-body-secondary text-center">+${o.items.length - ITEMS_SHOWN} more items</div>`
@@ -38,14 +47,14 @@
                             <div class="bg-success-subtle text-success-emphasis rounded-3 fw-semibold small text-center px-2 py-3">${AdminUI.escapeHtml(o.table ?? "-")}</div>
                             <div class="flex-grow-1 overflow-hidden">
                                 <div class="fw-semibold text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</div>
-                                <div class="small text-body-secondary">Order #${AdminUI.escapeHtml(o.displayId)} &middot; Table ${AdminUI.escapeHtml(o.table ?? "-")}</div>
+                                <div class="small text-body-secondary">${orderLabel(o)} &middot; Table ${AdminUI.escapeHtml(o.table ?? "-")}</div>
                             </div>
                             ${paidBadge}
                         </div>
 
                         <div class="d-flex justify-content-between small text-body-secondary border-bottom pb-2 my-3">
-                            <span>${AdminUI.formatDate(o.createdAt)}</span>
-                            <span>${AdminUI.formatTime(o.createdAt)}</span>
+                            <span>${AdminUI.formatDate(o.startedAt)}</span>
+                            <span>${timeRange(o)}</span>
                         </div>
 
                         <table class="table table-sm table-borderless small mb-1">
@@ -71,16 +80,17 @@
     };
 
     const showDetails = (o) => {
-        document.getElementById("order-modal-title").textContent = `Order #${o.displayId}`;
+        document.getElementById("order-modal-title").textContent = `Table ${o.table ?? "-"}`;
         const remarks = o.items.filter(item => item.remarks);
         document.getElementById("order-modal-body").innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 ${paidBadge}
-                <span class="small text-body-secondary">${AdminUI.formatDate(o.createdAt)}, ${AdminUI.formatTime(o.createdAt)}</span>
+                <span class="small text-body-secondary">${AdminUI.formatDate(o.startedAt)}, ${timeRange(o)}</span>
             </div>
             <dl class="row small mb-3">
                 <dt class="col-4 fw-normal text-body-secondary">Customer</dt><dd class="col-8 text-break">${AdminUI.escapeHtml(o.customer)}</dd>
                 <dt class="col-4 fw-normal text-body-secondary">Table</dt><dd class="col-8">${AdminUI.escapeHtml(o.table ?? "-")}</dd>
+                <dt class="col-4 fw-normal text-body-secondary">${o.orderIds.length === 1 ? "Order" : "Orders"}</dt><dd class="col-8">${o.orderIds.map(id => `#${AdminUI.escapeHtml(id)}`).join(", ")}</dd>
             </dl>
             <table class="table table-sm small mb-2">
                 <thead><tr><th class="ps-0">Items</th><th class="text-center">Qty</th><th class="text-end pe-0">Price</th></tr></thead>
@@ -101,15 +111,15 @@
 
     const matchesSearch = (o) => {
         const term = searchInput.value.trim().toLowerCase();
-        return !term || [o.displayId, o.table, o.customer].some(v => (v ?? "").toLowerCase().includes(term));
+        return !term || [...o.orderIds, o.table, o.customer].some(v => (v ?? "").toLowerCase().includes(term));
     };
 
     const render = () => {
-        const visible = orders.filter(matchesSearch);
+        const visible = visits.filter(matchesSearch);
         countEl.textContent = `· ${visible.length}`;
 
         if (visible.length === 0) {
-            showGridMessage(orders.length ? "No orders match this search." : "No paid orders for these dates.");
+            showGridMessage(visits.length ? "No orders match this search." : "No paid orders for these dates.");
             return;
         }
 
@@ -128,7 +138,7 @@
         showGridMessage("Loading...");
 
         AdminUI.get("History", { from: fromInput.value, to: toInput.value })
-            .then(data => { orders = data; render(); })
+            .then(data => { visits = data; render(); })
             .catch(error => {
                 showGridMessage(error.message, "text-danger");
                 AdminUI.showError(error);
@@ -152,7 +162,7 @@
 
     gridEl.addEventListener("click", (e) => {
         const button = e.target.closest("[data-details]");
-        if (button) showDetails(orders.find(o => o.id === button.dataset.details));
+        if (button) showDetails(visits.find(o => o.id === button.dataset.details));
     });
 
     document.getElementById("history-tab").addEventListener("shown.bs.tab", loadHistory, { once: true });

@@ -1,5 +1,11 @@
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Announcements
 @using RestaurantReservation.Infrastructure.Authentication
+@inject CustomerNotificationService Notifications
 @model string
+@{
+    var notes = User.IsInRole(AppRoles.Customer) ? await Notifications.GetAsync(User) : null;
+}
 
 <nav class="landing-nav">
     <a asp-page="/Index" class="brand">@Model</a>
@@ -9,6 +15,43 @@
         {
             @* Logout lives in the account sidebar. On the account pages this link leads back to the dashboard instead. *@
             <span class="greeting">Hi, @User.Identity?.Name</span>
+
+            @* Announcements from the restaurant. Opening the bell marks them read (js/customer-notifications.js). *@
+            <div class="dropdown customer-bell">
+                <button type="button" class="bell-btn" data-bs-toggle="dropdown" aria-expanded="false" id="customer-bell"
+                        aria-label="Notifications@(notes!.UnreadCount > 0 ? $", {notes.UnreadCount} unread" : "")">
+                    <i class="fa-regular fa-bell"></i>
+                    @if (notes.UnreadCount > 0)
+                    {
+                        <span class="bell-count" id="customer-bell-count">@(notes.UnreadCount > 9 ? "9+" : notes.UnreadCount.ToString())</span>
+                    }
+                </button>
+                <div class="dropdown-menu dropdown-menu-end bell-menu">
+                    @Html.AntiForgeryToken()
+                    <div class="bell-head">Notifications</div>
+                    @if (notes.Items.Count == 0)
+                    {
+                        <p class="bell-empty">You're all caught up.</p>
+                    }
+                    else
+                    {
+                        <ul class="bell-list">
+                            @foreach (var note in notes.Items)
+                            {
+                                <li class="@(note.IsUnread ? "unread" : "")">
+                                    <a asp-page="/Customer/Notifications" asp-fragment="ann-@note.Id">
+                                        <span class="bell-title">@note.Title</span>
+                                        <span class="bell-text">@note.Description</span>
+                                        <span class="bell-meta">@note.Category &middot; @note.PostedAt.ToRestaurantTime().ToString("d MMM, h:mm tt")</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <a class="bell-all" asp-page="/Customer/Notifications">See all notifications</a>
+                </div>
+            </div>
+            <script src="~/js/customer-notifications.js" asp-append-version="true" defer></script>
             @if ((ViewContext.RouteData.Values["page"] as string ?? "").StartsWith("/Customer/"))
             {
                 <a asp-page="/Index" class="pill-btn">Back to dashboard</a>
