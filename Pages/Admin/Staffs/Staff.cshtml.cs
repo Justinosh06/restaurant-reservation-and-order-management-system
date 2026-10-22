@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -98,6 +100,13 @@ public class StaffModel : PageModel
         }
 
         await _db.SaveChangesAsync();
+
+        // The login cookie holds the email, role and gender, so editing your own account issues it again;
+        // otherwise a changed role would keep its old permissions until the next sign-in.
+        if (admin.Id == CurrentAdminId)
+        {
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, AdminClaims.CreatePrincipal(admin));
+        }
 
         return new JsonResult(ToDto(admin));
     }

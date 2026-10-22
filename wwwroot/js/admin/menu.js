@@ -6,7 +6,6 @@
     let removeSavedImage = false;
 
     const gridEl = document.getElementById("menu-grid");
-    const countEl = document.getElementById("menu-count");
     const searchEl = document.getElementById("menu-search");
     const availabilityFilterEl = document.getElementById("menu-availability-filter");
     const categoryFilterEl = document.getElementById("menu-category-filter");
@@ -37,40 +36,31 @@
 
     // ---- List ----
 
-    const availabilityBadge = (m) => m.available
-        ? `<span class="badge rounded-pill bg-success-subtle text-success-emphasis">Available</span>`
-        : `<span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">Unavailable</span>`;
-
     const photo = (m) => m.imageUrl
         ? `<img src="${AdminUI.escapeHtml(m.imageUrl)}" class="object-fit-cover" alt="" />`
         : `<div class="d-flex align-items-center justify-content-center bg-body-tertiary text-body-secondary"><i class="fa-solid fa-utensils fs-3"></i></div>`;
 
+    // Photo, name, price, category and description; the switch shows whether customers can order it.
     const itemCard = (m) => {
         const name = AdminUI.escapeHtml(m.name);
-        const optionSummary = m.options.length
-            ? `<div class="small text-body-secondary text-truncate"><i class="fa-solid fa-sliders fa-fw me-1"></i>${m.options.map(o => AdminUI.escapeHtml(o.name)).join(", ")}</div>`
+        const description = m.description
+            ? `<p class="small text-body-secondary mt-3 mb-0 menu-description">${AdminUI.escapeHtml(m.description)}</p>`
             : "";
 
         return `
             <div class="col-sm-6 col-xl-4 col-xxl-3">
                 <div class="card h-100 bg-body border-0 rounded-4 overflow-hidden ${m.available ? "" : "opacity-75"}">
                     <div class="ratio ratio-4x3">${photo(m)}</div>
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="card-body d-flex flex-column p-4">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
                             <h2 class="h6 fw-semibold mb-0 text-truncate" title="${name}">${name}</h2>
                             <span class="fw-semibold text-nowrap">${AdminUI.formatCurrency(m.price)}</span>
                         </div>
-                        <div class="d-flex flex-wrap align-items-center gap-2 small text-body-secondary mt-1">
-                            <span>${AdminUI.escapeHtml(m.category)}</span>
-                            &middot;
-                            ${availabilityBadge(m)}
-                        </div>
-                        <p class="small text-body-secondary mt-2 mb-2 menu-description">${AdminUI.escapeHtml(m.description) || "<em>No description</em>"}</p>
-                        ${optionSummary}
-                        <div class="small text-body-secondary"><i class="fa-solid fa-receipt fa-fw me-1"></i>Ordered ${m.timesOrdered} ${m.timesOrdered === 1 ? "time" : "times"}</div>
+                        <div class="small text-body-secondary mt-1">${AdminUI.escapeHtml(m.category)}</div>
+                        ${description}
 
-                        <div class="d-flex align-items-center gap-2 border-top pt-3 mt-auto">
-                            <div class="form-check form-switch mb-0 me-auto" title="${m.available ? "Customers can order this" : "Hidden from ordering"}">
+                        <div class="d-flex align-items-center gap-2 pt-4 mt-auto">
+                            <div class="form-check form-switch mb-0 me-auto">
                                 <input class="form-check-input" type="checkbox" role="switch" id="avail-${m.id}" data-toggle="${m.id}" ${m.available ? "checked" : ""} />
                                 <label class="form-check-label small" for="avail-${m.id}">Available</label>
                             </div>
@@ -97,7 +87,6 @@
         renderSummary();
 
         if (items.length === 0) {
-            countEl.textContent = "";
             showGridMessage("The menu is empty. Use \"New menu item\" to add the first dish.");
             return;
         }
@@ -109,7 +98,6 @@
             (!category || m.category === category) &&
             (!availability || (availability === "available") === m.available));
 
-        countEl.textContent = `${visible.length} of ${items.length}`;
         if (visible.length === 0) {
             showGridMessage("No menu items match these filters.");
             return;
@@ -124,10 +112,14 @@
             .catch(error => { showGridMessage(error.message, "text-danger"); AdminUI.showError(error); });
     };
 
+    // Same order as the server's list: categories in serving order (as the form's dropdown lists them), then by name.
+    const categoryOrder = [...categoryInput.options].map(option => option.value);
+
     const replaceItem = (saved) => {
         const index = items.findIndex(m => m.id === saved.id);
         if (index >= 0) items[index] = saved; else items.push(saved);
-        items.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+        items.sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category)
+            || a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
     };
 
     // ---- Options editor ----

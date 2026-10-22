@@ -76,6 +76,8 @@ public class OrderModel : PageModel
 
     // History only lists finished orders: served to the table and paid for (status Completed).
     // Orders are grouped by dining session, so a table that ordered twice in one visit shows as one bill.
+    // A visit is listed when any of its orders falls in the dates, and then shows all of its orders,
+    // so a visit that ran past midnight isn't cut in two by the date range.
     public async Task<IActionResult> OnGetHistoryAsync(string? from, string? to)
     {
         var dateError = DateRangeInput.Check(from, to, out var fromDate, out var toDate);
@@ -86,8 +88,12 @@ public class OrderModel : PageModel
 
         var startUtc = _clock.StartOfDayUtc(fromDate);
         var endUtc = _clock.StartOfDayUtc(toDate.AddDays(1));
-        var orders = await _db.Orders.AsNoTracking()
-            .Where(o => o.Status == OrderStatus.Completed && o.CreatedAt >= startUtc && o.CreatedAt < endUtc)
+        var completed = _db.Orders.Where(o => o.Status == OrderStatus.Completed);
+        var sessionIds = completed
+            .Where(o => o.CreatedAt >= startUtc && o.CreatedAt < endUtc)
+            .Select(o => o.SessionId);
+        var orders = await completed.AsNoTracking()
+            .Where(o => sessionIds.Contains(o.SessionId))
             .Select(o => new
             {
                 o.Id,
@@ -101,9 +107,10 @@ public class OrderModel : PageModel
             .ToListAsync();
 
         var orderIds = orders.Select(o => o.Id).ToList();
+        // Name and price as charged on the order, not today's menu, which can since have been edited.
         var orderItems = await _db.OrderItems.AsNoTracking()
             .Where(oi => orderIds.Contains(oi.OrderId))
-            .Select(oi => new { oi.OrderId, oi.MenuItemId, oi.MenuItem!.Name, oi.MenuItem.Price, oi.Quantity, oi.Remarks })
+            .Select(oi => new { oi.OrderId, oi.ItemName, oi.UnitPrice, oi.Quantity, oi.Remarks })
             .ToListAsync();
         var itemsByOrder = orderItems.ToLookup(oi => oi.OrderId);
 
@@ -114,13 +121,14 @@ public class OrderModel : PageModel
                 var visitOrders = visit.OrderBy(o => o.CreatedAt).ToList();
                 var visitItems = visitOrders.SelectMany(o => itemsByOrder[o.Id]).ToList();
 
-                // The same dish ordered in both rounds becomes one line with the quantities added up.
+                // The same dish at the same price ordered in both rounds becomes one line with the quantities added up;
+                // a different price (another size, or a price change between rounds) keeps its own line.
                 var items = visitItems
-                    .GroupBy(oi => oi.MenuItemId)
+                    .GroupBy(oi => new { oi.ItemName, oi.UnitPrice })
                     .Select(dish => new OrderItemRow(
-                        dish.First().Name,
+                        dish.Key.ItemName,
                         dish.Sum(oi => oi.Quantity),
-                        dish.First().Price,
+                        dish.Key.UnitPrice,
                         JoinRemarks(dish.Select(oi => oi.Remarks))))
                     .ToList();
 
@@ -170,9 +178,9 @@ public class OrderModel : PageModel
         var orderIds = orders.Select(o => o.Id).ToList();
         var orderItems = await _db.OrderItems.AsNoTracking()
             .Where(oi => orderIds.Contains(oi.OrderId))
-            .Select(oi => new { oi.OrderId, oi.MenuItem!.Name, oi.MenuItem.Price, oi.Quantity, oi.Remarks })
+            .Select(oi => new { oi.OrderId, oi.ItemName, oi.UnitPrice, oi.Quantity, oi.Remarks })
             .ToListAsync();
-        var items = orderItems.ToLookup(oi => oi.OrderId, oi => new OrderItemRow(oi.Name, oi.Quantity, oi.Price, oi.Remarks));
+        var items = orderItems.ToLookup(oi => oi.OrderId, oi => new OrderItemRow(oi.ItemName, oi.Quantity, oi.UnitPrice, oi.Remarks));
 
         return orders.Select(o => new OrderRow(
             o.Id,

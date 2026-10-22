@@ -38,10 +38,12 @@ public class MenuModel : PageModel
 
     public async Task<IActionResult> OnGetListAsync()
     {
-        var items = await _db.MenuItems.AsNoTracking()
+        // Sorted after loading: the category is stored as text, so the database would sort it alphabetically
+        // instead of in serving order (Starter, Salad, ... Beverage).
+        var items = (await _db.MenuItems.AsNoTracking().ToListAsync())
             .OrderBy(m => m.MenuItemType)
-            .ThenBy(m => m.Name)
-            .ToListAsync();
+            .ThenBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         var orderCounts = await _db.OrderItems.AsNoTracking()
             .GroupBy(oi => oi.MenuItemId)
@@ -173,8 +175,8 @@ public class MenuModel : PageModel
         return new JsonResult(ToDto(item, await TimesOrderedAsync(item.Id)));
     }
 
-    // Past orders keep a link to the dish they were for, so a dish that has been ordered can only be
-    // marked unavailable. A dish nobody has ordered yet is removed, along with any copies sitting in carts.
+    // Past orders and reviews keep a link to the dish they were for, so a dish that has been ordered or reviewed
+    // can only be marked unavailable. Any other dish is removed, along with any copies sitting in carts.
     public async Task<IActionResult> OnPostDeleteAsync([FromBody] MenuItemIdRequest request)
     {
         var item = await _db.MenuItems.FindAsync(request.Id);
@@ -186,6 +188,12 @@ public class MenuModel : PageModel
         if (await _db.OrderItems.AnyAsync(oi => oi.MenuItemId == item.Id))
         {
             return new ConflictObjectResult(new { error = $"\"{item.Name}\" has been ordered before, so it can't be deleted. Mark it unavailable to hide it from the menu instead." });
+        }
+
+        // Deleting a dish also deletes its customer reviews (Feedback cascades), so a reviewed dish is kept too.
+        if (await _db.Feedbacks.AnyAsync(f => f.MenuItemId == item.Id))
+        {
+            return new ConflictObjectResult(new { error = $"\"{item.Name}\" has customer reviews, so it can't be deleted. Mark it unavailable to hide it from the menu instead." });
         }
 
         _db.CartItems.RemoveRange(_db.CartItems.Where(c => c.MenuItemId == item.Id));

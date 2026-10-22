@@ -88,14 +88,14 @@
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="active-pane" role="tabpanel" aria-labelledby="active-tab">
-            <div class="d-flex justify-content-end mb-3">
-                <div class="input-group w-auto search-pill">
+            <div class="d-flex justify-content-end gap-2 bg-body-tertiary rounded-4 p-3 mb-3">
+                <div class="input-group input-group-sm w-auto search-pill">
                     <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
                     <input type="search" id="order-search" class="form-control" placeholder="Search orders" aria-label="Search by order, table or customer" title="Search by order, table or customer" />
-                    <button type="button" class="btn btn-outline-secondary" id="order-refresh" title="Refresh orders">
-                        <i class="fa-solid fa-rotate"></i><span class="d-none d-sm-inline ms-1">Refresh</span>
-                    </button>
                 </div>
+                <button type="button" class="btn btn-sm btn-light filter-pill" id="order-refresh" title="Refresh orders">
+                    <i class="fa-solid fa-rotate"></i><span class="d-none d-sm-inline ms-1">Refresh</span>
+                </button>
             </div>
 
             <div class="row g-3" id="order-board">

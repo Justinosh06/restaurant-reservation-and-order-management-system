@@ -68,15 +68,14 @@
     </div>
 
     <section class="card border-0 bg-body-tertiary rounded-4">
-        <div class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3 pb-2">
-            <div class="d-inline-flex flex-wrap gap-1 bg-body border rounded-pill p-1" role="group" aria-label="Filter by category" id="menu-category-filter">
+        <div class="d-flex flex-wrap align-items-center gap-3 px-4 pt-4 pb-3">
+            <div class="d-inline-flex flex-wrap gap-1 bg-body rounded-pill p-1" role="group" aria-label="Filter by category" id="menu-category-filter">
                 <button type="button" class="btn btn-sm rounded-pill px-3 btn-dark" data-category="" aria-pressed="true">All</button>
                 @foreach (var category in MenuModel.Categories)
                 {
                     <button type="button" class="btn btn-sm rounded-pill px-3" data-category="@category" aria-pressed="false">@category</button>
                 }
             </div>
-            <span class="small text-body-secondary" id="menu-count"></span>
 
             <div class="d-flex flex-wrap gap-2 ms-lg-auto">
                 <div class="input-group input-group-sm w-auto search-pill">
@@ -90,7 +89,7 @@
                 </select>
             </div>
         </div>
-        <div class="row g-1 p-1 pt-0" id="menu-grid"></div>
+        <div class="row g-3 px-4 pb-4" id="menu-grid"></div>
     </section>
 </div>
 
@@ -169,7 +168,7 @@
                         <button type="button" class="btn btn-sm btn-light border" id="menu-add-option"
                                 data-max="@MenuModel.MaxOptions"><i class="fa-solid fa-plus me-1"></i>Add option</button>
                     </div>
-                    <p class="form-text mt-0">Choices the customer picks one of when ordering, e.g. Size: Regular, Large. Separate choices with commas.</p>
+                    <p class="form-text mt-0">e.g. Size: Regular, Large</p>
                     <div class="d-flex flex-column gap-2" id="menu-options"
                          data-name-max="@MenuModel.MaxOptionNameLength"></div>
                 </fieldset>

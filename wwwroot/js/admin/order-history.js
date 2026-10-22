@@ -99,8 +99,7 @@
             </table>
             ${remarks.length ? `
                 <div class="small fw-semibold mb-1">Remarks</div>
-                ${remarks.map(item => `<div class="bg-body-tertiary rounded-2 small px-2 py-1 mb-1">${AdminUI.escapeHtml(item.name)}: ${AdminUI.escapeHtml(item.remarks)}</div>`).join("")}` : ""}
-            <p class="small text-body-secondary mb-0 mt-2">Prices shown are today's menu prices.</p>`;
+                ${remarks.map(item => `<div class="bg-body-tertiary rounded-2 small px-2 py-1 mb-1">${AdminUI.escapeHtml(item.name)}: ${AdminUI.escapeHtml(item.remarks)}</div>`).join("")}` : ""}`;
         orderModal.show();
     };
 

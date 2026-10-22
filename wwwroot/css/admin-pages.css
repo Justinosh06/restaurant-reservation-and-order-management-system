@@ -25,8 +25,9 @@
     --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2833, 37, 41, 0.25%29'/%3e%3c/svg%3e");
 }
 
-/* Toolbar filters: the search boxes (class "search-pill"), "Filter by" dropdowns (class "filter-pill") and
-   date range buttons ([data-date-range]) on the Dashboard, Orders, Menu, Staffs, Announcements and Promotions pages.
+/* Toolbar filters: the search boxes (class "search-pill"), "Filter by" dropdowns and toolbar buttons such as
+   Orders' Refresh (class "filter-pill") and date range buttons ([data-date-range]) on the Dashboard, Orders,
+   Menu, Staffs, Announcements and Promotions pages.
    --filter-radius sets how round they are: 50rem = fully round ends, 0.375rem = Bootstrap's normal corners.
    They have no outline, so --filter-bg gives them a fill that stands out from what they sit on:
    light grey on the white page, white inside the grey panels. */
@@ -39,9 +40,9 @@
     --filter-bg: var(--bs-body-bg);
 }
 
-/* The search box is one capsule: the rounding sits on the whole group, so the magnifier, the input
-   and any button inside it (Orders' Refresh) join without inner seams. The transparent border keeps
-   its height in line with the dropdowns and shows the outline only while typing. */
+/* The search box is one capsule: the rounding sits on the whole group, so the magnifier and the input
+   join without an inner seam. The transparent border keeps its height in line with the dropdowns and
+   shows the outline only while typing. */
 .admin-page .search-pill {
     border: 1px solid transparent;
     border-radius: var(--filter-radius);
@@ -50,8 +51,7 @@
 }
 
 .admin-page .search-pill > .input-group-text,
-.admin-page .search-pill > .form-control,
-.admin-page .search-pill > .btn {
+.admin-page .search-pill > .form-control {
     border: 0;
     background: transparent;
 }
@@ -65,14 +65,6 @@
     padding-right: 0.9rem;
 }
 
-.admin-page .search-pill > .btn {
-    border-left: 1px solid var(--bs-border-color);
-}
-
-.admin-page .search-pill > .btn:hover {
-    background: var(--bs-tertiary-bg);
-}
-
 /* The rounded edge would cut off the input's own focus ring, so the whole capsule shows it instead. */
 .admin-page .search-pill > .form-control:focus {
     box-shadow: none;
@@ -83,14 +75,20 @@
     box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.15);
 }
 
-.admin-page .filter-pill {
+.admin-page .form-select.filter-pill {
     border-color: transparent;
     border-radius: var(--filter-radius);
     background-color: var(--filter-bg);
     padding-left: 0.9rem;
 }
 
-.admin-page [data-date-range] > .btn {
+/* Buttons take their fill through Bootstrap's button variables, so hover still darkens them. */
+.admin-page .btn.filter-pill {
+    padding-inline: 0.9rem;
+}
+
+.admin-page [data-date-range] > .btn,
+.admin-page .btn.filter-pill {
     --bs-btn-bg: var(--filter-bg);
     --bs-btn-border-color: transparent;
     --bs-btn-hover-border-color: transparent;
