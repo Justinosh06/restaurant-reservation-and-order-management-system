@@ -15,7 +15,7 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages;
 public class IndexModel : PageModel
 {
     private const int TopRatedSize = 5;
-    private const int NewArrivalsSize = 2;
+    private const int NewArrivalsSize = 4;
 
     private readonly ApplicationDbContext _db;
 
@@ -39,7 +39,17 @@ public class IndexModel : PageModel
     // New Arrival: the newest dishes on the menu, newest first.
     public IReadOnlyList<MenuItem> NewArrivals { get; private set; } = [];
 
-    public IReadOnlyList<Feedback> Reviews { get; private set; } = [];
+    // Reviews summary for the landing page; every review is on the Reviews page (/Reviews).
+    public double ReviewAverage { get; private set; }
+    public int ReviewCount { get; private set; }
+    public int ReviewerCount { get; private set; }
+    public int FiveStarPercent { get; private set; }
+
+    // Avatar letters of the most recent reviewers (different people), for the "Rated by" row.
+    public IReadOnlyList<string> RecentReviewerInitials { get; private set; } = [];
+
+    // Up to three reviews to show: the best-rated ones with a comment, newest first among equals.
+    public IReadOnlyList<Feedback> FeaturedReviews { get; private set; } = [];
 
     // The booking card follows the same rules as the booking page (Pages/Customer/Reserve).
     public DateOnly FirstBookingDay => DateOnly.FromDateTime(DateTime.Now).AddDays(ReserveModel.MinDaysAhead);
@@ -87,13 +97,27 @@ public class IndexModel : PageModel
             .Take(NewArrivalsSize)
             .ToListAsync();
 
-        // Every review is loaded: the page shows them in a scrolling list with a filter by rating.
-        Reviews = await _db.Feedbacks
+        var reviews = await _db.Feedbacks
             .AsNoTracking()
             .Include(f => f.MenuItem)
             .Include(f => f.Customer)
-            .OrderByDescending(f => f.Rating)
+            .OrderByDescending(f => f.CreatedAt)
             .ToListAsync();
+        ReviewCount = reviews.Count;
+        ReviewAverage = ReviewCount == 0 ? 0 : Math.Round(reviews.Average(f => f.Rating), 1);
+        ReviewerCount = reviews.Select(f => f.CustomerId).Distinct().Count();
+        FiveStarPercent = ReviewCount == 0 ? 0 : (int)Math.Round(100.0 * reviews.Count(f => f.Rating == 5) / ReviewCount);
+        RecentReviewerInitials = reviews
+            .DistinctBy(f => f.CustomerId)
+            .Take(4)
+            .Select(f => RestaurantReservation.Infrastructure.Reviews.ReviewDisplay.Initial(f.Customer))
+            .ToList();
+        FeaturedReviews = reviews
+            .Where(f => !string.IsNullOrWhiteSpace(f.Description))
+            .OrderByDescending(f => f.Rating)
+            .ThenByDescending(f => f.CreatedAt)
+            .Take(3)
+            .ToList();
     }
 
     // GET /?handler=Slots&date=2026-10-30 - the booking times on that day, grouped into Morning, Afternoon and

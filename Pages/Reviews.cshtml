@@ -1,0 +1,157 @@
+@page
+@using RestaurantReservation.Infrastructure.Reviews
+@model Restaurant_Reservation_and_Order_Management_System.Pages.ReviewsModel
+@{
+    ViewData["Title"] = "Customer Reviews";
+
+    // Read-only stars; half stars for averages such as 4.3.
+    void Stars(double rating)
+    {
+        <span class="rv-stars" aria-label="@rating.ToString("0.#") out of 5">
+            @for (var star = 1; star <= 5; star++)
+            {
+                <i class="@(rating >= star ? "fa-solid fa-star" : rating >= star - 0.5 ? "fa-solid fa-star-half-stroke" : "fa-regular fa-star")" aria-hidden="true"></i>
+            }
+        </span>
+    }
+}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
+<link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/reviews.css" asp-append-version="true" />
+
+<div class="landing">
+    <partial name="_LandingNav" model="Model.RestaurantName" />
+
+    <section class="rv-page">
+        <div class="rv-head">
+            <a asp-page="/Index" class="rv-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to home</a>
+            <h1 class="section-title mb-1">Customer Reviews</h1>
+            <p class="hint mb-0">See what our guests are saying about our food.</p>
+        </div>
+
+        @* The four scores, each with a short note underneath. *@
+        <div class="rv-stats">
+            <div class="rv-stat">
+                <div class="rv-stat-main">
+                    <strong class="rv-stat-value">@Model.Average.ToString("0.0")</strong>
+                    @{ Stars(Model.Average); }
+                </div>
+                <span class="rv-stat-note">Based on @Model.Total @(Model.Total == 1 ? "review" : "reviews")</span>
+            </div>
+            <div class="rv-stat">
+                <div class="rv-stat-main">
+                    <strong class="rv-stat-value">@Model.Total</strong>
+                    <span class="rv-stat-label">Total reviews</span>
+                </div>
+                <span class="rv-stat-note @(Model.ThisMonthCount > 0 ? "up" : "")">
+                    @if (Model.ThisMonthCount > 0)
+                    {
+                        <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+                    }
+                    +@Model.ThisMonthCount this month
+                </span>
+            </div>
+            <div class="rv-stat">
+                <div class="rv-stat-main">
+                    <strong class="rv-stat-value">@Model.ExcellentPercent%</strong>
+                    <span class="rv-stat-label">5-star reviews</span>
+                </div>
+                <span class="rv-stat-note good">
+                    <i class="fa-regular fa-thumbs-up" aria-hidden="true"></i>
+                    @Model.ExcellentCount excellent @(Model.ExcellentCount == 1 ? "rating" : "ratings")
+                </span>
+            </div>
+            <div class="rv-stat">
+                <div class="rv-stat-main">
+                    <strong class="rv-stat-value">@(Model.ThisMonthAverage?.ToString("0.0") ?? "–")</strong>
+                    <span class="rv-stat-label">This month</span>
+                </div>
+                <span class="rv-stat-note @(Model.ChangeFromLastMonth is > 0 ? "up" : Model.ChangeFromLastMonth is < 0 ? "down" : "")">
+                    @if (Model.ThisMonthAverage is null)
+                    {
+                        <text>No reviews yet this month</text>
+                    }
+                    else if (Model.ChangeFromLastMonth is { } change)
+                    {
+                        <i class="fa-solid @(change >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down")" aria-hidden="true"></i>
+                        <text>@(change >= 0 ? "+" : "")@change.ToString("0.0") from last month</text>
+                    }
+                    else
+                    {
+                        <text>@Model.ThisMonthCount @(Model.ThisMonthCount == 1 ? "review" : "reviews") this month</text>
+                    }
+                </span>
+            </div>
+        </div>
+
+        <div class="rv-body">
+            @* How many reviews each star rating has. A row opens the reviews with that rating. *@
+            <aside class="rv-panel rv-breakdown">
+                <h2 class="rv-panel-title">Ratings breakdown</h2>
+                @for (var stars = 5; stars >= 1; stars--)
+                {
+                    var count = Model.Breakdown[stars];
+                    var percent = Model.Total == 0 ? 0 : 100.0 * count / Model.Total;
+
+                    <a class="rv-bar-row @(Model.Rating == stars ? "active" : "")" asp-route-rating="@stars"
+                       aria-label="@count @(count == 1 ? "review" : "reviews") with @stars stars">
+                        <span class="rv-bar-label">@stars <i class="fa-solid fa-star" aria-hidden="true"></i></span>
+                        <span class="rv-bar"><span style="width:@percent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></span></span>
+                        <span class="rv-bar-count">@count</span>
+                    </a>
+                }
+            </aside>
+
+            <div class="rv-list">
+                @* Recent shows every review; a star pill shows only that rating. *@
+                <nav class="rv-tabs" aria-label="Show reviews">
+                    <a asp-page="/Reviews" asp-route-rating="" class="rv-tab @(Model.Rating is null ? "active" : "")">Recent reviews</a>
+                    @for (var stars = 5; stars >= 1; stars--)
+                    {
+                        <a asp-route-rating="@stars" class="rv-tab @(Model.Rating == stars ? "active" : "")">
+                            @stars <i class="fa-solid fa-star" aria-hidden="true"></i>
+                        </a>
+                    }
+                </nav>
+
+                @if (Model.Reviews.Count == 0)
+                {
+                    <p class="empty-note">
+                        @(Model.Rating is { } r ? $"No {r}-star reviews yet." : "No reviews yet. Be the first to share your thoughts after your meal.")
+                    </p>
+                }
+
+                @foreach (var review in Model.Reviews)
+                {
+                    <article class="rv-card">
+                        <header class="rv-card-head">
+                            <span class="rv-avatar" aria-hidden="true">@ReviewDisplay.Initial(review.Customer)</span>
+                            <div class="rv-who">
+                                <strong>@ReviewDisplay.Name(review.Customer)</strong>
+                                <span class="rv-date">
+                                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                                    @ReviewDisplay.Local(review.CreatedAt).ToString("d MMMM yyyy")
+                                </span>
+                            </div>
+                            <div class="rv-card-side">
+                                @{ Stars(review.Rating); }
+                                @if (review.MenuItem is not null)
+                                {
+                                    @* from=reviews makes the dish page's back button return here, on the same star filter. *@
+                                    <a class="rv-dish" asp-page="/Menu/Item" asp-route-menuItemId="@review.MenuItemId"
+                                       asp-route-from="reviews" asp-route-rating="@Model.Rating">
+                                        <i class="fa-solid fa-utensils" aria-hidden="true"></i> @review.MenuItem.Name
+                                    </a>
+                                }
+                            </div>
+                        </header>
+                        <p class="rv-text @(string.IsNullOrWhiteSpace(review.Description) ? "muted" : "")">
+                            @(string.IsNullOrWhiteSpace(review.Description) ? "Rated without a comment." : review.Description)
+                        </p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+</div>

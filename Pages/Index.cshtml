@@ -1,6 +1,7 @@
 @page
 @using RestaurantReservation.Extensions
 @using RestaurantReservation.Infrastructure.Authentication
+@using RestaurantReservation.Infrastructure.Reviews
 @using Restaurant_Reservation_and_Order_Management_System.Pages.Customer
 @model IndexModel
 @{
@@ -32,7 +33,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
 <link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
 
-<div class="landing">
+<div class="landing home">
     <partial name="_LandingNav" model="Model.RestaurantName" />
 
     <section class="hero">
@@ -152,22 +153,36 @@
         <section class="specials">
             <h2 class="section-title text-center">New Arrival</h2>
 
-            @* The newest dishes, newest on the left: only the picture, in the same frame as the menu page.
-               from=home makes the dish page's back button return here instead of to the menu. *@
+            @* The four newest dishes, newest on the left, in the same card as the menu page (Pages/Menu/Index):
+               picture, name and category, price. from=home makes the dish page's back button return here. *@
             <div class="specials-grid">
                 @foreach (var item in Model.NewArrivals)
                 {
-                    <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id" asp-route-from="home"
-                       aria-label="@item.Name">
+                    var isBeverage = item.MenuItemType == RestaurantReservation.Models.Enums.MenuItemType.Beverage;
+
+                    <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id" asp-route-from="home">
                         <div class="special-card">
-                            @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
-                            {
-                                <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
-                            }
-                            else
-                            {
-                                <i class="fa-solid @(item.MenuItemType == RestaurantReservation.Models.Enums.MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") special-placeholder" aria-hidden="true"></i>
-                            }
+                            <div class="special-thumb">
+                                @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
+                                {
+                                    <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                                }
+                                else
+                                {
+                                    <i class="fa-solid @(isBeverage ? "fa-martini-glass-citrus" : "fa-utensils") special-placeholder" aria-hidden="true"></i>
+                                }
+                            </div>
+
+                            <div class="special-info">
+                                <div class="special-name">
+                                    <h3>@item.Name</h3>
+                                    <span>
+                                        <i class="fa-solid @(isBeverage ? "fa-martini-glass-citrus" : "fa-utensils")" aria-hidden="true"></i>
+                                        @item.MenuItemType
+                                    </span>
+                                </div>
+                                <span class="special-price">@Model.Currency.FormatCents(item.Price)</span>
+                            </div>
                         </div>
                     </a>
                 }
@@ -175,57 +190,86 @@
         </section>
     }
 
-    <details class="reviews">
-        <summary>
-            <span>Reviews</span>
-            <i class="fa-solid fa-arrow-right"></i>
-        </summary>
+    @* Reviews: the overall score and who rated us, then up to three reviews (name card + quote card each,
+       the middle one upside down like a staggered wall). Every review is on the Reviews page. *@
+    <section class="reviews-section" aria-labelledby="reviewsTitle">
+        <h2 class="section-title text-center" id="reviewsTitle">Reviews</h2>
 
-        @if (Model.Reviews.Count == 0)
-        {
-            <p class="empty-note">No reviews yet.</p>
-        }
-        else
-        {
-            <div class="review-filter" role="group" aria-label="Filter reviews by rating">
-                <button type="button" class="filter-chip active" data-rating="" aria-pressed="true">All</button>
-                @for (var rating = 5; rating >= 1; rating--)
-                {
-                    <button type="button" class="filter-chip" data-rating="@rating" aria-pressed="false"
-                            aria-label="@rating star reviews">
-                        @rating <i class="fa-solid fa-star"></i>
-                    </button>
-                }
-            </div>
+        <div class="review-wall">
+            <div class="rw-summary">
+                <div class="rw-score">
+                    <span class="rw-score-value">@Model.ReviewAverage.ToString("0.0")<small>/5</small></span>
+                    <p class="rw-score-text">
+                        @if (Model.ReviewCount == 0)
+                        {
+                            <text>No reviews yet. Dine with us and be the first to share your thoughts.</text>
+                        }
+                        else
+                        {
+                            <text>From <strong>@Model.ReviewCount @(Model.ReviewCount == 1 ? "review" : "reviews")</strong> by guests who dined with us.</text>
+                        }
+                    </p>
+                </div>
 
-            <p class="empty-note review-none" hidden>No reviews with this rating yet.</p>
-
-            <ul class="review-list">
-                @foreach (var review in Model.Reviews)
-                {
-                    <li data-rating="@review.Rating">
-                        <div class="review-head">
-                            <strong>@(review.Customer?.FirstName ?? "Guest")</strong>
-                            <span class="review-rating" aria-label="@review.Rating out of 5">
+                <div class="rw-trust">
+                    <span class="rw-brand">@Model.RestaurantName</span>
+                    <div class="rw-trust-row">
+                        <div class="rw-avatars" aria-hidden="true">
+                            @foreach (var initial in Model.RecentReviewerInitials)
+                            {
+                                <span class="rw-avatar">@initial</span>
+                            }
+                            @if (Model.ReviewerCount > Model.RecentReviewerInitials.Count)
+                            {
+                                <span class="rw-avatar more">@(Model.ReviewerCount - Model.RecentReviewerInitials.Count)+</span>
+                            }
+                        </div>
+                        <div class="rw-trust-text">
+                            <span class="rw-stars" aria-label="@Model.ReviewAverage.ToString("0.0") out of 5">
                                 @for (var star = 1; star <= 5; star++)
                                 {
-                                    <i class="@(star <= review.Rating ? "fa-solid" : "fa-regular") fa-star"></i>
+                                    <i class="@(Model.ReviewAverage >= star ? "fa-solid fa-star" : Model.ReviewAverage >= star - 0.5 ? "fa-solid fa-star-half-stroke" : "fa-regular fa-star")" aria-hidden="true"></i>
                                 }
                             </span>
+                            <span>Rated by <strong>@Model.ReviewerCount @(Model.ReviewerCount == 1 ? "guest" : "guests")</strong> &middot; @Model.FiveStarPercent% gave 5 stars</span>
                         </div>
-                        @if (!string.IsNullOrWhiteSpace(review.Description))
-                        {
-                            <p>@review.Description</p>
-                        }
-                        @if (review.MenuItem is not null)
-                        {
-                            <span class="hint">on @review.MenuItem.Name</span>
-                        }
-                    </li>
-                }
-            </ul>
-        }
-    </details>
+                    </div>
+                    <a asp-page="/Reviews" class="pill-btn w-100">See all reviews</a>
+                </div>
+            </div>
+
+            @for (var i = 0; i < Model.FeaturedReviews.Count; i++)
+            {
+                var review = Model.FeaturedReviews[i];
+
+                <div class="rw-column @(i == 1 ? "flipped" : "")">
+                    <div class="rw-person">
+                        <span class="rw-avatar" aria-hidden="true">@ReviewDisplay.Initial(review.Customer)</span>
+                        <strong>@ReviewDisplay.Name(review.Customer)</strong>
+                    </div>
+                    <div class="rw-quote">
+                        <div class="rw-quote-top">
+                            <span class="rw-stars" aria-label="@review.Rating out of 5">
+                                @for (var star = 1; star <= 5; star++)
+                                {
+                                    <i class="@(star <= review.Rating ? "fa-solid" : "fa-regular") fa-star" aria-hidden="true"></i>
+                                }
+                            </span>
+                            @if (review.MenuItem is not null)
+                            {
+                                <a asp-page="/Menu/Item" asp-route-menuItemId="@review.MenuItemId" asp-route-from="home"
+                                   class="rw-dish-link">
+                                    <span>@review.MenuItem.Name</span>
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            }
+                        </div>
+                        <p class="rw-quote-text">@review.Description</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
 
     <section class="location">
         <iframe class="map" title="Map to @Model.RestaurantName" src="@mapEmbedUrl"
@@ -316,33 +360,6 @@
                 location.reload();
             }
         });
-
-        // Review filter: show only the reviews with the picked star rating ("All" shows every review).
-        (function () {
-            const chips = document.querySelectorAll('.review-filter .filter-chip');
-            const reviews = document.querySelectorAll('.review-list li');
-            const none = document.querySelector('.review-none');
-
-            chips.forEach(function (chip) {
-                chip.addEventListener('click', function () {
-                    const rating = chip.dataset.rating;
-                    let shown = 0;
-
-                    reviews.forEach(function (review) {
-                        const match = !rating || review.dataset.rating === rating;
-                        review.hidden = !match;
-                        if (match) {
-                            shown++;
-                        }
-                    });
-                    chips.forEach(function (other) {
-                        other.classList.toggle('active', other === chip);
-                        other.setAttribute('aria-pressed', other === chip);
-                    });
-                    none.hidden = shown > 0;
-                });
-            });
-        })();
     </script>
 }
 

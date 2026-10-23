@@ -1,0 +1,342 @@
+/* Customer Reviews page (/Reviews). Uses the landing page's look (landing_page.css): white rounded cards on the
+   light grey page, Bricolage Grotesque headings, black for the active choice and yellow stars. */
+.rv-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.rv-back {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #444444;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.rv-back:hover {
+    color: black;
+}
+
+.rv-stars {
+    display: inline-flex;
+    gap: 2px;
+    color: #F5B301;
+    white-space: nowrap;
+
+    .fa-regular {
+        color: #CCCCCC;
+    }
+}
+
+/* ---- The four scores ---- */
+.rv-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.rv-stat {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #DFDFE1;
+}
+
+.rv-stat-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 18px 12px;
+    border-radius: 16px;
+    background: white;
+    text-align: center;
+}
+
+.rv-stat-value {
+    font-size: 2.2rem;
+    line-height: 1;
+    font-family: "Bricolage Grotesque", sans-serif;
+}
+
+.rv-stat-label {
+    color: #666666;
+    font-weight: 500;
+}
+
+.rv-stat-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    color: #444444;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.rv-stat-note.up,
+.rv-stat-note.good {
+    color: var(--primary-color);
+}
+
+.rv-stat-note.down {
+    color: #B3261E;
+}
+
+/* ---- Breakdown beside the list ---- */
+.rv-body {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.rv-panel {
+    padding: 18px;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rv-breakdown {
+    position: sticky;
+    top: 24px;
+}
+
+.rv-panel-title {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: "Bricolage Grotesque", sans-serif;
+}
+
+.rv-bar-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 32px;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    color: black;
+    text-decoration: none;
+}
+
+.rv-bar-row:hover,
+.rv-bar-row.active {
+    background: #F2F2F3;
+    color: black;
+}
+
+.rv-bar-label {
+    font-weight: 600;
+
+    i {
+        color: #F5B301;
+        font-size: 0.8rem;
+    }
+}
+
+.rv-bar {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 100px;
+    background: #ECECEC;
+
+    span {
+        display: block;
+        height: 100%;
+        border-radius: 100px;
+        background: black;
+    }
+}
+
+.rv-bar-count {
+    color: #666666;
+    font-weight: 600;
+    text-align: right;
+}
+
+/* ---- The reviews ---- */
+.rv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+.rv-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px;
+    border-radius: 100px;
+    background: #DFDFE1;
+}
+
+.rv-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    color: #444444;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+
+    i {
+        color: #F5B301;
+        font-size: 0.8rem;
+    }
+}
+
+.rv-tab:hover {
+    color: black;
+}
+
+.rv-tab.active {
+    background: white;
+    color: black;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.rv-card {
+    padding: 18px 20px;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rv-card-head {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ECECEC;
+}
+
+.rv-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 100%;
+    background: var(--secondary-color);
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: "Bricolage Grotesque", sans-serif;
+}
+
+.rv-who {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+        font-size: 1.05rem;
+    }
+}
+
+.rv-date {
+    color: #666666;
+    font-size: 0.85rem;
+}
+
+.rv-card-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.rv-dish {
+    color: #444444;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.rv-dish:hover {
+    color: black;
+    text-decoration: underline;
+}
+
+.rv-text {
+    margin: 12px 0 0;
+    color: #333333;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.rv-text.muted {
+    color: #888888;
+    font-style: italic;
+}
+
+@media only screen and (max-width: 992px) {
+    .rv-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rv-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rv-breakdown {
+        position: static;
+    }
+}
+
+/* Phones: scores two by two, stars and dish under the name, the star pills scroll sideways. */
+@media only screen and (max-width: 576px) {
+    .rv-stats {
+        gap: 10px;
+    }
+
+    .rv-stat-value {
+        font-size: 1.7rem;
+    }
+
+    .rv-stat-note {
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+
+    .rv-tabs {
+        flex-wrap: nowrap;
+        width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .rv-card {
+        padding: 16px;
+    }
+
+    .rv-card-head {
+        grid-template-columns: 40px minmax(0, 1fr);
+    }
+
+    .rv-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .rv-card-side {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}

@@ -32,5 +32,9 @@ namespace RestaurantReservation.Models
         // The order the feedback was written on. A customer has one feedback per menu item: it is locked on that
         // order, and can only be replaced from a later order of the same item. Empty for feedback saved before this was kept.
         public string? OrderId { get; set; }
+
+        // When the feedback was written (UTC), or last replaced from a later order. Shown on the Reviews page.
+        // Feedback from before this column existed all shares the date the column was added.
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

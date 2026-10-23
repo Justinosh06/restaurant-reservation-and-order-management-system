@@ -164,6 +164,7 @@ public class OrderModel : PageModel
             }
 
             feedback.Rating = input.Rating!.Value;
+            feedback.CreatedAt = DateTime.UtcNow;
             feedback.Description = input.Description;
             feedback.OrderId = Order.Id;
             saved++;
