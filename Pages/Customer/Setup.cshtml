@@ -1,0 +1,49 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.SetupModel
+@{
+    // Same centred card as Login and Register, not the account sidebar.
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Complete your profile";
+    ViewData["Headline"] = "Almost there.";
+    ViewData["Tagline"] = "Tell us your name and phone number so we can look after your bookings and orders.";
+
+    var returnUrl = Request.Query["returnUrl"].ToString();
+}
+
+<h2 class="card-title">Complete your profile</h2>
+<p class="hint mb-3">You're logged in as <strong>@Model.Email</strong>. These details are needed before you continue.</p>
+
+<form method="post" asp-route-returnUrl="@(string.IsNullOrEmpty(returnUrl) ? null : returnUrl)" class="auth-form">
+    <div asp-validation-summary="ModelOnly" class="field-error" role="alert"></div>
+
+    <div class="auth-row">
+        <div class="auth-field">
+            <label asp-for="Input.FirstName"></label>
+            <input asp-for="Input.FirstName" autocomplete="given-name" autofocus />
+            <span asp-validation-for="Input.FirstName" class="field-error"></span>
+        </div>
+
+        <div class="auth-field">
+            <label asp-for="Input.LastName"></label>
+            <input asp-for="Input.LastName" autocomplete="family-name" />
+            <span asp-validation-for="Input.LastName" class="field-error"></span>
+        </div>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.PhoneNumber"></label>
+        <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" placeholder="012-3456789" />
+        <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
+    </div>
+
+    <button type="submit" class="pill-btn w-100">Save and continue</button>
+</form>
+
+<form method="post" asp-page="/Logout" class="auth-switch">
+    <span class="hint">Not you?</span>
+    <button type="submit" class="pill-btn ghost w-100">Log out</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

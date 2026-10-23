@@ -36,6 +36,23 @@ body:has(.landing) {
         color: white;
     }
 
+    /* Outlined button for the second choice next to a black one (Cancel, Log in instead, ...). */
+    .pill-btn.ghost {
+        background: transparent;
+        color: black;
+        outline: 1px solid black;
+    }
+
+    .pill-btn.ghost:hover {
+        background: #F2F2F3;
+        color: black;
+    }
+
+    .pill-btn.small-btn {
+        padding: 6px 14px;
+        font-size: 0.85rem;
+    }
+
     .section-title {
         font-size: 2.2rem;
         font-weight: 700;
@@ -185,6 +202,24 @@ body:has(.landing) {
 
             .pill-btn {
                 margin-top: 8px;
+            }
+        }
+
+        .menu-name {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+        }
+
+        .menu-rating {
+            color: #666666;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+
+            i {
+                color: #F5B301;
             }
         }
 
@@ -347,24 +382,47 @@ body:has(.landing) {
             border-radius: 16px;
         }
 
+        /* Same frame as a dish card on the menu page (menu_index.css): white card, soft green picture area,
+           the whole picture shown. */
         .special-card {
-            margin: 0;
+            height: 100%;
+            padding: 10px;
+            border: 1px solid #edf0ee;
+            border-radius: 26px;
+            background: #fff;
+            transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+        }
+
+        .special-frame {
+            display: grid;
+            aspect-ratio: 1.2 / 1;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 19px;
+            background: color-mix(in srgb, var(--primary-color) 8%, white);
 
             img {
                 width: 100%;
-                height: clamp(220px, 30vw, 460px);
-                object-fit: cover;
-                border-radius: 16px;
-                transition: 300ms ease-in-out;
+                height: 100%;
+                padding: 12px;
+                object-fit: contain;
+                transition: transform 220ms ease;
             }
+        }
 
-            figcaption {
-                display: flex;
-                justify-content: space-between;
-                gap: 16px;
-                padding: 8px 4px 0;
-                font-weight: 600;
-            }
+        .special-placeholder {
+            color: color-mix(in srgb, var(--primary-color) 48%, white);
+            font-size: 4rem;
+        }
+
+        .special-link:hover .special-card {
+            transform: translateY(-3px);
+            border-color: color-mix(in srgb, var(--primary-color) 28%, white);
+            box-shadow: 0 14px 32px rgb(14 88 71 / 10%);
+        }
+
+        .special-link:hover .special-frame img {
+            transform: scale(1.04);
         }
     }
 
@@ -444,6 +502,173 @@ body:has(.landing) {
                 justify-content: space-between;
             }
         }
+    }
+
+    /* Login and Register: one column in the middle of the page on every screen size,
+       a short welcome headline above the form card. */
+    .auth-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+
+        .auth-card {
+            width: 100%;
+            max-width: 520px;
+        }
+    }
+
+    /* The headline may run wider than the card so it does not wrap onto a short last line. */
+    .auth-intro {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        max-width: 760px;
+        text-align: center;
+
+        .auth-headline {
+            margin: 0;
+            font-size: clamp(2.4rem, 4vw, 3.6rem);
+            line-height: 1.05;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            letter-spacing: -2px;
+        }
+
+        .auth-tagline {
+            margin: 0;
+            color: #444444;
+            font-size: 1.05rem;
+        }
+    }
+
+    .auth-card {
+        padding: 28px;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+        .card-title {
+            margin-bottom: 4px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        a:not(.pill-btn) {
+            color: black;
+            font-weight: 600;
+        }
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .pill-btn {
+            margin-top: 4px;
+        }
+    }
+
+    .auth-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    /* Field name above the box, like My profile. Also used in the CAPTCHA step. */
+    .auth-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+
+        label {
+            color: #666666;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #CCCCCC;
+            border-radius: 8px;
+            background: #F2F2F3;
+            color: #444444;
+        }
+
+        input:focus {
+            outline: 2px solid black;
+            border-color: transparent;
+            background: white;
+        }
+    }
+
+    .auth-page .field-error:empty,
+    .auth-page .validation-summary-valid {
+        display: none;
+    }
+
+    /* Login steps 2a/2b: the email being used, with a link back to step 1. */
+    .auth-email-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #F2F2F3;
+        font-weight: 600;
+
+        span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        a {
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* The 6-digit login code: large and spaced out so it is easy to check against the email. */
+    .auth-field .code-input {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: 0.5em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* "Forgot password? Log in with a code instead" under the password form. */
+    .auth-forgot {
+        margin-top: 12px;
+        text-align: center;
+
+        .link-btn {
+            padding: 0;
+            border: none;
+            background: none;
+            color: black;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    }
+
+    .auth-switch {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #ECECEC;
     }
 
     .status-pill {
@@ -738,11 +963,6 @@ body:has(.landing) {
             outline-offset: 2px;
         }
 
-        .modal-footer .pill-btn.ghost {
-            background: transparent;
-            color: black;
-            outline: 1px solid black;
-        }
 
         /* Stars are radio buttons listed 5 to 1 and shown reversed, so a checked star also fills the ones before it. */
         .star-input {
@@ -915,22 +1135,8 @@ body:has(.landing) {
             gap: 12px;
             margin-top: 8px;
         }
-
-        .pill-btn.ghost {
-            background: transparent;
-            color: black;
-            outline: 1px solid black;
-        }
-
-        .pill-btn.ghost:hover {
-            background: #F2F2F3;
-            color: black;
-        }
     }
 
-    .special-link:hover img {
-        opacity: 0.85;
-    }
 
     .reviews[open] summary i {
         transform: rotate(90deg);
@@ -954,22 +1160,144 @@ body:has(.landing) {
 
         .location-info {
             align-self: start;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+
+            .section-title {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Address, Phone and Opening hours: icon on the left, small grey label, then the value in bold. */
+        .info-block {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .info-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #DFDFE1;
+            font-size: 1.05rem;
+        }
+
+        .info-label {
+            margin: 0 0 4px;
+            color: #666666;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            margin: 0;
+            color: black;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            overflow-wrap: anywhere;
+        }
+
+        a.info-value:hover {
+            text-decoration: underline;
         }
 
         .address {
-            margin-bottom: 12px;
+            white-space: pre-line;
         }
 
+        .hours-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px 12px;
+            margin-bottom: 8px;
+
+            .info-label {
+                margin: 0;
+            }
+        }
+
+        .open-status {
+            padding: 2px 10px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .open-status.open {
+            color: var(--primary-color);
+            background: var(--secondary-color);
+        }
+
+        .open-status.closed {
+            color: #666666;
+            background: #DFDFE1;
+        }
+
+        /* Monday to Sunday; today's row is white and bold. */
         .hours-list {
             list-style: none;
             margin: 0;
             padding: 0;
 
+            /* On narrow screens the time drops under the day instead of running off the edge. */
             li {
                 display: flex;
+                flex-wrap: wrap;
                 justify-content: space-between;
-                gap: 16px;
-                padding: 2px 0;
+                gap: 2px 16px;
+                padding: 7px 10px;
+                border-radius: 8px;
+                color: #444444;
+            }
+
+            li + li {
+                border-top: 1px solid #DFDFE1;
+            }
+
+            li.today {
+                border-color: transparent;
+                background: white;
+                color: black;
+                font-weight: 600;
+            }
+
+            li.today + li {
+                border-top-color: transparent;
+            }
+
+            .day {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .today-tag {
+                padding: 0 8px;
+                border-radius: 100px;
+                background: black;
+                color: white;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+
+            .time {
+                margin-left: auto;
+                white-space: nowrap;
+            }
+
+            .time.closed {
+                color: #B3261E;
             }
         }
 
@@ -1142,6 +1470,19 @@ body:has(.landing) {
 @media only screen and (max-width: 576px) {
     .landing .landing-nav .greeting {
         display: none;
+    }
+
+    .landing .auth-card {
+        padding: 20px 16px;
+    }
+
+    .landing .auth-intro .auth-headline {
+        font-size: 2rem;
+        letter-spacing: -1px;
+    }
+
+    .landing .auth-row {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     /* Earlier and new feedback stack in the reminder. */

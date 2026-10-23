@@ -1,10 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Models.Enums;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
@@ -113,11 +112,7 @@ public class ProfileModel : PageModel
         await _db.SaveChangesAsync();
 
         // Refresh the login cookie so the new name shows on other pages straight away.
-        var claims = User.Claims
-            .Where(c => c.Type != ClaimTypes.Name)
-            .Append(new Claim(ClaimTypes.Name, customer.FullName));
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+        await ProfileSetup.SignInCustomerAsync(HttpContext, customer);
 
         SuccessMessage = "Profile updated.";
         return RedirectToPage();

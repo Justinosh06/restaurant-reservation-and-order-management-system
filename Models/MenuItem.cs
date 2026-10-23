@@ -33,5 +33,9 @@ namespace RestaurantReservation.Models
 
         [Required]
         public bool Availability { get; set; } = true;
+
+        // When the dish was added to the menu (UTC). Set automatically for new dishes; the newest ones are the
+        // Chef's specials on the home page. Dishes from before this column existed all share one date.
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

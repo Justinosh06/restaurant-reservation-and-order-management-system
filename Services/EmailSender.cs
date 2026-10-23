@@ -43,3 +43,33 @@ public class SmtpEmailSender : IEmailSender
         await client.SendMailAsync(message, cancellationToken);
     }
 }
+
+// Sends one-off emails (such as login codes) through IEmailSender, so it uses the same "Email" settings.
+// In development these point at Mailpit (localhost:1025, no login): nothing leaves the computer and every
+// message can be read at http://localhost:8025. For a real mail server, set the host, port, SSL and login.
+public class EmailSender
+{
+    private readonly IEmailSender _sender;
+    private readonly ILogger<EmailSender> _logger;
+
+    public EmailSender(IEmailSender sender, ILogger<EmailSender> logger)
+    {
+        _sender = sender;
+        _logger = logger;
+    }
+
+    // Returns false when the mail server could not be reached, so the page can tell the user to try again.
+    public async Task<bool> SendAsync(string toAddress, string subject, string textBody, string htmlBody)
+    {
+        try
+        {
+            await _sender.SendAsync(toAddress, null, subject, htmlBody, textBody);
+            return true;
+        }
+        catch (SmtpException error)
+        {
+            _logger.LogError(error, "Could not send email \"{Subject}\" to {Address}. Is Mailpit running?", subject, toAddress);
+            return false;
+        }
+    }
+}

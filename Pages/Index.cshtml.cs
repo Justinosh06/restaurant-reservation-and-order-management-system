@@ -26,7 +26,12 @@ public class IndexModel : PageModel
     public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
     public RestaurantSettings? Settings { get; private set; }
     public IReadOnlyList<BusinessHours> OpeningHours { get; private set; } = [];
+    // Today's menu: the best-rated dishes first.
     public IReadOnlyList<MenuItem> ShortMenu { get; private set; } = [];
+
+    // Average stars and number of reviews per menu item id, for the dishes in ShortMenu that have reviews.
+    public IReadOnlyDictionary<string, (double Average, int Count)> Ratings { get; private set; } =
+        new Dictionary<string, (double, int)>();
     public IReadOnlyList<MenuItem> ChefSpecials { get; private set; } = [];
     public IReadOnlyList<Feedback> Reviews { get; private set; } = [];
 
@@ -41,19 +46,31 @@ public class IndexModel : PageModel
         {
             RestaurantName = Settings.Name;
             Currency = Settings.DefaultCurrency;
-            OpeningHours = Settings.BusinessHours.OrderBy(h => h.DayOfWeek).ToList();
+            // Monday first, Sunday last (DayOfWeek counts Sunday as 0).
+            OpeningHours = Settings.BusinessHours.OrderBy(h => ((int)h.DayOfWeek + 6) % 7).ToList();
         }
 
         var available = _db.MenuItems.AsNoTracking().Where(m => m.Availability);
 
-        ShortMenu = await available
-            .OrderBy(m => m.Name)
+        // Today's menu: highest average rating first, then the most reviewed; dishes nobody has rated yet fill
+        // any places left, by name.
+        var ratings = await _db.Feedbacks
+            .AsNoTracking()
+            .GroupBy(f => f.MenuItemId)
+            .Select(g => new { MenuItemId = g.Key, Average = g.Average(f => (double)f.Rating), Count = g.Count() })
+            .ToDictionaryAsync(r => r.MenuItemId, r => (r.Average, r.Count));
+        ShortMenu = (await available.ToListAsync())
+            .OrderByDescending(m => ratings.TryGetValue(m.Id, out var r) ? r.Average : 0)
+            .ThenByDescending(m => ratings.TryGetValue(m.Id, out var r) ? r.Count : 0)
+            .ThenBy(m => m.Name)
             .Take(ShortMenuSize)
-            .ToListAsync();
+            .ToList();
+        Ratings = ratings;
 
+        // Chef's specials: the newest dishes on the menu, newest first.
         ChefSpecials = await available
-            .Where(m => m.ThumbnailImage != null && m.ThumbnailImage != "")
-            .OrderByDescending(m => m.Price)
+            .OrderByDescending(m => m.CreatedAt)
+            .ThenByDescending(m => m.Id)
             .Take(ChefSpecialsSize)
             .ToListAsync();
 

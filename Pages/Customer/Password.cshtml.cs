@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Services;
 // Alias: "Customer" would otherwise resolve to the Pages.Customer folder.
 using CustomerAccount = RestaurantReservation.Models.Customer;
@@ -12,10 +13,12 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 
 // Change password. The customer types the current password and the new one twice,
 // then passes the same CAPTCHA step as the login page before anything is checked.
+// Customers without a password (they log in with an emailed code, or came from a guest checkout) set one here:
+// there is no current password to type, so that field is hidden and not checked.
+// The same goes for a customer who logged in with an emailed code this time (e.g. "Forgot password?" on the
+// login page): the code proved the email is theirs, so they can choose a new password without the old one.
 public class PasswordModel : PageModel
 {
-    public const string AdminEmail = "admin@restaurant.com";
-
     private readonly ApplicationDbContext _db;
     private readonly IPasswordHasher<CustomerAccount> _passwordHasher;
     private readonly CaptchaService _captcha;
@@ -30,6 +33,12 @@ public class PasswordModel : PageModel
     // false = the "Change password" button, true = the form
     public bool IsChanging { get; private set; }
 
+    // false = the account has no password yet, so the page sets one instead of changing it.
+    public bool HasPassword { get; private set; }
+
+    // true = the current password is asked for: the account has one and this login used the password.
+    public bool NeedsCurrentPassword => HasPassword && User.FindFirstValue(ProfileSetup.LoginMethodClaimType) != ProfileSetup.CodeLogin;
+
     // Set when the current password was wrong, to point the customer to the admin for a reset.
     public bool WrongCurrentPassword { get; private set; }
 
@@ -41,10 +50,10 @@ public class PasswordModel : PageModel
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Current password is required.")]
+        // Required only when the account already has a password (checked in OnPostAsync).
         [DataType(DataType.Password)]
         [Display(Name = "Current Password")]
-        public string CurrentPassword { get; set; } = string.Empty;
+        public string? CurrentPassword { get; set; }
 
         // Same rules as the Register page.
         [Required(ErrorMessage = "New password is required.")]
@@ -67,9 +76,17 @@ public class PasswordModel : PageModel
 
     // GET /Customer/Password              -> "Change password" button
     // GET /Customer/Password?change=true  -> the form
-    public void OnGet(bool change = false)
+    public async Task<IActionResult> OnGetAsync(bool change = false)
     {
+        var customer = await _db.Customers.FindAsync(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        if (customer is null)
+        {
+            return Challenge();
+        }
+
+        HasPassword = !string.IsNullOrEmpty(customer.Password);
         IsChanging = change;
+        return Page();
     }
 
     // GET /Customer/Password?handler=Captcha - returns a new CAPTCHA image (called by the popup).
@@ -82,6 +99,18 @@ public class PasswordModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         IsChanging = true;
+        var customer = await _db.Customers.FindAsync(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        if (customer is null)
+        {
+            return Challenge();
+        }
+
+        HasPassword = !string.IsNullOrEmpty(customer.Password);
+        if (NeedsCurrentPassword && string.IsNullOrEmpty(Input.CurrentPassword))
+        {
+            ModelState.AddModelError("Input.CurrentPassword", "Current password is required.");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -94,30 +123,29 @@ public class PasswordModel : PageModel
             return Page();
         }
 
-        var customer = await _db.Customers.FindAsync(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        if (customer is null)
+        // Step 2: the current password must be right (when it is asked for).
+        if (NeedsCurrentPassword)
         {
-            return Challenge();
+            if (!IsCurrentPassword(customer, Input.CurrentPassword!))
+            {
+                WrongCurrentPassword = true;
+                return Page();
+            }
+
+            if (Input.NewPassword == Input.CurrentPassword)
+            {
+                ModelState.AddModelError("Input.NewPassword", "The new password must be different from the current one.");
+                return Page();
+            }
         }
 
-        // Step 2: the current password must be right.
-        if (!IsCurrentPassword(customer, Input.CurrentPassword))
-        {
-            WrongCurrentPassword = true;
-            return Page();
-        }
-
-        if (Input.NewPassword == Input.CurrentPassword)
-        {
-            ModelState.AddModelError("Input.NewPassword", "The new password must be different from the current one.");
-            return Page();
-        }
-
-        // Step 3: save the new password as a hash.
+        // Step 3: save the new password as a hash. From now on the login page asks for it instead of a code.
         customer.Password = _passwordHasher.HashPassword(customer, Input.NewPassword);
         await _db.SaveChangesAsync();
 
-        SuccessMessage = "Your password has been changed.";
+        SuccessMessage = HasPassword
+            ? "Your password has been changed."
+            : "Your password has been set. Next time, log in with your email and this password.";
         return RedirectToPage();
     }
 
