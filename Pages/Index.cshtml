@@ -1,6 +1,7 @@
 @page
 @using RestaurantReservation.Extensions
 @using RestaurantReservation.Infrastructure.Authentication
+@using Restaurant_Reservation_and_Order_Management_System.Pages.Customer
 @model IndexModel
 @{
     ViewData["Title"] = "Welcome";
@@ -43,56 +44,101 @@
     </section>
 
     <section class="booking-row">
-        @* Reservations need a customer account, so visitors go through the login page first. *@
-        <form class="reservation-card" method="get" action="@(isCustomer ? reserveUrl : Url.Page("/Login"))">
-            @if (!isCustomer)
-            {
-                <input type="hidden" name="returnUrl" value="@reserveUrl" />
-            }
-            <h2 class="card-title">Reservation</h2>
+        @* Book a table: the same date range, closed days, times and party size as the booking page
+           (Pages/Customer/Reserve), which opens with these choices filled in. Visitors log in first. *@
+        <form class="reservation-card" method="get" action="@reserveUrl" id="bookingCard"
+              data-first-day="@Model.FirstBookingDay.ToString("yyyy-MM-dd")"
+              data-last-day="@Model.LastBookingDay.ToString("yyyy-MM-dd")"
+              data-closed-days="@string.Join(' ', Model.ClosedDays)">
+            <div class="booking-head">
+                <h2 class="card-title">Book a table</h2>
+                <p class="hint mb-0">Book at least @ReserveModel.MinDaysAhead days ahead. Your table is held for 2 hours.</p>
+            </div>
 
-            <label class="field">
-                <span class="field-label">Date</span>
-                <input type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
-            </label>
-            <label class="field">
-                <span class="field-label">Time</span>
-                <input type="time" />
-            </label>
-            <label class="field">
-                <span class="field-label">Guests</span>
-                <input type="number" min="1" max="20" placeholder="2" />
-            </label>
+            <div class="booking-field">
+                <span class="booking-label" id="bookingDateLabel"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Date</span>
+                <div class="dropdown">
+                    <input type="hidden" name="date" id="bookingDate" />
+                    <button type="button" class="booking-select" id="bookingDateButton" data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside" aria-expanded="false" aria-labelledby="bookingDateLabel bookingDateText">
+                        <span id="bookingDateText">Choose a date</span>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="dropdown-menu booking-calendar" id="bookingCalendar"></div>
+                </div>
+            </div>
+
+            <div class="booking-field">
+                <label class="booking-label" for="bookingTime"><i class="fa-regular fa-clock" aria-hidden="true"></i> Time</label>
+                <div class="booking-select-wrap">
+                    <select name="time" id="bookingTime" class="booking-select" disabled>
+                        <option value="">Choose a date first</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </div>
+            </div>
+
+            <div class="booking-field">
+                <span class="booking-label" id="bookingGuestsLabel"><i class="fa-solid fa-user-group" aria-hidden="true"></i> Guests</span>
+                <div class="guest-stepper" role="group" aria-labelledby="bookingGuestsLabel">
+                    <button type="button" id="bookingGuestsDown" aria-label="Fewer guests"><i class="fa-solid fa-minus" aria-hidden="true"></i></button>
+                    <input type="number" name="guests" id="bookingGuests" value="2" min="1" max="@ReserveModel.MaxPartySize"
+                           inputmode="numeric" aria-label="Number of guests" />
+                    <button type="button" id="bookingGuestsUp" aria-label="More guests"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+                </div>
+            </div>
 
             <button type="submit" class="pill-btn w-100">Reserve a table</button>
+            @if (!isCustomer)
+            {
+                <p class="hint text-center mb-0">You'll log in first, then finish booking.</p>
+            }
         </form>
 
         <div class="today-menu">
-            <h2 class="section-title">Today's menu</h2>
+            <div class="list-head">
+                <h2 class="section-title">Top Rating</h2>
+                <p class="hint mb-0">Our guests' favourite dishes, by their reviews.</p>
+            </div>
 
-            @if (Model.ShortMenu.Count == 0)
+            @if (Model.TopRated.Count == 0)
             {
                 <p class="empty-note">Our menu is being updated. Please check back soon.</p>
             }
             else
             {
-                <ul class="menu-list">
-                    @foreach (var item in Model.ShortMenu)
+                <ol class="rank-list">
+                    @for (var i = 0; i < Model.TopRated.Count; i++)
                     {
+                        var item = Model.TopRated[i];
+                        var rated = Model.Ratings.TryGetValue(item.Id, out var rating);
+
                         <li>
-                            <span class="menu-name">
-                                @item.Name
-                                @if (Model.Ratings.TryGetValue(item.Id, out var rating))
-                                {
-                                    <span class="menu-rating" aria-label="Rated @rating.Average.ToString("0.0") out of 5 from @rating.Count reviews">
-                                        <i class="fa-solid fa-star" aria-hidden="true"></i> @rating.Average.ToString("0.0")
+                            <a class="rank-row" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id" asp-route-from="home">
+                                <span class="rank-number">@(i + 1)</span>
+                                <span class="rank-info">
+                                    <span class="rank-name">@item.Name</span>
+                                    <span class="rank-meta">
+                                        @item.MenuItemType
+                                        &middot;
+                                        @if (rated)
+                                        {
+                                            <span class="rank-stars" aria-label="Rated @rating.Average.ToString("0.0") out of 5">
+                                                <i class="fa-solid fa-star" aria-hidden="true"></i> @rating.Average.ToString("0.0")
+                                            </span>
+                                            <span>(@rating.Count @(rating.Count == 1 ? "review" : "reviews"))</span>
+                                        }
+                                        else
+                                        {
+                                            <span>No reviews yet</span>
+                                        }
                                     </span>
-                                }
-                            </span>
-                            <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
+                                </span>
+                                <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
+                            </a>
                         </li>
                     }
-                </ul>
+                </ol>
             }
 
             <a href="@menuUrl" class="pill-btn menu-btn">
@@ -101,29 +147,27 @@
         </div>
     </section>
 
-    @if (Model.ChefSpecials.Count > 0)
+    @if (Model.NewArrivals.Count > 0)
     {
         <section class="specials">
-            <h2 class="section-title text-center">Chef's specials</h2>
+            <h2 class="section-title text-center">New Arrival</h2>
 
             @* The newest dishes, newest on the left: only the picture, in the same frame as the menu page.
                from=home makes the dish page's back button return here instead of to the menu. *@
             <div class="specials-grid">
-                @foreach (var item in Model.ChefSpecials)
+                @foreach (var item in Model.NewArrivals)
                 {
                     <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id" asp-route-from="home"
                        aria-label="@item.Name">
                         <div class="special-card">
-                            <div class="special-frame">
-                                @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
-                                {
-                                    <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
-                                }
-                                else
-                                {
-                                    <i class="fa-solid @(item.MenuItemType == RestaurantReservation.Models.Enums.MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") special-placeholder" aria-hidden="true"></i>
-                                }
-                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
+                            {
+                                <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                            }
+                            else
+                            {
+                                <i class="fa-solid @(item.MenuItemType == RestaurantReservation.Models.Enums.MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") special-placeholder" aria-hidden="true"></i>
+                            }
                         </div>
                     </a>
                 }
@@ -264,6 +308,7 @@
 <partial name="_PromotionPopup" />
 
 @section Scripts {
+    <script src="~/js/landingBooking.js" asp-append-version="true"></script>
     <script>
         // A page brought back by the Back button is a snapshot from before login or logout, so load it again.
         window.addEventListener('pageshow', function (e) {

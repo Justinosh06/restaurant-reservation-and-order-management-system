@@ -24,7 +24,8 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
     private static readonly TimeSpan UnpaidHold = TimeSpan.FromMinutes(35);
 
     // Opening hours (and their defaults) come from OpeningHours, shared with the staff form.
-    private static readonly TimeSpan SlotStep = TimeSpan.FromHours(1);
+    // Public so the home page's booking card offers the same times.
+    public static readonly TimeSpan SlotStep = TimeSpan.FromHours(1);
 
     public const int MaxPartySize = 20;
 
@@ -53,8 +54,23 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
     public bool CanCancel(ReservationSummary booking) =>
         DateOnly.FromDateTime(booking.ReservationAt) > Today;
 
-    public async Task OnGetAsync()
+    // The home page's booking card sends ?date=yyyy-MM-dd&time=HH:mm&guests=n; whatever is valid is pre-filled
+    // (the calendar and times then check it like any other choice).
+    public async Task OnGetAsync(DateOnly? date = null, TimeOnly? time = null, int? guests = null)
     {
+        if (date is { } day && day >= FirstDay && day <= LastDay)
+        {
+            Input.Date = day;
+            if (time is { } chosen)
+            {
+                Input.Time = chosen;
+            }
+        }
+        if (guests is >= 1 and <= MaxPartySize)
+        {
+            Input.Guests = guests.Value;
+        }
+
         await SettleExpiredUnpaidAsync();
         await LoadPageAsync();
     }

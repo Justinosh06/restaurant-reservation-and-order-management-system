@@ -22,36 +22,7 @@
     <div class="promo-popup" id="promo-popup" hidden>
         @foreach (var promotion in promotions)
         {
-            // The promotion runs to the end of its last day; the countdown counts down to that moment.
-            var endsAt = promotion.EndDate.ToDateTime(new TimeOnly(23, 59, 59));
-
-            <section class="promo-card" data-promo-id="@promotion.Id" role="dialog" aria-modal="true"
-                     aria-labelledby="promo-title-@promotion.Id" hidden>
-                <button type="button" class="promo-close" aria-label="Close promotion">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
-
-                <span class="promo-tag"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Limited-time promotion</span>
-
-                <h2 class="promo-title" id="promo-title-@promotion.Id">@promotion.Title</h2>
-
-                <p class="promo-countdown">
-                    <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                    Ends in: <span class="promo-time-left" data-ends="@endsAt.ToString("yyyy-MM-ddTHH:mm:ss")"></span>
-                </p>
-
-                @if (!string.IsNullOrWhiteSpace(promotion.ImageUrl))
-                {
-                    <img class="promo-image" src="@Url.Content(promotion.ImageUrl)" alt="@promotion.Title" />
-                }
-
-                <p class="promo-description">@promotion.Description</p>
-
-                <p class="promo-dates">
-                    Valid @promotion.StartDate.ToString("d MMM") &ndash; @promotion.EndDate.ToString("d MMM yyyy")
-                    <span class="promo-count"></span>
-                </p>
-            </section>
+            <partial name="_PromotionCard" model="promotion" />
         }
     </div>
 

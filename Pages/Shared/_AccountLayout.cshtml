@@ -15,6 +15,7 @@
         "/Customer/Password" => "password",
         "/Customer/Reservations" => "reservations",
         "/Customer/Reserve" => "reservations",
+        "/Customer/Promotions" => "promotions",
         _ => "dining"
     };
 }
@@ -45,6 +46,13 @@
                 <li>
                     <a asp-page="/Customer/Dining/Index" class="sidebar-link @(section == "dining" ? "active" : "")">
                         <i class="fa-solid fa-utensils"></i> Dining history
+                    </a>
+                </li>
+                <li>
+                    <a asp-page="/Customer/Promotions" class="sidebar-link @(section == "promotions" ? "active" : "")">
+                        <i class="fa-solid fa-tags"></i>
+                        <span class="label-long">Promotions</span>
+                        <span class="label-short">Promos</span>
                     </a>
                 </li>
                 <li>
