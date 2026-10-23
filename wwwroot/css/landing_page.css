@@ -472,7 +472,7 @@ body:has(.landing) {
         }
     }
 
-    /* One upcoming booking on the Upcoming reservations page. */
+    /* One booking on the Reservations page. */
     .upcoming-card {
         display: flex;
         flex-direction: column;
@@ -503,6 +503,102 @@ body:has(.landing) {
             background: #DFDFE1;
             color: #444444;
         }
+
+        .status-pill.cancelled {
+            background: #FDE8E8;
+            color: #B42318;
+        }
+    }
+
+    /* A cancelled booking is greyed out so the live ones stand out. */
+    .upcoming-card.cancelled {
+        .upcoming-head > div,
+        .upcoming-details {
+            opacity: 0.55;
+        }
+
+        .upcoming-time {
+            text-decoration: line-through;
+        }
+    }
+
+    /* Cancel button (or why it is gone) under an upcoming booking. */
+    .res-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px 12px;
+        padding-top: 12px;
+        border-top: 1px solid #ECECEC;
+
+        .hint {
+            margin: 0;
+        }
+
+        form {
+            margin-left: auto;
+        }
+
+        .pill-btn.danger-btn {
+            color: #B42318;
+            outline-color: #B42318;
+        }
+
+        .pill-btn.danger-btn:hover {
+            background: #B42318;
+            color: white;
+        }
+    }
+
+    /* Reservations page tabs: Upcoming, Done and Cancelled, each with its count. */
+    .res-tabs {
+        display: flex;
+        gap: 6px;
+        width: fit-content;
+        max-width: 100%;
+        margin-bottom: 16px;
+        padding: 5px;
+        overflow-x: auto;
+        border-radius: 100px;
+        background: #DFDFE1;
+        scrollbar-width: none;
+    }
+
+    .res-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px;
+        border-radius: 100px;
+        color: #444444;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .res-tab:hover {
+        color: black;
+    }
+
+    .res-tab.active {
+        background: white;
+        color: black;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .res-tab-count {
+        min-width: 22px;
+        padding: 0 7px;
+        border-radius: 100px;
+        background: rgba(0, 0, 0, 0.08);
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    .res-tab.active .res-tab-count {
+        background: black;
+        color: white;
     }
 
     .upcoming-head {
@@ -570,7 +666,7 @@ body:has(.landing) {
         }
     }
 
-    /* Upcoming reservations page: title with the booking button beside it, then one card per booking. */
+    /* Reservations page: title with the booking button beside it, then one card per booking. */
     .page-head {
         display: flex;
         align-items: center;
