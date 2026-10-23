@@ -245,7 +245,7 @@
         try {
             let response;
             try {
-                response = await fetch(url);
+                response = await fetch(url, { cache: "no-store" });
             } catch {
                 throw new Error("Can't reach the server. Check your connection and try again.");
             }

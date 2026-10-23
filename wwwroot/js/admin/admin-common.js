@@ -99,7 +99,7 @@ const AdminUI = (() => {
 
         let response;
         try {
-            response = await fetch(url, { method, headers, body });
+            response = await fetch(url, { method, headers, body, cache: "no-store" });
         } catch {
             throw new Error("Can't reach the server. Check your connection and try again.");
         }
