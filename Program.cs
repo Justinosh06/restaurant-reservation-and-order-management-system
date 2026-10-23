@@ -60,6 +60,10 @@ builder.Services.AddScoped<IPasswordHasher<RestaurantReservation.Models.Customer
 builder.Services.AddSingleton<CaptchaService>();
 builder.Services.AddSingleton<AdminSignInTicketService>();
 
+// Email (login codes). In development the mail goes to Mailpit: SMTP on localhost:1025, inbox at http://localhost:8025.
+builder.Services.AddSingleton<EmailSender>();
+builder.Services.AddSingleton<LoginCodeService>();
+
 // Session stores the current CAPTCHA answer on the server side.
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -141,6 +145,9 @@ app.UseStatusCodePagesWithReExecute("/NotFound");
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Customers without a name or phone number complete their profile before anything else.
+app.UseProfileSetup();
 
 // 3. Minimal API endpoints filtered by host header
 app.MapGet("/api/info", () => "Main Domain API")

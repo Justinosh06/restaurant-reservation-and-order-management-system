@@ -1,0 +1,25 @@
+/* Online menu header (Pages/Shared/_MenuLayout): the restaurant name on the left, styled like the brand
+   in the home page's navigation bar (landing_page.css), and the "Back to ..." button on the right. */
+.header {
+    align-items: center;
+
+    .menu-brand {
+        padding-left: 8px;
+        color: black;
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: "Bricolage Grotesque", sans-serif;
+        letter-spacing: -2px;
+        text-decoration: none;
+    }
+
+    .menu-brand:hover {
+        color: black;
+    }
+}
+
+@media only screen and (max-width: 576px) {
+    .header .menu-brand {
+        font-size: 1.6rem;
+    }
+}

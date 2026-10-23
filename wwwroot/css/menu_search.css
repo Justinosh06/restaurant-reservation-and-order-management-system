@@ -1,0 +1,142 @@
+/* Search for the online menu (/Menu), driven by tableMenu.js. The same look as the table menu's search
+   (table_page.css), kept in its own file because /Menu uses menu_index.css for everything else.
+   The search button matches the category pills of menu_index.css. */
+.menu-search {
+    position: relative;
+
+    [hidden] {
+        display: none !important;
+    }
+
+    .searchbar-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 16px;
+        border: 1px solid #e5ebe8;
+        border-radius: 999px;
+        background: #fff;
+        color: #4b5752;
+        cursor: pointer;
+        transition: border-color 160ms ease, color 160ms ease;
+    }
+
+    .searchbar-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    /* Full-screen search over a blurred page. */
+    .search-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        padding: 8px;
+        padding-top: 85px;
+        backdrop-filter: blur(16px);
+        background: rgb(255 255 255 / 90%);
+    }
+
+    .searchbar-popup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: min(100%, 520px);
+
+        .searchbar-input {
+            width: 100%;
+            min-height: 48px;
+            padding: 8px 16px;
+            border: 0;
+            border-radius: 30px;
+            outline: 0;
+            background: #F2F2F3;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .searchbar-submit {
+            padding: 10px 24px;
+            border-radius: 30px;
+            background: black;
+            color: white;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .searchbar-close {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: fit-content;
+            aspect-ratio: 1/1;
+            border-radius: 20px;
+            background: #F2F2F3;
+            font-size: 2.5rem;
+        }
+    }
+
+    .search-recommendations {
+        width: min(100%, 520px);
+        margin-top: 20px;
+
+        .search-recommendation-group + .search-recommendation-group {
+            margin-top: 20px;
+        }
+
+        .search-recommendation-group h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .search-recommendation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0;
+            list-style: none;
+        }
+
+        .search-recommendation {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            background: #F2F2F3;
+            text-align: left;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+    }
+
+    /* After searching: the search text as a chip, with a cross to clear it. */
+    .active-search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        min-height: 44px;
+        padding: 0 16px;
+        border: 1px solid var(--primary-color);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--primary-color);
+        font-weight: 600;
+
+        .active-search-query,
+        .clear-search {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+        }
+
+        .clear-search {
+            font-size: 1.3rem;
+            line-height: 1;
+        }
+    }
+}

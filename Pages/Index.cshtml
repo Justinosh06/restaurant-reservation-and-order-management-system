@@ -15,6 +15,17 @@
     const string mapEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3689.51102615882!2d113.98775958961416!3d22.372084687791705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3403fb70f463265b%3A0xb412a51f5ac2f272!2sResto%20Bar%20%26%20Grill!5e0!3m2!1sen!2smy!4v1791788991346!5m2!1sen!2smy";
     // Same place as the embedded map, opened in Google Maps.
     const string mapOpenUrl = "https://www.google.com/maps?cid=12975615030493114994";
+
+    // Opening hours use the server's local time. A closing time earlier than the opening time runs past midnight.
+    var now = DateTime.Now;
+    var today = now.DayOfWeek;
+    bool IsOpenDay(RestaurantReservation.Models.BusinessHours h) => !h.IsClosed && h.OpenTime is not null && h.CloseTime is not null;
+    bool OpenAt(RestaurantReservation.Models.BusinessHours h, TimeOnly time) =>
+        IsOpenDay(h) && (h.OpenTime < h.CloseTime
+            ? time >= h.OpenTime && time < h.CloseTime
+            : time >= h.OpenTime || time < h.CloseTime);
+    var todaysHours = Model.OpeningHours.FirstOrDefault(h => h.DayOfWeek == today);
+    var openNow = todaysHours is not null && OpenAt(todaysHours, TimeOnly.FromDateTime(now));
 }
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
@@ -69,7 +80,15 @@
                     @foreach (var item in Model.ShortMenu)
                     {
                         <li>
-                            <span>@item.Name</span>
+                            <span class="menu-name">
+                                @item.Name
+                                @if (Model.Ratings.TryGetValue(item.Id, out var rating))
+                                {
+                                    <span class="menu-rating" aria-label="Rated @rating.Average.ToString("0.0") out of 5 from @rating.Count reviews">
+                                        <i class="fa-solid fa-star" aria-hidden="true"></i> @rating.Average.ToString("0.0")
+                                    </span>
+                                }
+                            </span>
                             <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
                         </li>
                     }
@@ -87,17 +106,25 @@
         <section class="specials">
             <h2 class="section-title text-center">Chef's specials</h2>
 
+            @* The newest dishes, newest on the left: only the picture, in the same frame as the menu page.
+               from=home makes the dish page's back button return here instead of to the menu. *@
             <div class="specials-grid">
                 @foreach (var item in Model.ChefSpecials)
                 {
-                    <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id">
-                        <figure class="special-card">
-                            <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
-                            <figcaption>
-                                <span>@item.Name</span>
-                                <span class="menu-price">@Model.Currency.FormatCents(item.Price)</span>
-                            </figcaption>
-                        </figure>
+                    <a class="special-link" asp-page="/Menu/Item" asp-route-menuItemId="@item.Id" asp-route-from="home"
+                       aria-label="@item.Name">
+                        <div class="special-card">
+                            <div class="special-frame">
+                                @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
+                                {
+                                    <img src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                                }
+                                else
+                                {
+                                    <i class="fa-solid @(item.MenuItemType == RestaurantReservation.Models.Enums.MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") special-placeholder" aria-hidden="true"></i>
+                                }
+                            </div>
+                        </div>
                     </a>
                 }
             </div>
@@ -169,32 +196,60 @@
             }
             else
             {
-                <p class="address">
-                    @Model.Settings.Address
-                    @if (!string.IsNullOrWhiteSpace(Model.Settings.PhoneNumber))
-                    {
-                        <br />@Model.Settings.PhoneNumber
-                    }
-                </p>
+                @* One block per detail: icon, small label, then the value. *@
+                <div class="info-block">
+                    <i class="fa-solid fa-location-dot info-icon" aria-hidden="true"></i>
+                    <div>
+                        <h3 class="info-label">Address</h3>
+                        <p class="info-value address">@Model.Settings.Address</p>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Settings.PhoneNumber))
+                {
+                    <div class="info-block">
+                        <i class="fa-solid fa-phone info-icon" aria-hidden="true"></i>
+                        <div>
+                            <h3 class="info-label">Phone</h3>
+                            <a class="info-value" href="tel:@Model.Settings.PhoneNumber.Replace(" ", "")">@Model.Settings.PhoneNumber</a>
+                        </div>
+                    </div>
+                }
 
                 @if (Model.OpeningHours.Count > 0)
                 {
-                    <ul class="hours-list">
-                        @foreach (var hours in Model.OpeningHours)
-                        {
-                            <li>
-                                <span>@hours.DayOfWeek</span>
-                                @if (hours.IsClosed || hours.OpenTime is null || hours.CloseTime is null)
+                    <div class="info-block">
+                        <i class="fa-regular fa-clock info-icon" aria-hidden="true"></i>
+                        <div class="info-hours">
+                            <div class="hours-head">
+                                <h3 class="info-label">Opening hours</h3>
+                                <span class="open-status @(openNow ? "open" : "closed")">@(openNow ? "Open now" : "Closed now")</span>
+                            </div>
+
+                            <ul class="hours-list">
+                                @foreach (var hours in Model.OpeningHours)
                                 {
-                                    <span>Closed</span>
+                                    <li class="@(hours.DayOfWeek == today ? "today" : "")">
+                                        <span class="day">
+                                            @hours.DayOfWeek
+                                            @if (hours.DayOfWeek == today)
+                                            {
+                                                <span class="today-tag">Today</span>
+                                            }
+                                        </span>
+                                        @if (IsOpenDay(hours))
+                                        {
+                                            <span class="time">@hours.OpenTime!.Value.ToString("h:mm tt") &ndash; @hours.CloseTime!.Value.ToString("h:mm tt")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="time closed">Closed</span>
+                                        }
+                                    </li>
                                 }
-                                else
-                                {
-                                    <span>@hours.OpenTime.Value.ToString("HH:mm") &ndash; @hours.CloseTime.Value.ToString("HH:mm")</span>
-                                }
-                            </li>
-                        }
-                    </ul>
+                            </ul>
+                        </div>
+                    </div>
                 }
             }
         </div>
@@ -204,6 +259,9 @@
         </a>
     </section>
 </div>
+
+@* Today's promotions pop up once per browser tab. *@
+<partial name="_PromotionPopup" />
 
 @section Scripts {
     <script>

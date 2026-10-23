@@ -42,6 +42,8 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Feedbacks', 'OrderId') IS NULL ALTER TABLE Feedbacks ADD OrderId nvarchar(max) NULL");
         await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('MenuItems', 'CreatedAt') IS NULL ALTER TABLE MenuItems ADD CreatedAt datetime2 NOT NULL DEFAULT SYSUTCDATETIME()");
+        await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'CheckedInAt') IS NULL ALTER TABLE Reservations ADD CheckedInAt datetime2 NULL");
 
         // Customers used to have one FullName; it is now FirstName and LastName. Older databases get the two
@@ -76,6 +78,9 @@ public static class DbSeeder
                 EXEC(N'CREATE INDEX IX_Sessions_CustomerId ON Sessions (CustomerId);');
                 ALTER TABLE Sessions ADD CONSTRAINT FK_Sessions_Customers_CustomerId
                     FOREIGN KEY (CustomerId) REFERENCES Customers (Id);
+                                             
+                EXEC(N'ALTER TABLE Sessions ADD CONSTRAINT FK_Sessions_Customers_CustomerId
+                    FOREIGN KEY (CustomerId) REFERENCES Customers (Id);');
             END
             """);
 
