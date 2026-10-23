@@ -19,9 +19,19 @@
 
 <div class="page-container">
     <header class="header">
-        <a asp-page="/Menu/Index" class="back-btn" aria-label="Back to menu">
-            <i class="fa-solid fa-arrow-left"></i>
-        </a>
+        @* Back to where the dish was opened from: the home page's Chef's specials, or the menu. *@
+        @if (Request.Query["from"] == "home")
+        {
+            <a asp-page="/Index" class="back-btn" aria-label="Back to home">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        }
+        else
+        {
+            <a asp-page="/Menu/Index" class="back-btn" aria-label="Back to menu">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        }
     </header>
 
     <div class="menu-item-container">

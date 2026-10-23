@@ -250,8 +250,10 @@ public class TableManagementModel(
             var activeSession = activeSessions.FirstOrDefault(session => session.TableId == tableId);
             if (activeSession is null)
             {
+                // Own Id now: two blank Ids would clash when one booking spans several tables.
                 db.Sessions.Add(new RestaurantReservation.Models.Session
                 {
+                    Id = Guid.NewGuid().ToString("N"),
                     TableId = tableId,
                     CustomerId = reservation.CustomerId,
                     StartingTime = now
@@ -286,6 +288,25 @@ public class TableManagementModel(
             return RedirectToPage();
         }
 
+        // Check-in opened a dining session on each table (same start time as CheckedInAt);
+        // undoing it removes them, or they would carry on as walk-ins. Ones already ordered on stay.
+        var tableIds = reservation.ReservationTables.Select(link => link.TableId).ToArray();
+        var openedSessions = await db.Sessions
+            .Include(session => session.Orders)
+            .Where(session => tableIds.Contains(session.TableId)
+                && session.EndingTime == null
+                && session.StartingTime == reservation.CheckedInAt)
+            .ToListAsync();
+        if (openedSessions.Any(session => session.Orders.Count > 0))
+        {
+            StatusMessage = $"{ReservationSummary.From(reservation).CustomerName} has already ordered, so the check-in can't be undone. "
+                + "Use End session when they leave.";
+            return RedirectToPage();
+        }
+
+        var sessionIds = openedSessions.Select(session => session.Id).ToArray();
+        db.CartItems.RemoveRange(await db.CartItems.Where(item => sessionIds.Contains(item.SessionId)).ToListAsync());
+        db.Sessions.RemoveRange(openedSessions);
         reservation.Status = ReservationStatus.Confirmed;
         reservation.CheckedInAt = null;
         await db.SaveChangesAsync();

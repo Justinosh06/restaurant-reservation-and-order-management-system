@@ -5,7 +5,11 @@
     <a asp-page="/Index" class="brand">@Model</a>
 
     <div class="nav-actions">
-        @if (User.IsInRole(AppRoles.Customer))
+        @if ((ViewContext.RouteData.Values["page"] as string) == ProfileSetup.SetupPath)
+        {
+            @* Complete your profile: nothing to go to until it is done (the page has its own Log out). *@
+        }
+        else if (User.IsInRole(AppRoles.Customer))
         {
             @* Logout lives in the account sidebar. On the account pages this link leads back to the dashboard instead. *@
             <span class="greeting">Hi, @User.Identity?.Name</span>

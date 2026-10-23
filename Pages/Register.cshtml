@@ -1,65 +1,63 @@
 @page
 @model RegisterModel
 @{
+    Layout = "_AuthLayout";
     ViewData["Title"] = "Register";
+    ViewData["Headline"] = "A table is waiting for you.";
+    ViewData["Tagline"] = "Create a customer account to book tables, keep your dining history and share feedback on our dishes.";
 }
 
-<div class="row justify-content-center">
-    <div class="col-12 col-sm-10 col-md-8 col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h1 class="h3 text-center mb-1">Create an Account</h1>
-                <p class="text-center text-muted mb-4">Register as a customer to make reservations and orders</p>
+<h2 class="card-title">Create an account</h2>
+<p class="hint mb-3">Register as a customer to make reservations and orders.</p>
 
-                <form method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+<form method="post" class="auth-form">
+    <div asp-validation-summary="ModelOnly" class="field-error" role="alert"></div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.FirstName" class="form-label"></label>
-                        <input asp-for="Input.FirstName" class="form-control" autocomplete="given-name" />
-                        <span asp-validation-for="Input.FirstName" class="text-danger small"></span>
-                    </div>
+    <div class="auth-row">
+        <div class="auth-field">
+            <label asp-for="Input.FirstName"></label>
+            <input asp-for="Input.FirstName" autocomplete="given-name" />
+            <span asp-validation-for="Input.FirstName" class="field-error"></span>
+        </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.LastName" class="form-label"></label>
-                        <input asp-for="Input.LastName" class="form-control" autocomplete="family-name" />
-                        <span asp-validation-for="Input.LastName" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Input.Email" class="form-label"></label>
-                        <input asp-for="Input.Email" class="form-control" autocomplete="email" placeholder="name@example.com" />
-                        <span asp-validation-for="Input.Email" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Input.PhoneNumber" class="form-label"></label>
-                        <input asp-for="Input.PhoneNumber" class="form-control" type="tel" autocomplete="tel" placeholder="012-3456789" />
-                        <span asp-validation-for="Input.PhoneNumber" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Input.Password" class="form-label"></label>
-                        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
-                        <div class="form-text">At least 8 characters, with an uppercase letter, a lowercase letter and a number.</div>
-                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-4">
-                        <label asp-for="Input.ConfirmPassword" class="form-label"></label>
-                        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
-                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">Register</button>
-                </form>
-
-                <hr class="my-4" />
-
-                <p class="text-center mb-0">Already have an account? <a asp-page="/Login">Log in here</a></p>
-            </div>
+        <div class="auth-field">
+            <label asp-for="Input.LastName"></label>
+            <input asp-for="Input.LastName" autocomplete="family-name" />
+            <span asp-validation-for="Input.LastName" class="field-error"></span>
         </div>
     </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.Email"></label>
+        <input asp-for="Input.Email" autocomplete="email" placeholder="name@example.com" />
+        <span asp-validation-for="Input.Email" class="field-error"></span>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.PhoneNumber"></label>
+        <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" placeholder="012-3456789" />
+        <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.Password"></label>
+        <input asp-for="Input.Password" autocomplete="new-password" />
+        <span class="hint">At least 8 characters, with an uppercase letter, a lowercase letter and a number.</span>
+        <span asp-validation-for="Input.Password" class="field-error"></span>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.ConfirmPassword"></label>
+        <input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+        <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+    </div>
+
+    <button type="submit" class="pill-btn w-100">Register</button>
+</form>
+
+<div class="auth-switch">
+    <span class="hint">Already have an account?</span>
+    <a asp-page="/Login" class="pill-btn ghost w-100">Log in</a>
 </div>
 
 @section Scripts {
