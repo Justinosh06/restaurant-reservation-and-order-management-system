@@ -172,6 +172,102 @@
         }
     }
 
+    /* Promo code: an input and Apply button, or the applied code with Remove. */
+    .promo-code-box {
+        margin: 0 0 16px;
+        font-family: "Bricolage Grotesque", sans-serif;
+
+        .promo-form,
+        .promo-applied {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 6px 6px 20px;
+            border-radius: 100px;
+            background: #f1f1f1;
+        }
+
+        .promo-input {
+            flex: 1;
+            min-width: 0;
+            border: 0;
+            background: transparent;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--primary-color);
+        }
+
+        .promo-input::placeholder {
+            letter-spacing: 0;
+            text-transform: none;
+            font-weight: 500;
+            color: #888888;
+        }
+
+        .promo-input:focus {
+            outline: none;
+        }
+
+        .promo-form:focus-within {
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .promo-apply-btn,
+        .promo-remove-btn {
+            flex-shrink: 0;
+            border: 0;
+            border-radius: 100px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+
+        .promo-apply-btn {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+        }
+
+        .promo-applied {
+            background: #edfdca;
+            color: var(--primary-color);
+
+            .promo-applied-text {
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                line-height: 1.2;
+
+                strong {
+                    letter-spacing: 1px;
+                }
+
+                span {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    font-size: 0.85rem;
+                    color: #555555;
+                }
+            }
+        }
+
+        .promo-remove-btn {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .promo-feedback {
+            margin: 8px 20px 0;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+
+        .promo-feedback-error {
+            color: #b42318;
+        }
+    }
+
     .checkout-total-breakdown {
         display: grid;
         gap: 8px;

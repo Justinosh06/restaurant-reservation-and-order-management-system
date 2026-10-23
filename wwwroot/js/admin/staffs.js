@@ -53,16 +53,19 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><button type="button" class="dropdown-item" data-edit="${s.id}"><i class="fa-solid fa-pen fa-fw me-2"></i>Edit</button></li>
-                                    <li><button type="button" class="dropdown-item text-danger" data-delete="${s.id}"><i class="fa-solid fa-trash fa-fw me-2"></i>Delete</button></li>
+                                    ${s.isCurrentUser ? "" : `<li><button type="button" class="dropdown-item text-danger" data-delete="${s.id}"><i class="fa-solid fa-trash fa-fw me-2"></i>Delete</button></li>`}
                                 </ul>
                             </div>
                         </div>
 
                         <div class="text-center my-3">
-                            <span class="d-inline-block rounded-circle bg-${avatar.color}-subtle text-${avatar.color}-emphasis fs-4 p-3">
-                                <img class="avatar-img" style="width: 50px;" src="/images/avatar-${avatarImage}.png" alt="" />
-                            </span>
-                            <div class="fw-semibold mt-2 text-truncate" title="${email}">${email}</div>
+                            ${s.imageUrl
+                                ? `<img class="rounded-circle object-fit-cover" width="82" height="82" src="${AdminUI.escapeHtml(s.imageUrl)}" alt="" />`
+                                : `<span class="d-inline-block rounded-circle bg-${avatar.color}-subtle text-${avatar.color}-emphasis fs-4 p-3">
+                                    <img class="avatar-img" style="width: 50px;" src="/images/avatar-${avatarImage}.png" alt="" />
+                                </span>`}
+                            ${s.name ? `<div class="fw-semibold mt-2 text-truncate">${AdminUI.escapeHtml(s.name)}</div>` : ""}
+                            <div class="${s.name ? "small" : "fw-semibold mt-2"} text-truncate" title="${email}">${email}</div>
                             <div class="small text-body-secondary">${AdminUI.escapeHtml(s.role)}</div>
                         </div>
 
@@ -98,7 +101,7 @@
 
         const term = searchEl.value.trim().toLowerCase();
         const visible = staffs.filter(s =>
-            (!term || s.email.includes(term)) &&
+            (!term || s.email.includes(term) || (s.name ?? "").toLowerCase().includes(term)) &&
             (!roleFilterEl.value || s.role === roleFilterEl.value) &&
             (!genderFilterEl.value || s.gender === genderFilterEl.value));
 

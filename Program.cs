@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Announcements;
+using RestaurantReservation.Infrastructure.Email;
 using RestaurantReservation.Infrastructure.Navigation;
 using RestaurantReservation.Infrastructure.Stripe;
 
@@ -37,6 +39,19 @@ builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddSingleton<RestaurantClock>();
 builder.Services.AddScoped<RestaurantCurrency>();
 builder.Services.AddScoped<DiningSessionService>();
+builder.Services.AddScoped<ImageUploadService>();
+builder.Services.AddScoped<AdminPortalService>();
+builder.Services.AddScoped<CustomerNotificationService>();
+builder.Services.AddScoped<AnalyticsReportBuilder>();
+
+// The dashboard's PDF export uses QuestPDF, which is free under its Community licence for a project like this.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+// Announcement emails (sent to Mailpit locally; see the "Email" section of appsettings.json).
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddSingleton<AnnouncementEmailQueue>();
+builder.Services.AddHostedService<AnnouncementEmailWorker>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 
@@ -106,6 +121,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Promotions", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Menu", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Settings", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
 });

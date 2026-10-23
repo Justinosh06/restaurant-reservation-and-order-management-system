@@ -32,8 +32,8 @@ namespace RestaurantReservation.Models
         [ForeignKey(nameof(OrderId))]
         public Order? Order { get; set; }
 
-        [Required]
-        public string MenuItemId { get; set; } = string.Empty;
+        // Null once the dish has been deleted from the menu; ItemName and UnitPrice still describe it.
+        public string? MenuItemId { get; set; }
 
         [ForeignKey(nameof(MenuItemId))]
         public MenuItem? MenuItem { get; set; }

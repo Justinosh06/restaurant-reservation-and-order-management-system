@@ -34,6 +34,9 @@ namespace RestaurantReservation.Models
         [DataType(DataType.Date)]
         public DateOnly? DateOfBirth { get; set; }
 
+        // When the customer last opened the announcement bell; newer announcements count as unread.
+        public DateTime? AnnouncementsSeenAt { get; set; }
+
         // Stores a hashed password (ASP.NET Core PasswordHasher), never plain text.
         [DataType(DataType.Password)]
         public string? Password { get; set; }

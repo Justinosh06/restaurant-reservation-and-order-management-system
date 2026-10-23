@@ -1,0 +1,54 @@
+@page "/Admin/Notifications"
+@model RestaurantReservation.Pages.Admin.Notifications.NotificationModel
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Pages.Admin.Announcements
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="admin-page px-3 pt-3 pb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="h4 fw-semibold mb-1">Notifications</h1>
+            <p class="small text-body-secondary mb-0">Announcements customers can see right now.</p>
+        </div>
+        @if (User.IsInRole("Administrator"))
+        {
+            <a asp-page="/Admin/Announcements/Announcement" class="btn btn-dark"><i class="fa-solid fa-bullhorn me-1"></i> Manage announcements</a>
+        }
+    </div>
+
+    <section class="card border-0 bg-body-tertiary rounded-4">
+        <div class="small text-body-secondary fw-medium px-3 pt-3 pb-2">
+            Live announcements <span class="fw-normal">&middot; @Model.Announcements.Count</span>
+        </div>
+        <div class="d-flex flex-column gap-1 p-1 pt-0">
+            @if (Model.Announcements.Count == 0)
+            {
+                <div class="bg-body rounded-4 text-center text-body-secondary py-5">No announcements right now.</div>
+            }
+            @foreach (var note in Model.Announcements)
+            {
+                var icon = AnnouncementModel.Categories.FirstOrDefault(c => c.Name == note.Category).Icon ?? AnnouncementModel.Categories[0].Icon;
+                <article class="card bg-body border-0 rounded-4" id="ann-@note.Id">
+                    <div class="card-body d-flex gap-3">
+                        <div class="rounded-3 bg-body-tertiary text-body-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                            <i class="@icon"></i>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                                <h2 class="h6 fw-semibold mb-1">@note.Title</h2>
+                                @if (note.IsUnread)
+                                {
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">New</span>
+                                }
+                            </div>
+                            <div class="small text-body-secondary">@note.Category &middot; @note.PostedAt.ToDisplayTime()</div>
+                            <p class="small mt-2 mb-0" style="white-space: pre-line;">@note.Description</p>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</div>

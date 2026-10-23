@@ -22,18 +22,18 @@
                 <div class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3 pb-2">
                     <span class="small text-body-secondary fw-medium">All announcements</span>
                     <div class="d-flex flex-wrap gap-2 ms-lg-auto">
-                        <div class="input-group input-group-sm w-auto">
-                            <span class="input-group-text bg-body"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+                        <div class="input-group input-group-sm w-auto search-pill">
+                            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
                             <input type="search" id="ann-search" class="form-control" placeholder="Search by title" aria-label="Search announcements by title" />
                         </div>
-                        <select class="form-select form-select-sm w-auto" id="ann-category-filter" aria-label="Filter by category">
+                        <select class="form-select form-select-sm w-auto filter-pill" id="ann-category-filter" aria-label="Filter by category">
                             <option value="">All categories</option>
                             @foreach (var category in AnnouncementModel.Categories)
                             {
                                 <option value="@category.Name">@category.Name</option>
                             }
                         </select>
-                        <select class="form-select form-select-sm w-auto" id="ann-status-filter" aria-label="Filter by status">
+                        <select class="form-select form-select-sm w-auto filter-pill" id="ann-status-filter" aria-label="Filter by status">
                             <option value="">All statuses</option>
                             <option value="Active">Active</option>
                             <option value="Hidden">Hidden</option>
@@ -101,6 +101,7 @@
                     <input class="form-check-input" type="checkbox" role="switch" id="ann-active" checked />
                     <label class="form-check-label" for="ann-active">Visible to customers</label>
                 </div>
+                <div class="form-text mb-1">Customers get an email and a notification the first time it is visible.</div>
 
                 <div class="alert alert-danger d-none mt-3 mb-0" id="ann-form-error" role="alert"></div>
             </div>

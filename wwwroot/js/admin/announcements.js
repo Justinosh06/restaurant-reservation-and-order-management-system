@@ -198,7 +198,8 @@
             });
             replaceAnnouncement(saved);
             formModal.hide();
-            AdminUI.showToast(editingId ? "Announcement updated" : "Announcement posted");
+            AdminUI.showToast((editingId ? "Announcement updated" : "Announcement posted")
+                + (saved.emailQueued ? " and emailed to customers" : ""));
             render();
         } catch (error) {
             formError.textContent = error.message;
@@ -213,7 +214,9 @@
         try {
             const updated = await AdminUI.post("Toggle", { id: button.dataset.toggle });
             replaceAnnouncement(updated);
-            AdminUI.showToast(updated.isActive ? "Announcement is now visible" : "Announcement hidden");
+            AdminUI.showToast(updated.isActive
+                ? `Announcement is now visible${updated.emailQueued ? " and emailed to customers" : ""}`
+                : "Announcement hidden");
             render();
         } catch (error) {
             AdminUI.setBusy(button, false);

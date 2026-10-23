@@ -1,5 +1,6 @@
 @using Microsoft.EntityFrameworkCore
 @using RestaurantReservation.Data
+@using RestaurantReservation.Models
 @inject ApplicationDbContext Db
 @{
     // Promotion posters that pop up one after another, on the landing page and the table ordering page.
@@ -13,6 +14,15 @@
         .OrderBy(p => p.EndDate)
         .ThenBy(p => p.Title)
         .ToListAsync();
+
+    // e.g. "20% off" or "RM 10.00 off, min. spend RM 100.00".
+    string DiscountText(Promotion promotion)
+    {
+        var off = promotion.DiscountType == PromotionDiscountType.Percentage
+            ? $"{promotion.DiscountValue}% off"
+            : $"RM {promotion.DiscountValue / 100m:F2} off";
+        return promotion.MinimumSpend > 0 ? $"{off}, min. spend RM {promotion.MinimumSpend / 100m:F2}" : off;
+    }
 }
 
 @if (promotions.Count > 0)
@@ -46,6 +56,12 @@
                 }
 
                 <p class="promo-description">@promotion.Description</p>
+
+                @* A code only means something at checkout once the promotion has a discount. *@
+                @if (!string.IsNullOrWhiteSpace(promotion.Code) && promotion.DiscountType is not null)
+                {
+                    <p class="promo-code">Use code <strong>@promotion.Code</strong> at checkout for @DiscountText(promotion)</p>
+                }
 
                 <p class="promo-dates">
                     Valid @promotion.StartDate.ToString("d MMM") &ndash; @promotion.EndDate.ToString("d MMM yyyy")

@@ -27,5 +27,9 @@ namespace RestaurantReservation.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? ExpiresAt { get; set; }
+
+        // When the announcement first became visible to customers; they are emailed then, and only then.
+        // Notification bells count it as new from this time, so one posted hidden and shown later still shows as unread.
+        public DateTime? PublishedAt { get; set; }
     }
 }

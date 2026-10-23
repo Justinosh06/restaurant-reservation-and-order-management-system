@@ -20,6 +20,8 @@ public class StripePaymentService : IPaymentService
         string paymentAttemptId,
         IEnumerable<(string Name, decimal UnitPrice, int Quantity, string Remark)> items,
         int reservationDepositCredit,
+        int promoDiscount,
+        string? promotionCode,
         string domain)
     {
         var lineItems = items.Select(item => new SessionLineItemOptions
@@ -49,27 +51,37 @@ public class StripePaymentService : IPaymentService
                 { "dining_session_id", diningSessionId },
                 { "payment_attempt_id", paymentAttemptId },
                 { "reservation_deposit_credit", reservationDepositCredit.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture) }
+                    System.Globalization.CultureInfo.InvariantCulture) },
+                { "promo_discount", promoDiscount.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+                { "promotion_code", promotionCode ?? string.Empty }
             },
             SuccessUrl = $"{domain}/Payment/{{CHECKOUT_SESSION_ID}}?tableId={tableId}",
             CancelUrl = $"{domain}/Table/{tableId}/Checkout"
         };
 
-        if (reservationDepositCredit > 0)
+        // Stripe takes one discount per checkout, so the promo code and the deposit go into a single coupon.
+        // The amounts are part of the idempotency keys: applying or removing a code makes a new checkout.
+        var discountKey = $"{tableId}:{diningSessionId}:{paymentAttemptId}:{reservationDepositCredit}:{promoDiscount}:{promotionCode}";
+        var totalDiscount = reservationDepositCredit + promoDiscount;
+        if (totalDiscount > 0)
         {
+            var couponName = (reservationDepositCredit > 0, promoDiscount > 0) switch
+            {
+                (true, true) => $"Promo code {promotionCode} + reservation deposit",
+                (false, true) => $"Promo code {promotionCode}",
+                _ => "Reservation deposit"
+            };
             var coupon = await new CouponService().CreateAsync(
                 new CouponCreateOptions
                 {
-                    AmountOff = reservationDepositCredit,
+                    AmountOff = totalDiscount,
                     Currency = "myr",
                     Duration = "once",
-                    Name = "Reservation deposit"
+                    Name = couponName
                 },
                 new RequestOptions
                 {
-                    IdempotencyKey = CreateIdempotencyKey(
-                        "reservation_deposit_credit",
-                        $"{tableId}:{diningSessionId}:{paymentAttemptId}")
+                    IdempotencyKey = CreateIdempotencyKey("reservation_deposit_credit", discountKey)
                 });
             options.Discounts =
             [
@@ -79,9 +91,7 @@ public class StripePaymentService : IPaymentService
 
         return await _sessionService.CreateAsync(options, new RequestOptions
         {
-            IdempotencyKey = CreateIdempotencyKey(
-                "table_settlement",
-                $"{tableId}:{diningSessionId}:{paymentAttemptId}")
+            IdempotencyKey = CreateIdempotencyKey("table_settlement", discountKey)
         });
     }
 

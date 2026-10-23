@@ -15,6 +15,7 @@
         "/Customer/Password" => "password",
         "/Customer/Reservations" => "reservations",
         "/Customer/Reserve" => "reservations",
+        "/Customer/Notifications" => "notifications",
         _ => "dining"
     };
 }
@@ -45,6 +46,11 @@
                 <li>
                     <a asp-page="/Customer/Dining/Index" class="sidebar-link @(section == "dining" ? "active" : "")">
                         <i class="fa-solid fa-utensils"></i> Dining history
+                    </a>
+                </li>
+                <li>
+                    <a asp-page="/Customer/Notifications" class="sidebar-link @(section == "notifications" ? "active" : "")">
+                        <i class="fa-regular fa-bell"></i> Notifications
                     </a>
                 </li>
                 <li>

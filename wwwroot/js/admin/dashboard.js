@@ -5,6 +5,7 @@
     const byDayButton = document.getElementById("orders-by-day");
     const byHourButton = document.getElementById("orders-by-hour");
     const recentOrdersEl = document.getElementById("recent-orders");
+    const exportButton = document.getElementById("export-button");
 
     // Charts use the page's text colours so they also work in dark mode.
     const pageStyle = getComputedStyle(document.body);
@@ -204,6 +205,7 @@
         const fromText = AdminUI.formatDate(`${fromInput.value}T00:00:00`);
         const toText = AdminUI.formatDate(`${toInput.value}T00:00:00`);
         document.getElementById("range-label").textContent = fromText === toText ? fromText : `${fromText} - ${toText}`;
+        document.getElementById("export-range").textContent = fromText === toText ? fromText : `${fromText} - ${toText}`;
 
         latestRequest++;
         const thisRequest = latestRequest;
@@ -227,6 +229,52 @@
                 AdminUI.showError(error);
             });
     };
+
+    // Downloads the report for the dates on screen. Fetched rather than linked, so a bad range shows
+    // the server's message in a toast instead of opening a page of JSON.
+    const exportReport = async (format) => {
+        if (toInput.value < fromInput.value) {
+            AdminUI.showToast("The To date must be on or after the From date.", "danger");
+            return;
+        }
+
+        const url = new URL(window.location.pathname, window.location.origin);
+        url.search = new URLSearchParams({ handler: "Export", from: fromInput.value, to: toInput.value, format }).toString();
+
+        AdminUI.setBusy(exportButton, true);
+        try {
+            let response;
+            try {
+                response = await fetch(url);
+            } catch {
+                throw new Error("Can't reach the server. Check your connection and try again.");
+            }
+            if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                throw new Error(data?.error ?? "The report could not be made. Please try again.");
+            }
+
+            const fileName = /filename="?([^";]+)"?/.exec(response.headers.get("Content-Disposition") ?? "")?.[1]
+                ?? `analytics.${format}`;
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(await response.blob());
+            link.download = fileName;
+            document.body.append(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            AdminUI.showToast(`${format.toUpperCase()} report downloaded`);
+        } catch (error) {
+            AdminUI.showError(error);
+        } finally {
+            AdminUI.setBusy(exportButton, false);
+        }
+    };
+
+    document.querySelector(".export-menu").addEventListener("click", (e) => {
+        const option = e.target.closest("[data-export]");
+        if (option) exportReport(option.dataset.export);
+    });
 
     byDayButton.addEventListener("click", () => {
         if (ordersChart) showOrdersView("day");

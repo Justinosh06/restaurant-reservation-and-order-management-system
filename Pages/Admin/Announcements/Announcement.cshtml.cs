@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using RestaurantReservation.Data;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Announcements;
+using RestaurantReservation.Infrastructure.Authentication;
+using RestaurantReservation.Infrastructure.Email;
 using RestaurantReservation.Models;
+using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Admin.Announcements;
 
@@ -23,11 +28,19 @@ public class AnnouncementModel : PageModel
 
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
+    private readonly AnnouncementEmailQueue _emailQueue;
+    private readonly EmailSettings _emailSettings;
 
-    public AnnouncementModel(ApplicationDbContext db, RestaurantClock clock)
+    // Set when this request queued the customer emails, so the page can say so.
+    private bool _emailQueued;
+
+    public AnnouncementModel(ApplicationDbContext db, RestaurantClock clock, AnnouncementEmailQueue emailQueue,
+        IOptions<EmailSettings> emailSettings)
     {
         _db = db;
         _clock = clock;
+        _emailQueue = emailQueue;
+        _emailSettings = emailSettings.Value;
     }
 
     public DateOnly Today => _clock.Today;
@@ -56,6 +69,7 @@ public class AnnouncementModel : PageModel
 
         _db.Announcements.Add(announcement);
         await _db.SaveChangesAsync();
+        await EmailCustomersIfNewlyLiveAsync(announcement);
 
         return new JsonResult(ToDto(announcement));
     }
@@ -75,8 +89,32 @@ public class AnnouncementModel : PageModel
         }
 
         await _db.SaveChangesAsync();
+        await EmailCustomersIfNewlyLiveAsync(announcement);
 
         return new JsonResult(ToDto(announcement));
+    }
+
+    // Customers are emailed the first time an announcement is live: when it is posted visible, or when a hidden
+    // one is switched on later. PublishedAt is saved before queueing, so editing it afterwards never emails again.
+    // The queue is in memory: emails not yet sent when the app stops are not sent later.
+    private async Task EmailCustomersIfNewlyLiveAsync(Announcement announcement)
+    {
+        if (announcement.PublishedAt is not null || !AnnouncementFeed.IsLive(announcement))
+        {
+            return;
+        }
+
+        // Set even with email turned off: the notification bells count the announcement as new from this time.
+        announcement.PublishedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        if (!_emailSettings.Enabled)
+        {
+            return;
+        }
+
+        _emailQueue.Enqueue(new AnnouncementEmailJob(announcement.Id, SiteHosts.MainSiteUrl(Request, "/Customer/Notifications")));
+        _emailQueued = true;
     }
 
     // Copies the form values onto the announcement. Returns an error message, or null when everything is valid.
@@ -129,6 +167,7 @@ public class AnnouncementModel : PageModel
 
         announcement.IsActive = !announcement.IsActive;
         await _db.SaveChangesAsync();
+        await EmailCustomersIfNewlyLiveAsync(announcement);
 
         return new JsonResult(ToDto(announcement));
     }
@@ -157,6 +196,8 @@ public class AnnouncementModel : PageModel
         isActive = a.IsActive,
         isExpired = a.ExpiresAt <= DateTime.UtcNow,
         createdAt = a.CreatedAt,
+        publishedAt = a.PublishedAt,
+        emailQueued = _emailQueued,
         lastDay = a.ExpiresAt.HasValue
             ? DateOnly.FromDateTime(_clock.ToLocal(a.ExpiresAt.Value).AddTicks(-1)).ToString("yyyy-MM-dd")
             : null

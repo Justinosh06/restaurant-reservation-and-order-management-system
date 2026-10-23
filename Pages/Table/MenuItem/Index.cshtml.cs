@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
 using RestaurantReservation.Models;
@@ -12,7 +13,12 @@ public class MenuItemModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly DiningSessionService _diningSessions;
 
-    [BindProperty]
+    // A dish without options posts no "Options[...]" fields. Without an explicit Name, model binding then falls back
+    // to binding the whole form (Quantity, Remarks, the antiforgery token) into this dictionary, so the dish looked
+    // like it had unknown options and could never be added. ValidateNever skips the automatic "required" check;
+    // OnPostAddToCartAsync checks the options against the dish itself.
+    [BindProperty(Name = "Options")]
+    [ValidateNever]
     public Dictionary<string, string> Options { get; set; } = new();
 
     [BindProperty]
@@ -127,7 +133,8 @@ public class MenuItemModel : PageModel
                 !option.Value.Contains(selectedValue, StringComparer.Ordinal)) ||
             Options.Keys.Any(key => !validOptions.ContainsKey(key)))
         {
-            ModelState.AddModelError(nameof(Options), "Select a valid option for each menu item option.");
+            // Added as a page-level error so the form's validation summary shows it.
+            ModelState.AddModelError(string.Empty, "Select a valid option for each menu item option.");
         }
 
         if (!ModelState.IsValid)
