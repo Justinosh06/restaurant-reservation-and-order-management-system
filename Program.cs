@@ -55,6 +55,10 @@ builder.Services.AddHostedService<AnnouncementEmailWorker>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 
+// Payment details from Stripe on the customer's dining visits and reservations, cached in memory.
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<RestaurantReservation.Infrastructure.Payments.StripePaymentDetails>();
+
 // Register Controllers (Required for Stripe Webhook Controller)
 builder.Services.AddControllers();
 

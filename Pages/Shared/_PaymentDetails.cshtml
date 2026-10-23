@@ -1,0 +1,102 @@
+@using RestaurantReservation.Infrastructure.Payments
+@model PaymentPanel
+@{
+    // One payment, laid out like the payment result page: the amount, then a row per detail. Used on a dining
+    // visit (the bill) and on a reservation (the deposit). Styles are in landing_page.css (.pay-card).
+    string Local(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("d MMM yyyy, HH:mm");
+
+    var (statusText, statusClass) = Model.State switch
+    {
+        PaymentState.Paid => ("Paid", "paid"),
+        PaymentState.Refunded => ("Refunded", "refunded"),
+        _ => ("Waiting for payment", "muted")
+    };
+}
+
+<div class="pay-card @statusClass">
+    <div class="pay-top">
+        <span class="pay-label">Amount</span>
+        <span class="status-pill @statusClass">
+            @if (Model.State == PaymentState.Refunded)
+            {
+                <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
+            }
+            @statusText
+        </span>
+    </div>
+    <span class="pay-amount">
+        @Model.CurrencySymbol @decimal.Truncate(Model.Amount).ToString("N0")<span>.@(((Model.Amount - decimal.Truncate(Model.Amount)) * 100).ToString("00"))</span>
+    </span>
+
+    @if (Model.State == PaymentState.Refunded)
+    {
+        <p class="pay-refund-note">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+            <span>
+                @Model.CurrencySymbol @Model.Amount.ToString("0.00") was refunded to your
+                @(Model.Stripe?.MethodLabel is { } method ? method.Replace(" ending in", " card ending in") : "card")@(Model.RefundedAtUtc is { } refundedAt ? $" on {Local(refundedAt)}" : "").
+                It usually shows in your account within 5–10 working days.
+            </span>
+        </p>
+    }
+
+    <dl class="pay-rows">
+        @if (!string.IsNullOrWhiteSpace(Model.CheckoutSessionId))
+        {
+            <div>
+                <dt><i class="fa-solid fa-receipt" aria-hidden="true"></i> Stripe Checkout ID</dt>
+                <dd title="@Model.CheckoutSessionId">@Model.CheckoutSessionId</dd>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.PaymentIntentId))
+        {
+            <div>
+                <dt><i class="fa-solid fa-credit-card" aria-hidden="true"></i> Payment intent</dt>
+                <dd title="@Model.PaymentIntentId">@Model.PaymentIntentId</dd>
+            </div>
+        }
+        <div>
+            <dt><i class="fa-solid fa-cash-register" aria-hidden="true"></i> Payment method</dt>
+            <dd>@Model.MethodLabel</dd>
+        </div>
+        <div>
+            <dt><i class="fa-regular fa-user" aria-hidden="true"></i> Customer</dt>
+            <dd>@Model.CustomerName</dd>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
+        {
+            <div>
+                <dt><i class="fa-regular fa-envelope" aria-hidden="true"></i> Email</dt>
+                <dd title="@Model.CustomerEmail">@Model.CustomerEmail</dd>
+            </div>
+        }
+        @if (Model.PaidAtUtc is { } paidAt && Model.State != PaymentState.Pending)
+        {
+            <div>
+                <dt><i class="fa-regular fa-calendar" aria-hidden="true"></i> Paid on</dt>
+                <dd>@Local(paidAt)</dd>
+            </div>
+        }
+        @if (Model.RefundedAtUtc is { } refunded)
+        {
+            <div>
+                <dt><i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i> Refunded on</dt>
+                <dd>@Local(refunded)</dd>
+            </div>
+        }
+        @foreach (var row in Model.ExtraRows)
+        {
+            <div>
+                <dt><i class="@row.Icon" aria-hidden="true"></i> @row.Label</dt>
+                <dd>@row.Value</dd>
+            </div>
+        }
+    </dl>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ReceiptUrl))
+    {
+        <a class="pill-btn w-100" href="@Model.ReceiptUrl" target="_blank" rel="noopener noreferrer">
+            View receipt <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i>
+        </a>
+    }
+</div>

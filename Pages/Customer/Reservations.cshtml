@@ -56,6 +56,27 @@
                 <article class="upcoming-card @(cancelled ? "cancelled" : "")">
                     <partial name="_UpcomingReservation" model="reservation" />
 
+                    @* The deposit paid when booking: Paid, or Refunded once the booking is cancelled. *@
+                    @if (Model.Deposits.TryGetValue(reservation.Id, out var deposit))
+                    {
+                        var depositText = deposit.State switch
+                        {
+                            RestaurantReservation.Infrastructure.Payments.PaymentState.Paid => "Paid",
+                            RestaurantReservation.Infrastructure.Payments.PaymentState.Refunded => "Refunded",
+                            _ => "Waiting for payment"
+                        };
+                        var depositClass = deposit.State.ToString().ToLowerInvariant();
+
+                        <details class="res-payment">
+                            <summary>
+                                <span><i class="fa-solid fa-credit-card" aria-hidden="true"></i> RM@(deposit.Amount.ToString("0.00")) deposit</span>
+                                <span class="status-pill @(depositClass == "pending" ? "muted" : depositClass)">@depositText</span>
+                                <i class="fa-solid fa-chevron-down res-payment-arrow" aria-hidden="true"></i>
+                            </summary>
+                            <partial name="_PaymentDetails" model="deposit" />
+                        </details>
+                    }
+
                     @* Only bookings still to come can be cancelled, up to 24 hours before. *@
                     @if (Model.ActiveTab == ReservationsModel.UpcomingTab && !cancelled
                         && reservation.Status is RestaurantReservation.Models.ReservationStatus.Pending or RestaurantReservation.Models.ReservationStatus.Confirmed)
@@ -87,6 +108,34 @@
 @section Scripts {
     <script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
     <script>
+        // Payment details: one open at a time; a click outside the open one, or Escape, closes it.
+        const paymentPanels = document.querySelectorAll(".res-payment");
+        paymentPanels.forEach(function (panel) {
+            panel.addEventListener("toggle", function () {
+                if (panel.open) {
+                    paymentPanels.forEach(function (other) {
+                        if (other !== panel) {
+                            other.open = false;
+                        }
+                    });
+                }
+            });
+        });
+        document.addEventListener("click", function (event) {
+            paymentPanels.forEach(function (panel) {
+                if (panel.open && !panel.contains(event.target)) {
+                    panel.open = false;
+                }
+            });
+        });
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                paymentPanels.forEach(function (panel) {
+                    panel.open = false;
+                });
+            }
+        });
+
         // Same question as the booking page before a booking is cancelled.
         document.querySelectorAll(".cancel-booking-form").forEach(function (cancelForm) {
             AppDialog.guardSubmit(cancelForm, {

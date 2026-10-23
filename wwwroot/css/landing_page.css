@@ -666,6 +666,182 @@ body:has(.landing) {
         }
     }
 
+    /* A payment (Pages/Shared/_PaymentDetails), laid out like the payment result page: a grey frame round a
+       white card with the amount, then one row per detail. */
+    .pay-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+        border: 8px solid #F2F2F3;
+        border-radius: 24px;
+        background: white;
+
+        .pay-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .pay-label {
+            color: #888888;
+            font-weight: 600;
+        }
+
+        .pay-amount {
+            font-size: 2.6rem;
+            font-weight: 600;
+            line-height: 1;
+            letter-spacing: -1px;
+            font-family: "Bricolage Grotesque", sans-serif;
+
+            span {
+                color: #888888;
+                font-size: 1.2rem;
+                letter-spacing: 0;
+            }
+        }
+
+        .pay-refund-note {
+            display: flex;
+            gap: 8px;
+            margin: 0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: #E8F5EC;
+            color: #1E6B3A;
+            font-size: 0.85rem;
+
+            i {
+                margin-top: 3px;
+            }
+        }
+
+        .pay-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 0;
+
+            div {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 16px;
+                min-width: 0;
+            }
+
+            dt {
+                flex-shrink: 0;
+                color: #888888;
+                font-weight: 500;
+
+                i {
+                    width: 16px;
+                    text-align: center;
+                }
+            }
+
+            dd {
+                min-width: 0;
+                margin: 0;
+                overflow: hidden;
+                font-weight: 600;
+                text-align: right;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+
+        .status-pill.paid {
+            background: #E8F5EC;
+            color: #1E6B3A;
+        }
+
+        .status-pill.refunded {
+            background: #E8EEFC;
+            color: #2446A8;
+        }
+    }
+
+    /* Dining visit: order history on the left, the payment on the right. */
+    .visit-body {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .visit-payments {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* The deposit on a reservation: one line with its state. The arrow opens the full payment details as a panel
+       floating over the boxes below (the page doesn't move); clicking anywhere else closes it (Reservations.cshtml). */
+    .upcoming-card {
+        position: relative;
+    }
+
+    .upcoming-card:has(.res-payment[open]) {
+        z-index: 30;
+    }
+
+    .res-payment {
+        position: relative;
+        border-top: 1px solid #ECECEC;
+        padding-top: 12px;
+
+        summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+
+            .status-pill {
+                margin-left: auto;
+            }
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .res-payment-arrow {
+            color: #888888;
+            font-size: 0.8rem;
+            transition: transform 200ms ease;
+        }
+
+        .pay-card {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: -8px;
+            left: -8px;
+            z-index: 30;
+            border-width: 6px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+        }
+
+        .status-pill.paid {
+            background: #E8F5EC;
+            color: #1E6B3A;
+        }
+
+        .status-pill.refunded {
+            background: #E8EEFC;
+            color: #2446A8;
+        }
+    }
+
+    .res-payment[open] .res-payment-arrow {
+        transform: rotate(180deg);
+    }
+
     /* Reservations page: title with the booking button beside it, then one card per booking. */
     .page-head {
         display: flex;
@@ -1330,16 +1506,23 @@ body:has(.landing) {
             background: #F2F2F3;
         }
 
+        /* The long order number wraps so the total and status always stay inside the card. */
+        .order-card > div:first-child {
+            min-width: 0;
+        }
+
         .order-code {
             display: block;
             font-size: 1.25rem;
             font-weight: 600;
             font-family: "Bricolage Grotesque", sans-serif;
+            overflow-wrap: anywhere;
         }
 
         .order-side {
             display: flex;
             flex-direction: column;
+            flex-shrink: 0;
             align-items: flex-end;
             gap: 4px;
         }
@@ -1358,9 +1541,8 @@ body:has(.landing) {
         }
     }
 
+    /* Dining visit and order pages use the full width beside the account sidebar. */
     .detail-page {
-        max-width: 960px;
-
         .back-link {
             display: inline-block;
             margin-bottom: 16px;
@@ -2068,6 +2250,26 @@ body:has(.landing) {
 
         .special-price {
             font-size: 1.35rem;
+        }
+    }
+}
+
+@media only screen and (max-width: 1200px) {
+    .landing .visit-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media only screen and (max-width: 576px) {
+    .landing .pay-card {
+        padding: 16px;
+
+        .pay-amount {
+            font-size: 2.2rem;
+        }
+
+        .pay-rows {
+            font-size: 0.9rem;
         }
     }
 }

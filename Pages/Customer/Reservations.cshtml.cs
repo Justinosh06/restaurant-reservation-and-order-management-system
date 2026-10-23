@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Payments;
 using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
@@ -14,8 +15,10 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 //   stays here (marked Cancelled) until its day is over.
 // - Done: completed bookings, and any other booking whose day has passed; newest first.
 // - Cancelled: every cancelled booking, newest first.
-// Upcoming bookings can be cancelled here up to 24 hours before (same rule as the booking page).
-public class ReservationsModel(ApplicationDbContext db, IPaymentService payments, ILogger<ReservationsModel> logger) : PageModel
+// Upcoming bookings can be cancelled here up to 24 hours before (same rule as the booking page); a paid deposit is
+// refunded, and each booking shows its deposit payment (Paid or Refunded) from Stripe.
+public class ReservationsModel(
+    ApplicationDbContext db, IPaymentService payments, StripePaymentDetails stripe, ILogger<ReservationsModel> logger) : PageModel
 {
     public const string UpcomingTab = "upcoming";
     public const string DoneTab = "done";
@@ -37,6 +40,9 @@ public class ReservationsModel(ApplicationDbContext db, IPaymentService payments
         CancelledTab => Cancelled,
         _ => Upcoming
     };
+
+    // The deposit payment of each shown booking that took one, by reservation id.
+    public Dictionary<string, PaymentPanel> Deposits { get; private set; } = [];
 
     [TempData]
     public string? StatusMessage { get; set; }
@@ -66,6 +72,37 @@ public class ReservationsModel(ApplicationDbContext db, IPaymentService payments
             .Where(r => r.Status == ReservationStatus.Cancelled)
             .OrderByDescending(r => r.Date).ThenByDescending(r => r.TimeSlot)
             .ToList();
+
+        await LoadDepositsAsync();
+    }
+
+    private async Task LoadDepositsAsync()
+    {
+        var paid = Shown
+            .Where(r => r.StripeSessionId != null && r.DepositStatus is DepositStatus.Paid or DepositStatus.Refunded or DepositStatus.Unpaid)
+            .ToList();
+        var details = await Task.WhenAll(paid.Select(r => r.DepositStatus == DepositStatus.Unpaid
+            ? Task.FromResult<StripePaymentInfo?>(null)
+            : stripe.GetAsync(r.StripeSessionId, expectRefunded: r.DepositStatus == DepositStatus.Refunded)));
+
+        Deposits = paid.Select((reservation, index) => (reservation, info: details[index])).ToDictionary(
+            pair => pair.reservation.Id,
+            pair => new PaymentPanel
+            {
+                AmountCents = pair.reservation.DepositAmount ?? 0,
+                State = pair.reservation.DepositStatus switch
+                {
+                    DepositStatus.Refunded => PaymentState.Refunded,
+                    DepositStatus.Paid => PaymentState.Paid,
+                    _ => PaymentState.Pending
+                },
+                CheckoutSessionId = pair.reservation.StripeSessionId,
+                Stripe = pair.info,
+                FallbackMethod = "Stripe Checkout",
+                FallbackName = pair.reservation.Customer?.FullName,
+                FallbackEmail = pair.reservation.Customer?.Email,
+                FallbackPaidAtUtc = pair.reservation.CreatedAt
+            });
     }
 
     // Cancel button on an upcoming booking.
