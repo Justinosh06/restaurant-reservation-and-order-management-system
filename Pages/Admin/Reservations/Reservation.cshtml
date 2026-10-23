@@ -265,8 +265,14 @@
                     <span asp-validation-for="Input.PartySize" class="field-error"></span>
                 </div>
                 <div>
-                    <label for="createReservationAt">Date and time</label>
-                    <input asp-for="Input.ReservationAt" id="createReservationAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                    <label for="createReservationAtButton">Date and time</label>
+                    <div class="dropdown date-time-field" data-date-time>
+                        <input asp-for="Input.ReservationAt" id="createReservationAt" type="hidden" data-date-time-value asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                        <button type="button" id="createReservationAtButton" class="btn btn-light border date-time-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i><span data-date-time-label></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
+                    </div>
                     <span asp-validation-for="Input.ReservationAt" class="field-error"></span>
                 </div>
             </div>
@@ -316,8 +322,14 @@
                     <span asp-validation-for="Input.PartySize" class="field-error"></span>
                 </div>
                 <div>
-                    <label for="editReservationAt">Date and time</label>
-                    <input asp-for="Input.ReservationAt" id="editReservationAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                    <label for="editReservationAtButton">Date and time</label>
+                    <div class="dropdown date-time-field" data-date-time>
+                        <input asp-for="Input.ReservationAt" id="editReservationAt" type="hidden" data-date-time-value asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                        <button type="button" id="editReservationAtButton" class="btn btn-light border date-time-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i><span data-date-time-label></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
+                    </div>
                     <span asp-validation-for="Input.ReservationAt" class="field-error"></span>
                 </div>
             </div>
@@ -457,3 +469,4 @@
 </div>
 
 <script src="~/js/reservation-management.js" asp-append-version="true"></script>
+<script src="~/js/admin/date-time-picker.js" asp-append-version="true" defer></script>

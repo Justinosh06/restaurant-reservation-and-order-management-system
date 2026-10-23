@@ -577,7 +577,8 @@ body:has(.service-app) {
 }
 
 .reservation-panel.open {
-    transform: translateX(0);
+    /* none, not translateX(0): a transform would trap the date picker's pop-up inside the panel. */
+    transform: none;
 }
 
 .panel-heading {
@@ -2403,4 +2404,84 @@ body:has(.service-app) {
 
 .service-app .legend .legend-icon {
     font-size: 9px;
+}
+
+/* Booking date and time: the dashboard's calendar pop-up (js/admin/date-time-picker.js),
+   opened from a button that sits in the form like the other fields. */
+.date-time-toggle {
+    display: flex;
+    width: 100%;
+    min-height: 40px;
+    align-items: center;
+    gap: .5rem;
+    border-radius: 8px;
+    font-size: 12px;
+    text-align: left;
+}
+
+/* The booking picker shows the times in a scrolling column beside the calendar. */
+.reservation-form .date-range-calendar {
+    width: auto;
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+}
+
+.date-time-columns {
+    display: flex;
+    gap: .75rem;
+}
+
+.date-time-days {
+    width: 17.5rem;
+}
+
+.date-time-times {
+    display: flex;
+    width: 6.5rem;
+    flex-direction: column;
+    border-left: 1px solid var(--bs-border-color, #dee2e6);
+    padding-left: .75rem;
+}
+
+.calendar-times {
+    display: grid;
+    flex: 1 1 0;
+    min-height: 0;
+    align-content: start;
+    gap: .125rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.calendar-times .btn {
+    white-space: nowrap;
+}
+
+.calendar-times .btn:not(.btn-dark):hover {
+    background: var(--bs-secondary-bg, #e9ecef);
+}
+
+@media (max-width: 520px) {
+    .reservation-form .date-range-calendar {
+        width: min(19rem, calc(100vw - 16px));
+    }
+
+    .date-time-columns {
+        flex-direction: column;
+    }
+
+    .date-time-days,
+    .date-time-times {
+        width: auto;
+    }
+
+    .date-time-times {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .calendar-times {
+        max-height: 9rem;
+        flex-basis: auto;
+    }
 }
