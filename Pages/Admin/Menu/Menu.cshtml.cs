@@ -50,7 +50,8 @@ public class MenuModel : PageModel
             .ToList();
 
         var orderCounts = await _db.OrderItems.AsNoTracking()
-            .GroupBy(oi => oi.MenuItemId)
+            .Where(oi => oi.MenuItemId != null)
+            .GroupBy(oi => oi.MenuItemId!)
             .Select(g => new { MenuItemId = g.Key, Quantity = g.Sum(oi => oi.Quantity) })
             .ToDictionaryAsync(g => g.MenuItemId, g => g.Quantity);
 
@@ -179,25 +180,14 @@ public class MenuModel : PageModel
         return new JsonResult(ToDto(item, await TimesOrderedAsync(item.Id)));
     }
 
-    // Past orders and reviews keep a link to the dish they were for, so a dish that has been ordered or reviewed
-    // can only be marked unavailable. Any other dish is removed, along with any copies sitting in carts.
+    // Removes the dish along with any copies sitting in carts and its customer reviews (Feedback cascades).
+    // Past orders keep their lines: each holds the dish's name and price, and its link to the dish is cleared.
     public async Task<IActionResult> OnPostDeleteAsync([FromBody] MenuItemIdRequest request)
     {
         var item = await _db.MenuItems.FindAsync(request.Id);
         if (item is null)
         {
             return NotFound(new { error = "This menu item no longer exists. Refresh the page." });
-        }
-
-        if (await _db.OrderItems.AnyAsync(oi => oi.MenuItemId == item.Id))
-        {
-            return new ConflictObjectResult(new { error = $"\"{item.Name}\" has been ordered before, so it can't be deleted. Mark it unavailable to hide it from the menu instead." });
-        }
-
-        // Deleting a dish also deletes its customer reviews (Feedback cascades), so a reviewed dish is kept too.
-        if (await _db.Feedbacks.AnyAsync(f => f.MenuItemId == item.Id))
-        {
-            return new ConflictObjectResult(new { error = $"\"{item.Name}\" has customer reviews, so it can't be deleted. Mark it unavailable to hide it from the menu instead." });
         }
 
         _db.CartItems.RemoveRange(_db.CartItems.Where(c => c.MenuItemId == item.Id));

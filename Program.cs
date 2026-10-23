@@ -42,6 +42,10 @@ builder.Services.AddScoped<DiningSessionService>();
 builder.Services.AddScoped<ImageUploadService>();
 builder.Services.AddScoped<AdminPortalService>();
 builder.Services.AddScoped<CustomerNotificationService>();
+builder.Services.AddScoped<AnalyticsReportBuilder>();
+
+// The dashboard's PDF export uses QuestPDF, which is free under its Community licence for a project like this.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // Announcement emails (sent to Mailpit locally; see the "Email" section of appsettings.json).
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));

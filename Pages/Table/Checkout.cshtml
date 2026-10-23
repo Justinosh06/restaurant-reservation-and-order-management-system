@@ -102,11 +102,61 @@
 
     @if (Model.SessionOrders.Count > 0)
     {
-        @if (Model.ReservationDepositCredit > 0)
+        @if (!Model.IsSessionClosed)
+        {
+            <div class="promo-code-box">
+                @if (Model.AppliedPromotion is not null)
+                {
+                    <form method="post" asp-page-handler="RemovePromoCode" asp-route-tableId="@Model.TableId" class="promo-applied">
+                        <i class="fa-solid fa-ticket" aria-hidden="true"></i>
+                        <div class="promo-applied-text">
+                            <strong>@Model.AppliedPromotion.Code</strong>
+                            <span>@Model.AppliedPromotion.Title</span>
+                        </div>
+                        <button type="submit" class="promo-remove-btn">Remove</button>
+                    </form>
+                    @if (Model.PromoDiscount == 0 && Model.AppliedPromotion.MinimumSpend > 0)
+                    {
+                        <p class="promo-feedback">
+                            Spend RM @((Model.AppliedPromotion.MinimumSpend / 100m - Model.TotalAmount).ToString("F2")) more
+                            to get this discount (minimum spend RM @((Model.AppliedPromotion.MinimumSpend / 100m).ToString("F2"))).
+                        </p>
+                    }
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="ApplyPromoCode" asp-route-tableId="@Model.TableId" class="promo-form">
+                        <label for="promoCode" class="visually-hidden">Promo code</label>
+                        <input type="text" id="promoCode" name="promoCode" class="promo-input" placeholder="Promo code"
+                               maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                               aria-describedby="promoFeedback" />
+                        <button type="submit" class="promo-apply-btn">Apply</button>
+                    </form>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.PromoError ?? Model.PromoRemovedNotice))
+                {
+                    <p class="promo-feedback promo-feedback-error" id="promoFeedback" role="alert">@(Model.PromoError ?? Model.PromoRemovedNotice)</p>
+                }
+                else if (!string.IsNullOrWhiteSpace(Model.PromoMessage))
+                {
+                    <p class="promo-feedback" id="promoFeedback" role="status">@Model.PromoMessage</p>
+                }
+            </div>
+        }
+
+        @if (Model.ReservationDepositCredit > 0 || Model.PromoDiscount > 0)
         {
             <div class="checkout-total-breakdown">
                 <div><span>Orders total</span><span>RM @Model.TotalAmount.ToString("F2")</span></div>
-                <div><span>Reservation deposit</span><span>- RM @Model.ReservationDepositCredit.ToString("F2")</span></div>
+                @if (Model.PromoDiscount > 0)
+                {
+                    <div><span>Promo code @Model.AppliedPromotion?.Code</span><span>- RM @Model.PromoDiscount.ToString("F2")</span></div>
+                }
+                @if (Model.ReservationDepositCredit > 0)
+                {
+                    <div><span>Reservation deposit</span><span>- RM @Model.ReservationDepositCredit.ToString("F2")</span></div>
+                }
                 <div class="checkout-amount-due"><strong>Amount due</strong><strong>RM @Model.AmountDue.ToString("F2")</strong></div>
             </div>
         }
@@ -118,7 +168,7 @@
                     <h4 class="total-price">RM @Model.AmountDue.ToString("F2")</h4>
                     @if (Model.AmountDue == 0)
                     {
-                        <span>Complete checkout with deposit</span>
+                        <span>@(Model.ReservationDepositCredit > 0 ? "Complete checkout with deposit" : "Complete checkout")</span>
                     }
                     else
                     {

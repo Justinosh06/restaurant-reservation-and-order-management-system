@@ -81,6 +81,45 @@ public static class DbSeeder
             END
             """);
 
+        // Deleting a dish keeps its past order lines (they hold their own name and price) and clears their link
+        // to it, so the column becomes nullable and the key changes from "no action" to "set null".
+        await db.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (SELECT 1 FROM sys.foreign_keys
+                       WHERE name = 'FK_OrderItems_MenuItems_MenuItemId' AND delete_referential_action <> 2)
+            BEGIN
+                ALTER TABLE OrderItems DROP CONSTRAINT FK_OrderItems_MenuItems_MenuItemId;
+                ALTER TABLE OrderItems ALTER COLUMN MenuItemId nvarchar(450) NULL;
+                ALTER TABLE OrderItems ADD CONSTRAINT FK_OrderItems_MenuItems_MenuItemId
+                    FOREIGN KEY (MenuItemId) REFERENCES MenuItems (Id) ON DELETE SET NULL;
+            END
+            """);
+
+        // Promo codes: one per promotion, unique (same filtered index as EnsureCreated makes).
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Promotions', 'Code') IS NULL
+            BEGIN
+                ALTER TABLE Promotions ADD Code nvarchar(20) NULL;
+                EXEC(N'CREATE UNIQUE INDEX IX_Promotions_Code ON Promotions (Code) WHERE [Code] IS NOT NULL;');
+            END
+            """);
+
+        // Promo code discounts, and the code a dining session applied at checkout (same key and index as EnsureCreated).
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Promotions', 'DiscountType') IS NULL ALTER TABLE Promotions ADD DiscountType nvarchar(20) NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Promotions', 'DiscountValue') IS NULL ALTER TABLE Promotions ADD DiscountValue int NOT NULL DEFAULT 0");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Promotions', 'MinimumSpend') IS NULL ALTER TABLE Promotions ADD MinimumSpend int NOT NULL DEFAULT 0");
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Sessions', 'PromotionId') IS NULL
+            BEGIN
+                ALTER TABLE Sessions ADD PromotionId nvarchar(450) NULL;
+                EXEC(N'CREATE INDEX IX_Sessions_PromotionId ON Sessions (PromotionId);');
+                EXEC(N'ALTER TABLE Sessions ADD CONSTRAINT FK_Sessions_Promotions_PromotionId
+                    FOREIGN KEY (PromotionId) REFERENCES Promotions (Id) ON DELETE SET NULL;');
+            END
+            """);
+
         // Admin portal profile (name and picture) and announcement notifications.
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Admins', 'Name') IS NULL ALTER TABLE Admins ADD Name nvarchar(100) NULL");

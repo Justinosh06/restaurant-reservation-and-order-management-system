@@ -16,6 +16,12 @@ namespace RestaurantReservation.Models
         [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters.")]
         public string Description { get; set; } = string.Empty;
 
+        // The code customers quote for the promotion. Every promotion saved since codes were added has one;
+        // older promotions get one the next time they are saved.
+        [StringLength(20, MinimumLength = 4, ErrorMessage = "The promo code must be 4 to 20 characters.")]
+        [RegularExpression("^[A-Z0-9]+$", ErrorMessage = "The promo code can only use letters and numbers.")]
+        public string? Code { get; set; }
+
         [StringLength(500, ErrorMessage = "Image URL cannot exceed 500 characters.")]
         public string? ImageUrl { get; set; }
 
@@ -24,5 +30,39 @@ namespace RestaurantReservation.Models
 
         [Required]
         public DateOnly EndDate { get; set; }
+
+        // What the code takes off the bill at checkout. Null for promotions made before discounts were added:
+        // their code can't be used until a discount is set.
+        public PromotionDiscountType? DiscountType { get; set; }
+
+        // A percentage (1 to 100) for Percentage, or an amount in cents for FixedAmount.
+        [Range(0, 10000000)]
+        public int DiscountValue { get; set; }
+
+        // The orders total (in cents) the bill must reach before the code can be used; 0 means no minimum.
+        [Range(0, 10000000)]
+        public int MinimumSpend { get; set; }
+
+        public bool IsRunningOn(DateOnly day) => StartDate <= day && day <= EndDate;
+
+        // The amount (in cents) taken off a bill of subtotal cents, or 0 when the bill doesn't qualify.
+        public int DiscountOn(int subtotal)
+        {
+            if (DiscountType is null || subtotal <= 0 || subtotal < MinimumSpend)
+            {
+                return 0;
+            }
+
+            var discount = DiscountType == PromotionDiscountType.Percentage
+                ? (int)Math.Round(subtotal * DiscountValue / 100m, MidpointRounding.AwayFromZero)
+                : DiscountValue;
+            return Math.Clamp(discount, 0, subtotal);
+        }
+    }
+
+    public enum PromotionDiscountType
+    {
+        Percentage,
+        FixedAmount
     }
 }

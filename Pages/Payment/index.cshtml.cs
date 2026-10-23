@@ -405,9 +405,21 @@ public class IndexModel : PageModel
                                          out var parsedCredit)
             ? parsedCredit
             : 0;
+        var promoRemaining = status == TransactionStatus.Succeeded &&
+                             int.TryParse(
+                                 checkoutSession.Metadata.GetValueOrDefault("promo_discount"),
+                                 NumberStyles.Integer,
+                                 CultureInfo.InvariantCulture,
+                                 out var parsedPromo)
+            ? parsedPromo
+            : 0;
+        var promotionCode = checkoutSession.Metadata.GetValueOrDefault("promotion_code");
 
         foreach (var order in distinctOrders)
         {
+            // The promo discount comes off each order first, then the deposit (as on the checkout page).
+            var orderPromoDiscount = Math.Min(order.TotalAmount, promoRemaining);
+            var orderDepositCredit = Math.Min(order.TotalAmount - orderPromoDiscount, depositCreditRemaining);
             var transaction = _db.Transactions.Local
                 .FirstOrDefault(existing =>
                     existing.OrderId == order.Id &&
@@ -423,9 +435,9 @@ public class IndexModel : PageModel
                 stripePaymentStatus = checkoutSession.PaymentStatus,
                 stripeSessionStatus = checkoutSession.Status,
                 receiptUrl = charge?.ReceiptUrl,
-                reservationDepositCredit = status == TransactionStatus.Succeeded
-                    ? Math.Min(order.TotalAmount, depositCreditRemaining)
-                    : 0
+                reservationDepositCredit = orderDepositCredit,
+                promoDiscount = orderPromoDiscount,
+                promotionCode = orderPromoDiscount > 0 ? promotionCode : null
             });
 
             if (transaction is null)
@@ -439,9 +451,8 @@ public class IndexModel : PageModel
                 _db.Transactions.Add(transaction);
             }
 
-            var orderDepositCredit = Math.Min(order.TotalAmount, depositCreditRemaining);
             transaction.Amount = status == TransactionStatus.Succeeded
-                ? order.TotalAmount - orderDepositCredit
+                ? order.TotalAmount - orderPromoDiscount - orderDepositCredit
                 : order.TotalAmount;
             transaction.Currency = currency;
             transaction.Status = status;
@@ -449,6 +460,7 @@ public class IndexModel : PageModel
             transaction.CreatedAt = transactionTime;
             transaction.MetadataJson = metadata;
             depositCreditRemaining -= orderDepositCredit;
+            promoRemaining -= orderPromoDiscount;
         }
 
         if (status == TransactionStatus.Succeeded)

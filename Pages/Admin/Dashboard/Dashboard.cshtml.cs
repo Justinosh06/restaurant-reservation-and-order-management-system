@@ -11,16 +11,19 @@ public class DashboardModel : PageModel
 {
     private const int DefaultFirstHour = 10;
     private const int DefaultLastHour = 22;
+    private const int MaxExportDays = 366;
 
     private static readonly OrderStatus[] RevenueStatuses = [OrderStatus.Served, OrderStatus.Completed];
 
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
+    private readonly AnalyticsReportBuilder _reports;
 
-    public DashboardModel(ApplicationDbContext db, RestaurantClock clock)
+    public DashboardModel(ApplicationDbContext db, RestaurantClock clock, AnalyticsReportBuilder reports)
     {
         _db = db;
         _clock = clock;
+        _reports = reports;
     }
 
     public DateOnly Today => _clock.Today;
@@ -124,7 +127,7 @@ public class DashboardModel : PageModel
         var topItems = await _db.OrderItems.AsNoTracking()
             .Where(oi => RevenueStatuses.Contains(oi.Order!.Status))
             .Where(oi => (oi.Order!.ServedAt ?? oi.Order.CreatedAt) >= rangeStartUtc && (oi.Order.ServedAt ?? oi.Order.CreatedAt) < endUtc)
-            .GroupBy(oi => oi.MenuItem!.Name)
+            .GroupBy(oi => oi.ItemName)
             .Select(g => new { name = g.Key, units = g.Sum(oi => oi.Quantity) })
             .OrderByDescending(x => x.units)
             .Take(5)
@@ -176,6 +179,33 @@ public class DashboardModel : PageModel
             topItems,
             recentOrders
         });
+    }
+
+    // Downloads the business analytics report for the chosen dates: format "pdf" for a printable report,
+    // "csv" for the same figures plus every order, to open in a spreadsheet.
+    public async Task<IActionResult> OnGetExportAsync(string? from, string? to, string? format)
+    {
+        var dateError = DateRangeInput.Check(from, to, out var fromDate, out var toDate);
+        if (dateError is not null)
+        {
+            return BadRequest(new { error = dateError });
+        }
+        if (toDate.DayNumber - fromDate.DayNumber + 1 > MaxExportDays)
+        {
+            return BadRequest(new { error = "An export can cover up to one year. Please choose a shorter date range." });
+        }
+        if (format is not ("pdf" or "csv"))
+        {
+            return BadRequest(new { error = "Please choose PDF or CSV." });
+        }
+
+        var report = await _reports.BuildAsync(fromDate, toDate);
+        var fileName = fromDate == toDate
+            ? $"analytics-{fromDate:yyyy-MM-dd}.{format}"
+            : $"analytics-{fromDate:yyyy-MM-dd}-to-{toDate:yyyy-MM-dd}.{format}";
+        return format == "pdf"
+            ? File(AnalyticsReportPdf.Write(report), "application/pdf", fileName)
+            : File(AnalyticsReportCsv.Write(report), "text/csv", fileName);
     }
 
     private static int Average(int total, int count) =>

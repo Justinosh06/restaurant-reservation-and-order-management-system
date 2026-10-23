@@ -163,3 +163,20 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
+
+/* Promo code field (js/admin/promotions.js): the code shows in capitals as it is typed (the server saves it
+   that way); the "Leave blank to generate one" hint keeps normal text. */
+.promo-code-input {
+    font-family: var(--bs-font-monospace);
+    text-transform: uppercase;
+}
+
+.promo-code-input::placeholder {
+    font-family: var(--bs-body-font-family);
+    text-transform: none;
+}
+
+/* Dashboard Export menu (js/admin/dashboard.js): wide enough for each option's one-line description. */
+.export-menu {
+    width: 18rem;
+}

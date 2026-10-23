@@ -308,15 +308,10 @@
 
     const deleteItem = async (button) => {
         const item = items.find(m => m.id === button.dataset.delete);
-        if (item.timesOrdered > 0) {
-            await AppDialog.alert({
-                title: "Can't delete this dish",
-                message: `"${item.name}" is part of past orders. Switch off "Available" to hide it from the menu instead.`,
-                icon: "fa-circle-info"
-            });
-            return;
-        }
-        if (!(await AppDialog.confirm({ title: `Delete "${item.name}"?`, message: "It will be removed from the menu. This can't be undone.", confirmText: "Delete", cancelText: "Keep it", danger: true, icon: "fa-trash" }))) return;
+        const message = item.timesOrdered > 0
+            ? "It will be removed from the menu, along with its customer reviews. Past orders keep its name and price. This can't be undone."
+            : "It will be removed from the menu. This can't be undone.";
+        if (!(await AppDialog.confirm({ title: `Delete "${item.name}"?`, message, confirmText: "Delete", cancelText: "Keep it", danger: true, icon: "fa-trash" }))) return;
 
         AdminUI.setBusy(button, true);
         try {
