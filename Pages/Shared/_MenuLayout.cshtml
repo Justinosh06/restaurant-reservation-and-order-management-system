@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/table_layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/menu_layout.css" asp-append-version="true" />
 </head>
 <body>
     @{
@@ -21,11 +22,8 @@
 
     <div class="page-content">
         <header class="header">
-            <div class="nav-group">
-                <a asp-page="/Menu/Index" class="nav-item active" aria-label="Menu">
-                    <i class="fa-solid fa-burger"></i>
-                </a>
-            </div>
+            @* The restaurant name, like the home page's navigation bar. *@
+            <a asp-page="/Index" class="menu-brand">@restaurantName</a>
 
             @* The home page is the customer's dashboard once they are logged in. *@
             <a asp-page="/Index" class="checkout-btn">

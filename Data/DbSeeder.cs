@@ -42,6 +42,8 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Feedbacks', 'OrderId') IS NULL ALTER TABLE Feedbacks ADD OrderId nvarchar(max) NULL");
         await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('MenuItems', 'CreatedAt') IS NULL ALTER TABLE MenuItems ADD CreatedAt datetime2 NOT NULL DEFAULT SYSUTCDATETIME()");
+        await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'CheckedInAt') IS NULL ALTER TABLE Reservations ADD CheckedInAt datetime2 NULL");
 
         // A dining session can belong to a signed-in customer (same column, key and index as EnsureCreated).

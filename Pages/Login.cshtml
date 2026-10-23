@@ -1,83 +1,158 @@
 @page
 @model LoginModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
 @{
+    Layout = "_AuthLayout";
     ViewData["Title"] = "Login";
+    ViewData["Headline"] = "Welcome back.";
+    ViewData["Tagline"] = "Log in to book a table, see your dining history and review your favourite dishes.";
+
+    // Kept on every step so the customer still lands on the page they wanted (e.g. /Customer/Reserve).
+    var returnUrl = Request.Query["returnUrl"].ToString();
+    var routeReturnUrl = string.IsNullOrEmpty(returnUrl) ? null : returnUrl;
 }
 
-<div class="row justify-content-center">
-    <div class="col-12 col-sm-10 col-md-7 col-lg-5">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h1 class="h3 text-center mb-1">Welcome Back</h1>
-                <p class="text-center text-muted mb-4">Log in as Admin, Staff or Customer</p>
+<h2 class="card-title">Log in</h2>
+<p class="hint mb-3">
+    @(Model.Step switch
+    {
+        LoginModel.PasswordStep => "Enter your password to continue.",
+        LoginModel.CodeStep => "Enter the code from your email to continue.",
+        _ => "Enter your email. We'll ask for your password, or email you a login code."
+    })
+</p>
 
-                @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-                {
-                    <div class="alert alert-success">@Model.SuccessMessage</div>
-                }
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <p class="notice">@Model.SuccessMessage</p>
+}
 
-                <form method="post" id="loginForm">
-                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+@if (Model.Step == LoginModel.EmailStep)
+{
+    @* Step 1: email only. *@
+    <form method="post" asp-page-handler="Email" asp-route-returnUrl="@routeReturnUrl" class="auth-form">
+        <div asp-validation-summary="ModelOnly" class="field-error" role="alert"></div>
 
-                    <div class="mb-3">
-                        <label asp-for="Input.Email" class="form-label"></label>
-                        <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
-                        <span asp-validation-for="Input.Email" class="text-danger small"></span>
+        <div class="auth-field">
+            <label asp-for="Input.Email"></label>
+            <input asp-for="Input.Email" autocomplete="username" placeholder="name@example.com" autofocus />
+            <span asp-validation-for="Input.Email" class="field-error"></span>
+        </div>
+
+        <button type="submit" class="pill-btn w-100">Continue</button>
+    </form>
+}
+else
+{
+    @* Steps 2a and 2b show which email is being used, with a way back to step 1. *@
+    <div class="auth-email-chip">
+        <span>@Model.Input.Email</span>
+        <a asp-page="/Login" asp-route-returnUrl="@routeReturnUrl">Change</a>
+    </div>
+}
+
+@if (Model.Step == LoginModel.PasswordStep)
+{
+    @* Step 2a: password, then the CAPTCHA popup (login.js). *@
+    <form method="post" id="loginForm" asp-route-returnUrl="@routeReturnUrl" class="auth-form">
+        <div asp-validation-summary="ModelOnly" class="field-error" role="alert"></div>
+        <input type="hidden" asp-for="Input.Email" />
+
+        <div class="auth-field">
+            <label asp-for="Input.Password"></label>
+            <input asp-for="Input.Password" autocomplete="current-password" placeholder="Enter your password" autofocus />
+            <span asp-validation-for="Input.Password" class="field-error"></span>
+        </div>
+
+        <button type="button" id="loginButton" class="pill-btn w-100">Log in</button>
+
+        <!-- CAPTCHA step: opens after the Login button is clicked -->
+        <div class="modal fade" id="captchaModal" tabindex="-1" aria-labelledby="captchaModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="captchaModalLabel">Security check</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-
-                    <div class="mb-4">
-                        <label asp-for="Input.Password" class="form-label"></label>
-                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" placeholder="Enter your password" />
-                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
-                        <div class="text-left">
-                            <p class="text-muted mb-2">Forgot password? Please email to admin@restaurant.com</p>
+                    <div class="modal-body">
+                        <p class="mb-2">Type the characters shown in the image to confirm you are not a robot.</p>
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+                            <img id="captchaImage" alt="CAPTCHA image" width="200" height="70" class="border rounded" />
+                            <button type="button" id="refreshCaptcha" class="pill-btn ghost small-btn">&#x21bb; New image</button>
+                        </div>
+                        <div class="auth-field">
+                            <label asp-for="Input.CaptchaAnswer"></label>
+                            <input asp-for="Input.CaptchaAnswer" class="text-uppercase" autocomplete="off" maxlength="5" />
+                            <span id="captchaError" class="field-error d-none">Please enter the characters shown.</span>
                         </div>
                     </div>
-
-                    
-
-                    <button type="button" id="loginButton" class="btn btn-primary w-100">Login</button>
-
-
-                    <!-- CAPTCHA step: opens after the Login button is clicked -->
-                    <div class="modal fade" id="captchaModal" tabindex="-1" aria-labelledby="captchaModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h2 class="modal-title h5" id="captchaModalLabel">Security Check</h2>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p class="mb-2">Type the characters shown in the image to confirm you are not a robot.</p>
-                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-                                        <img id="captchaImage" alt="CAPTCHA image" width="200" height="70" class="border rounded" />
-                                        <button type="button" id="refreshCaptcha" class="btn btn-outline-secondary btn-sm">&#x21bb; New image</button>
-                                    </div>
-                                    <label asp-for="Input.CaptchaAnswer" class="form-label"></label>
-                                    <input asp-for="Input.CaptchaAnswer" class="form-control text-uppercase" autocomplete="off" maxlength="5" />
-                                    <div id="captchaError" class="text-danger small mt-1 d-none">Please enter the characters shown.</div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-primary">Verify &amp; Login</button>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="pill-btn ghost" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="pill-btn">Verify &amp; log in</button>
                     </div>
-                </form>
-
-                <hr class="my-4" />
-
-                <div class="text-center">
-                    <p class="text-muted mb-2">First time here? Register a customer account first.</p>
-                    <a asp-page="/Register" class="btn btn-outline-primary w-100">Register</a>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
+
+    @* Forgot password: email a login code instead (its own form, so the CAPTCHA step is not involved). *@
+    <form method="post" asp-page-handler="Resend" asp-route-returnUrl="@routeReturnUrl" class="auth-forgot">
+        <input type="hidden" asp-for="Input.Email" id="ForgotEmail" />
+        <button type="submit" class="link-btn">Forgot password? Log in with a code instead</button>
+    </form>
+}
+else if (Model.Step == LoginModel.CodeStep)
+{
+    @* Step 2b: one-time code from the email. *@
+    <form method="post" asp-page-handler="Code" asp-route-returnUrl="@routeReturnUrl" class="auth-form">
+        <div asp-validation-summary="ModelOnly" class="field-error" role="alert"></div>
+        <input type="hidden" asp-for="Input.Email" />
+
+        @if (!string.IsNullOrEmpty(Model.CodeNotice))
+        {
+            <p class="notice mb-0">@Model.CodeNotice</p>
+        }
+
+        <div class="auth-field">
+            <label asp-for="Input.Code"></label>
+            <input asp-for="Input.Code" class="code-input" inputmode="numeric" autocomplete="one-time-code"
+                   maxlength="6" pattern="[0-9]{6}" placeholder="000000" title="The 6-digit code from the email" autofocus />
+            <span asp-validation-for="Input.Code" class="field-error"></span>
+        </div>
+
+        <button type="submit" class="pill-btn w-100">Log in</button>
+        <button type="submit" asp-page-handler="Resend" asp-route-returnUrl="@routeReturnUrl" formnovalidate
+                class="pill-btn ghost w-100">Send a new code</button>
+
+        @if (Environment.IsDevelopment())
+        {
+            <p class="hint text-center mb-0">
+                Testing: the email is in Mailpit at <a href="http://localhost:8025" target="_blank" rel="noopener">localhost:8025</a>.
+            </p>
+        }
+    </form>
+}
+
+<div class="auth-switch">
+    <span class="hint">First time here?</span>
+    <a asp-page="/Register" class="pill-btn ghost w-100">Create a customer account</a>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/login.js" asp-append-version="true"></script>
+    @if (Model.Step == LoginModel.PasswordStep)
+    {
+        <script src="~/js/login.js" asp-append-version="true"></script>
+    }
+    else
+    {
+        <script>
+            // Going Back to this page after logging in loads it again, which sends the customer to their dashboard.
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted) {
+                    location.reload();
+                }
+            });
+        </script>
+    }
 }
