@@ -4,6 +4,15 @@
     // (_PromotionPopup) and when a promotion is opened on the customer's Promotions page.
     // The promotion runs to the end of its last day; the countdown counts down to that moment.
     var endsAt = Model.EndDate.ToDateTime(new TimeOnly(23, 59, 59));
+
+    // e.g. "20% off" or "RM 10.00 off, min. spend RM 100.00".
+    string DiscountText(RestaurantReservation.Models.Promotion promotion)
+    {
+        var off = promotion.DiscountType == RestaurantReservation.Models.PromotionDiscountType.Percentage
+            ? $"{promotion.DiscountValue}% off"
+            : $"RM {promotion.DiscountValue / 100m:F2} off";
+        return promotion.MinimumSpend > 0 ? $"{off}, min. spend RM {promotion.MinimumSpend / 100m:F2}" : off;
+    }
 }
 
 <section class="promo-card" data-promo-id="@Model.Id" role="dialog" aria-modal="true"
@@ -27,6 +36,12 @@
     }
 
     <p class="promo-description">@Model.Description</p>
+
+    @* A code only means something at checkout once the promotion has a discount. *@
+    @if (!string.IsNullOrWhiteSpace(Model.Code) && Model.DiscountType is not null)
+    {
+        <p class="promo-code">Use code <strong>@Model.Code</strong> at checkout for @DiscountText(Model)</p>
+    }
 
     <p class="promo-dates">
         Valid @Model.StartDate.ToString("d MMM") &ndash; @Model.EndDate.ToString("d MMM yyyy")

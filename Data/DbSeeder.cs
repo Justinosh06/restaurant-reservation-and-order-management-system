@@ -48,7 +48,31 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'CheckedInAt') IS NULL ALTER TABLE Reservations ADD CheckedInAt datetime2 NULL");
 
-        // A dining session can belong to a signed-in customer (same column, key and index as EnsureCreated).
+        // Customers used to have one FullName; it is now FirstName and LastName. Older databases get the two
+        // columns, filled by splitting FullName at the first space, and FullName is dropped (it is required
+        // there and no longer saved, so new customers couldn't register). Dynamic SQL because new databases
+        // have no FullName column at all.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'FirstName') IS NULL ALTER TABLE Customers ADD FirstName nvarchar(50) NOT NULL DEFAULT ''");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'LastName') IS NULL ALTER TABLE Customers ADD LastName nvarchar(50) NOT NULL DEFAULT ''");
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Customers', 'FullName') IS NOT NULL
+            BEGIN
+                EXEC(N'
+                    UPDATE Customers SET
+                        FirstName = LEFT(CASE WHEN CHARINDEX(N'' '', LTRIM(FullName)) > 0
+                            THEN LEFT(LTRIM(FullName), CHARINDEX(N'' '', LTRIM(FullName)) - 1)
+                            ELSE LTRIM(FullName) END, 50),
+                        LastName = LEFT(CASE WHEN CHARINDEX(N'' '', LTRIM(FullName)) > 0
+                            THEN LTRIM(SUBSTRING(LTRIM(FullName), CHARINDEX(N'' '', LTRIM(FullName)) + 1, 200))
+                            ELSE N'''' END, 50)
+                    WHERE FirstName = N'''' AND LastName = N'''';
+                    ALTER TABLE Customers DROP COLUMN FullName;');
+            END
+            """);
+
+        // A dining session can belong to a signed-in customer (same column, index and key as EnsureCreated makes).
         await db.Database.ExecuteSqlRawAsync("""
             IF COL_LENGTH('Sessions', 'CustomerId') IS NULL
             BEGIN
@@ -56,6 +80,66 @@ public static class DbSeeder
                 EXEC(N'CREATE INDEX IX_Sessions_CustomerId ON Sessions (CustomerId);');
                 EXEC(N'ALTER TABLE Sessions ADD CONSTRAINT FK_Sessions_Customers_CustomerId
                     FOREIGN KEY (CustomerId) REFERENCES Customers (Id);');
+            END
+            """);
+
+        // Deleting a dish keeps its past order lines (they hold their own name and price) and clears their link
+        // to it, so the column becomes nullable and the key changes from "no action" to "set null".
+        await db.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (SELECT 1 FROM sys.foreign_keys
+                       WHERE name = 'FK_OrderItems_MenuItems_MenuItemId' AND delete_referential_action <> 2)
+            BEGIN
+                ALTER TABLE OrderItems DROP CONSTRAINT FK_OrderItems_MenuItems_MenuItemId;
+                ALTER TABLE OrderItems ALTER COLUMN MenuItemId nvarchar(450) NULL;
+                ALTER TABLE OrderItems ADD CONSTRAINT FK_OrderItems_MenuItems_MenuItemId
+                    FOREIGN KEY (MenuItemId) REFERENCES MenuItems (Id) ON DELETE SET NULL;
+            END
+            """);
+
+        // Promo codes: one per promotion, unique (same filtered index as EnsureCreated makes).
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Promotions', 'Code') IS NULL
+            BEGIN
+                ALTER TABLE Promotions ADD Code nvarchar(20) NULL;
+                EXEC(N'CREATE UNIQUE INDEX IX_Promotions_Code ON Promotions (Code) WHERE [Code] IS NOT NULL;');
+            END
+            """);
+
+        // Promo code discounts, and the code a dining session applied at checkout (same key and index as EnsureCreated).
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Promotions', 'DiscountType') IS NULL ALTER TABLE Promotions ADD DiscountType nvarchar(20) NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Promotions', 'DiscountValue') IS NULL ALTER TABLE Promotions ADD DiscountValue int NOT NULL DEFAULT 0");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Promotions', 'MinimumSpend') IS NULL ALTER TABLE Promotions ADD MinimumSpend int NOT NULL DEFAULT 0");
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Sessions', 'PromotionId') IS NULL
+            BEGIN
+                ALTER TABLE Sessions ADD PromotionId nvarchar(450) NULL;
+                EXEC(N'CREATE INDEX IX_Sessions_PromotionId ON Sessions (PromotionId);');
+                EXEC(N'ALTER TABLE Sessions ADD CONSTRAINT FK_Sessions_Promotions_PromotionId
+                    FOREIGN KEY (PromotionId) REFERENCES Promotions (Id) ON DELETE SET NULL;');
+            END
+            """);
+
+        // Admin portal profile (name and picture) and announcement notifications.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Admins', 'Name') IS NULL ALTER TABLE Admins ADD Name nvarchar(100) NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Admins', 'ImageUrl') IS NULL ALTER TABLE Admins ADD ImageUrl nvarchar(max) NULL");
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Admins', 'AnnouncementsSeenAt') IS NULL ALTER TABLE Admins ADD AnnouncementsSeenAt datetime2 NULL");
+
+        // Customer announcement notifications: the bell on the customer site, and the email sent once per announcement.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Customers', 'AnnouncementsSeenAt') IS NULL ALTER TABLE Customers ADD AnnouncementsSeenAt datetime2 NULL");
+        // Visible announcements posted before emails existed count as already published, so editing one later
+        // doesn't email everyone. Hidden ones are emailed when they are first switched on.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Announcements', 'PublishedAt') IS NULL
+            BEGIN
+                ALTER TABLE Announcements ADD PublishedAt datetime2 NULL;
+                EXEC(N'UPDATE Announcements SET PublishedAt = CreatedAt WHERE IsActive = 1;');
             END
             """);
 

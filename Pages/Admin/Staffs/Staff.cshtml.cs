@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -98,6 +101,13 @@ public class StaffModel : PageModel
 
         await _db.SaveChangesAsync();
 
+        // The login cookie holds the email, role and gender, so editing your own account issues it again;
+        // otherwise a changed role would keep its old permissions until the next sign-in.
+        if (admin.Id == CurrentAdminId)
+        {
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, AdminClaims.CreatePrincipal(admin));
+        }
+
         return new JsonResult(ToDto(admin));
     }
 
@@ -107,6 +117,11 @@ public class StaffModel : PageModel
         if (admin is null)
         {
             return NotFound(new { error = "This account no longer exists. Refresh the page." });
+        }
+
+        if (admin.Id == CurrentAdminId)
+        {
+            return BadRequest(new { error = "You can't delete your own account." });
         }
 
         if (admin.Role == AdminRole.Administrator && await IsLastAdministratorAsync())
@@ -120,13 +135,18 @@ public class StaffModel : PageModel
         return new NoContentResult();
     }
 
-    private static object ToDto(Models.Admin admin) => new
+    private string? CurrentAdminId => User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    private object ToDto(Models.Admin admin) => new
     {
         id = admin.Id,
         displayId = AdminDisplay.ShortId(admin.Id),
         email = admin.Email,
+        name = admin.Name,
+        imageUrl = admin.ImageUrl,
         role = admin.Role.ToString(),
-        gender = admin.Gender?.ToString()
+        gender = admin.Gender?.ToString(),
+        isCurrentUser = admin.Id == CurrentAdminId
     };
 
     private static string NormalizeEmail(string? email) => (email ?? string.Empty).Trim().ToLowerInvariant();

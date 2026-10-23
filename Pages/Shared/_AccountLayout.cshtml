@@ -16,6 +16,7 @@
         "/Customer/Reservations" => "reservations",
         "/Customer/Reserve" => "reservations",
         "/Customer/Promotions" => "promotions",
+        "/Customer/Notifications" => "notifications",
         _ => "dining"
     };
 }
@@ -53,6 +54,13 @@
                         <i class="fa-solid fa-tags"></i>
                         <span class="label-long">Promotions</span>
                         <span class="label-short">Promos</span>
+                    </a>
+                </li>
+                <li>
+                    <a asp-page="/Customer/Notifications" class="sidebar-link @(section == "notifications" ? "active" : "")">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="label-long">Notifications</span>
+                        <span class="label-short">Alerts</span>
                     </a>
                 </li>
                 <li>

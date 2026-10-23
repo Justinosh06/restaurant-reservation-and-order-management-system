@@ -21,10 +21,32 @@
             <div class="dropdown" data-date-range>
                 <input type="hidden" id="range-from" data-range-from min="2000-01-01" max="@today" value="@weekAgo" />
                 <input type="hidden" id="range-to" data-range-to max="@today" value="@today" />
-                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Choose a date range">
+                <button type="button" class="btn btn-sm btn-light rounded-pill px-3" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Choose a date range">
                     <i class="fa-regular fa-calendar me-1"></i><span data-range-label></span>
                 </button>
                 <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
+            </div>
+            <div class="dropdown">
+                <button type="button" class="btn btn-sm btn-dark rounded-pill px-3" id="export-button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-solid fa-download me-1" aria-hidden="true"></i>Export
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow-sm export-menu">
+                    <div class="dropdown-header">Report for <span class="fw-semibold text-body" id="export-range"></span></div>
+                    <button type="button" class="dropdown-item d-flex gap-2 py-2" data-export="pdf">
+                        <i class="fa-regular fa-file-pdf mt-1" aria-hidden="true"></i>
+                        <span>
+                            <span class="d-block fw-medium">PDF report</span>
+                            <span class="d-block small text-body-secondary text-wrap">Summary, charts and tables to print or share</span>
+                        </span>
+                    </button>
+                    <button type="button" class="dropdown-item d-flex gap-2 py-2" data-export="csv">
+                        <i class="fa-solid fa-file-csv mt-1" aria-hidden="true"></i>
+                        <span>
+                            <span class="d-block fw-medium">CSV data</span>
+                            <span class="d-block small text-body-secondary text-wrap">The same figures plus every order, for Excel or Google Sheets</span>
+                        </span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

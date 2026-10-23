@@ -1,4 +1,4 @@
-using System.Text;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -8,31 +8,25 @@ using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Pages.Admin.Promotions;
 
-[RequestFormLimits(MultipartBodyLengthLimit = MaxImageBytes + 1024 * 1024)]
+[RequestFormLimits(MultipartBodyLengthLimit = ImageUploadService.MaxRequestBytes)]
 public class PromotionModel : PageModel
 {
-    public const int MaxImageBytes = 5 * 1024 * 1024;
     private const string UploadFolder = "uploads/promotions";
 
-    public static readonly Dictionary<string, string> AllowedImageTypes = new()
-    {
-        ["image/jpeg"] = ".jpg",
-        ["image/png"] = ".png",
-        ["image/webp"] = ".webp"
-    };
-
     private readonly ApplicationDbContext _db;
-    private readonly IWebHostEnvironment _env;
+    private readonly ImageUploadService _images;
     private readonly RestaurantClock _clock;
-    private readonly ILogger<PromotionModel> _logger;
 
-    public PromotionModel(ApplicationDbContext db, IWebHostEnvironment env, RestaurantClock clock, ILogger<PromotionModel> logger)
+    public PromotionModel(ApplicationDbContext db, ImageUploadService images, RestaurantClock clock)
     {
         _db = db;
-        _env = env;
+        _images = images;
         _clock = clock;
-        _logger = logger;
     }
+
+    // Generated codes leave out 0, O, 1 and I, which are easy to misread.
+    private const string CodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private const int GeneratedCodeLength = 8;
 
     public record PromotionIdRequest(string Id);
 
@@ -51,10 +45,16 @@ public class PromotionModel : PageModel
         [FromForm] string? description,
         [FromForm] string? startDate,
         [FromForm] string? endDate,
+        [FromForm] string? code,
+        [FromForm] string? discountType,
+        [FromForm] string? discountValue,
+        [FromForm] string? minimumSpend,
         IFormFile? image)
     {
         var promotion = new Promotion();
-        var error = Apply(promotion, title, description, startDate, endDate);
+        var error = Apply(promotion, title, description, startDate, endDate)
+            ?? ApplyDiscount(promotion, discountType, discountValue, minimumSpend)
+            ?? await ApplyCodeAsync(promotion, code);
         if (error is not null)
         {
             return BadRequest(new { error });
@@ -62,12 +62,12 @@ public class PromotionModel : PageModel
 
         if (image is { Length: > 0 })
         {
-            var imageError = await ValidateImageAsync(image);
+            var imageError = await ImageUploadService.ValidateAsync(image);
             if (imageError is not null)
             {
                 return BadRequest(new { error = imageError });
             }
-            promotion.ImageUrl = await SaveImageAsync(image);
+            promotion.ImageUrl = await _images.SaveAsync(image, UploadFolder);
         }
 
         _db.Promotions.Add(promotion);
@@ -77,7 +77,7 @@ public class PromotionModel : PageModel
         }
         catch
         {
-            DeleteImage(promotion.ImageUrl);
+            _images.Delete(promotion.ImageUrl, UploadFolder);
             throw;
         }
 
@@ -91,6 +91,10 @@ public class PromotionModel : PageModel
         [FromForm] string? description,
         [FromForm] string? startDate,
         [FromForm] string? endDate,
+        [FromForm] string? code,
+        [FromForm] string? discountType,
+        [FromForm] string? discountValue,
+        [FromForm] string? minimumSpend,
         [FromForm] bool removeImage,
         IFormFile? image)
     {
@@ -100,7 +104,9 @@ public class PromotionModel : PageModel
             return NotFound(new { error = "This promotion no longer exists. Refresh the page." });
         }
 
-        var error = Apply(promotion, title, description, startDate, endDate);
+        var error = Apply(promotion, title, description, startDate, endDate)
+            ?? ApplyDiscount(promotion, discountType, discountValue, minimumSpend)
+            ?? await ApplyCodeAsync(promotion, code);
         if (error is not null)
         {
             return BadRequest(new { error });
@@ -109,12 +115,12 @@ public class PromotionModel : PageModel
         var oldImageUrl = promotion.ImageUrl;
         if (image is { Length: > 0 })
         {
-            var imageError = await ValidateImageAsync(image);
+            var imageError = await ImageUploadService.ValidateAsync(image);
             if (imageError is not null)
             {
                 return BadRequest(new { error = imageError });
             }
-            promotion.ImageUrl = await SaveImageAsync(image);
+            promotion.ImageUrl = await _images.SaveAsync(image, UploadFolder);
         }
         else if (removeImage)
         {
@@ -129,14 +135,14 @@ public class PromotionModel : PageModel
         {
             if (promotion.ImageUrl != oldImageUrl)
             {
-                DeleteImage(promotion.ImageUrl);
+                _images.Delete(promotion.ImageUrl, UploadFolder);
             }
             throw;
         }
 
         if (promotion.ImageUrl != oldImageUrl)
         {
-            DeleteImage(oldImageUrl);
+            _images.Delete(oldImageUrl, UploadFolder);
         }
 
         return new JsonResult(ToDto(promotion));
@@ -171,6 +177,84 @@ public class PromotionModel : PageModel
         return null;
     }
 
+    // Sets the discount the promo code gives: a percentage (1 to 100) or an amount in RM, and an optional
+    // minimum spend in RM. Returns an error message, or null when everything is valid.
+    private static string? ApplyDiscount(Promotion promotion, string? discountType, string? discountValue, string? minimumSpend)
+    {
+        if (!Enum.TryParse<PromotionDiscountType>(discountType, out var type) || !Enum.IsDefined(type))
+        {
+            return "Please choose the kind of discount the promo code gives.";
+        }
+        if (!decimal.TryParse(discountValue, NumberStyles.Number, CultureInfo.InvariantCulture, out var value) || value <= 0)
+        {
+            return "Please enter a discount greater than zero.";
+        }
+
+        int amount;
+        if (type == PromotionDiscountType.Percentage)
+        {
+            if (value != decimal.Truncate(value) || value > 100)
+            {
+                return "A percentage discount must be a whole number from 1 to 100.";
+            }
+            amount = (int)value;
+        }
+        else
+        {
+            if (decimal.Round(value, 2) != value || value > 100000)
+            {
+                return "Please enter the discount in RM with at most 2 decimal places.";
+            }
+            amount = (int)(value * 100);
+        }
+
+        var minimum = 0m;
+        if (!string.IsNullOrWhiteSpace(minimumSpend) &&
+            (!decimal.TryParse(minimumSpend, NumberStyles.Number, CultureInfo.InvariantCulture, out minimum) ||
+             minimum < 0 || decimal.Round(minimum, 2) != minimum || minimum > 100000))
+        {
+            return "Please enter the minimum spend in RM with at most 2 decimal places, or leave it empty.";
+        }
+
+        promotion.DiscountType = type;
+        promotion.DiscountValue = amount;
+        promotion.MinimumSpend = (int)(minimum * 100);
+        return null;
+    }
+
+    // Sets the promo code: the one typed in (upper-cased, spaces removed), or a new random one when left blank.
+    // Returns an error message, or null when the code is valid and no other promotion uses it.
+    private async Task<string?> ApplyCodeAsync(Promotion promotion, string? code)
+    {
+        var typed = string.Concat((code ?? string.Empty).Where(c => !char.IsWhiteSpace(c))).ToUpperInvariant();
+        if (typed.Length == 0)
+        {
+            do
+            {
+                typed = new string(Random.Shared.GetItems(CodeAlphabet.AsSpan(), GeneratedCodeLength));
+            }
+            while (await CodeTakenAsync(typed, promotion.Id));
+        }
+        else
+        {
+            var error = ModelRules.FirstError(new Promotion { Code = typed }, nameof(Promotion.Code));
+            if (error is not null)
+            {
+                return error;
+            }
+            if (await CodeTakenAsync(typed, promotion.Id))
+            {
+                return $"Another promotion already uses the code {typed}.";
+            }
+        }
+
+        promotion.Code = typed;
+        return null;
+    }
+
+    private Task<bool> CodeTakenAsync(string code, string id) =>
+        _db.Promotions.AnyAsync(p => p.Code == code && p.Id != id);
+
     public async Task<IActionResult> OnPostDeleteAsync([FromBody] PromotionIdRequest request)
     {
         var promotion = await _db.Promotions.FindAsync(request.Id);
@@ -181,80 +265,9 @@ public class PromotionModel : PageModel
 
         _db.Promotions.Remove(promotion);
         await _db.SaveChangesAsync();
-        DeleteImage(promotion.ImageUrl);
+        _images.Delete(promotion.ImageUrl, UploadFolder);
 
         return new NoContentResult();
-    }
-
-    private static async Task<string?> ValidateImageAsync(IFormFile image)
-    {
-        if (image.Length > MaxImageBytes)
-        {
-            return $"Image must be {MaxImageBytes / (1024 * 1024)} MB or smaller.";
-        }
-        if (!AllowedImageTypes.ContainsKey(image.ContentType))
-        {
-            return "Please choose a JPG, PNG or WebP image.";
-        }
-
-        var header = new byte[12];
-        await using var stream = image.OpenReadStream();
-        await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
-        if (!LooksLikeImage(image.ContentType, header))
-        {
-            return "This file isn't a valid JPG, PNG or WebP image.";
-        }
-        return null;
-    }
-
-    // Checks the first bytes of the file, so a renamed non-image file is rejected.
-    private static bool LooksLikeImage(string contentType, byte[] header)
-    {
-        if (contentType == "image/jpeg")
-        {
-            return header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-        }
-        if (contentType == "image/png")
-        {
-            byte[] pngStart = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-            return header.Take(8).SequenceEqual(pngStart);
-        }
-        if (contentType == "image/webp")
-        {
-            return Encoding.ASCII.GetString(header, 0, 4) == "RIFF" && Encoding.ASCII.GetString(header, 8, 4) == "WEBP";
-        }
-        return false;
-    }
-
-    private async Task<string> SaveImageAsync(IFormFile image)
-    {
-        var folder = Path.Combine(_env.WebRootPath, UploadFolder);
-        Directory.CreateDirectory(folder);
-
-        var fileName = Guid.NewGuid().ToString("N") + AllowedImageTypes[image.ContentType];
-        await using (var output = System.IO.File.Create(Path.Combine(folder, fileName)))
-        {
-            await image.CopyToAsync(output);
-        }
-        return $"/{UploadFolder}/{fileName}";
-    }
-
-    private void DeleteImage(string? imageUrl)
-    {
-        if (string.IsNullOrEmpty(imageUrl) || !imageUrl.StartsWith($"/{UploadFolder}/", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        var path = Path.Combine(_env.WebRootPath, UploadFolder, Path.GetFileName(imageUrl));
-        try
-        {
-            System.IO.File.Delete(path);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _logger.LogWarning(ex, "Could not delete promotion image {Path}", path);
-        }
     }
 
     private object ToDto(Promotion p) => new
@@ -262,9 +275,14 @@ public class PromotionModel : PageModel
         id = p.Id,
         status = p.EndDate < _clock.Today ? "Ended" : p.StartDate > _clock.Today ? "Scheduled" : "Active",
         title = p.Title,
+        code = p.Code,
         description = p.Description,
         imageUrl = p.ImageUrl,
         startDate = p.StartDate.ToString("yyyy-MM-dd"),
-        endDate = p.EndDate.ToString("yyyy-MM-dd")
+        endDate = p.EndDate.ToString("yyyy-MM-dd"),
+        discountType = p.DiscountType?.ToString(),
+        // Percent for Percentage; RM for FixedAmount and the minimum spend.
+        discountValue = p.DiscountType == PromotionDiscountType.FixedAmount ? p.DiscountValue / 100m : p.DiscountValue,
+        minimumSpend = p.MinimumSpend / 100m
     };
 }

@@ -213,7 +213,7 @@ public class OrderModel : PageModel
         }
 
         var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var orderedIds = Items.Select(i => i.MenuItemId).Distinct().ToList();
+        var orderedIds = Items.Select(i => i.MenuItemId).OfType<string>().Distinct().ToList();
         var onMenu = await _db.MenuItems.Where(m => orderedIds.Contains(m.Id)).Select(m => m.Id).ToListAsync();
         var reviewable = orderedIds.Where(onMenu.Contains).ToList();
 

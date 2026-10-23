@@ -64,7 +64,20 @@ public class OrderModel : PageModel
         return new JsonResult(await ToRowsAsync(activeOrders));
     }
 
+    public record VisitRow(
+        string Id,
+        string? Table,
+        string Customer,
+        List<string> OrderIds,
+        List<OrderItemRow> Items,
+        DateTime StartedAt,
+        DateTime LastOrderAt,
+        int Total);
+
     // History only lists finished orders: served to the table and paid for (status Completed).
+    // Orders are grouped by dining session, so a table that ordered twice in one visit shows as one bill.
+    // A visit is listed when any of its orders falls in the dates, and then shows all of its orders,
+    // so a visit that ran past midnight isn't cut in two by the date range.
     public async Task<IActionResult> OnGetHistoryAsync(string? from, string? to)
     {
         var dateError = DateRangeInput.Check(from, to, out var fromDate, out var toDate);
@@ -75,9 +88,76 @@ public class OrderModel : PageModel
 
         var startUtc = _clock.StartOfDayUtc(fromDate);
         var endUtc = _clock.StartOfDayUtc(toDate.AddDays(1));
-        var orders = _db.Orders.Where(o => o.Status == OrderStatus.Completed && o.CreatedAt >= startUtc && o.CreatedAt < endUtc);
+        var completed = _db.Orders.Where(o => o.Status == OrderStatus.Completed);
+        var sessionIds = completed
+            .Where(o => o.CreatedAt >= startUtc && o.CreatedAt < endUtc)
+            .Select(o => o.SessionId);
+        var orders = await completed.AsNoTracking()
+            .Where(o => sessionIds.Contains(o.SessionId))
+            .Select(o => new
+            {
+                o.Id,
+                o.SessionId,
+                o.TotalAmount,
+                o.CreatedAt,
+                o.Session!.TableId,
+                OrderEmail = o.Customer!.Email,
+                SessionEmail = o.Session.Customer!.Email
+            })
+            .ToListAsync();
 
-        return new JsonResult(await ToRowsAsync(orders));
+        var orderIds = orders.Select(o => o.Id).ToList();
+        // Name and price as charged on the order, not today's menu, which can since have been edited.
+        var orderItems = await _db.OrderItems.AsNoTracking()
+            .Where(oi => orderIds.Contains(oi.OrderId))
+            .Select(oi => new { oi.OrderId, oi.ItemName, oi.UnitPrice, oi.Quantity, oi.Remarks })
+            .ToListAsync();
+        var itemsByOrder = orderItems.ToLookup(oi => oi.OrderId);
+
+        var visits = orders
+            .GroupBy(o => o.SessionId)
+            .Select(visit =>
+            {
+                var visitOrders = visit.OrderBy(o => o.CreatedAt).ToList();
+                var visitItems = visitOrders.SelectMany(o => itemsByOrder[o.Id]).ToList();
+
+                // The same dish at the same price ordered in both rounds becomes one line with the quantities added up;
+                // a different price (another size, or a price change between rounds) keeps its own line.
+                var items = visitItems
+                    .GroupBy(oi => new { oi.ItemName, oi.UnitPrice })
+                    .Select(dish => new OrderItemRow(
+                        dish.Key.ItemName,
+                        dish.Sum(oi => oi.Quantity),
+                        dish.Key.UnitPrice,
+                        JoinRemarks(dish.Select(oi => oi.Remarks))))
+                    .ToList();
+
+                var customers = visitOrders
+                    .Select(o => o.OrderEmail ?? o.SessionEmail)
+                    .Where(email => !string.IsNullOrEmpty(email))
+                    .Distinct()
+                    .ToList();
+
+                return new VisitRow(
+                    visit.Key,
+                    visitOrders[0].TableId,
+                    customers.Count == 0 ? "Walk-in guest" : string.Join(", ", customers),
+                    visitOrders.Select(o => AdminDisplay.ShortId(o.Id)).ToList(),
+                    items,
+                    visitOrders[0].CreatedAt,
+                    visitOrders[^1].CreatedAt,
+                    visitOrders.Sum(o => o.TotalAmount));
+            })
+            .OrderByDescending(v => v.LastOrderAt)
+            .ToList();
+
+        return new JsonResult(visits);
+    }
+
+    private static string? JoinRemarks(IEnumerable<string?> remarks)
+    {
+        var distinct = remarks.Where(r => !string.IsNullOrWhiteSpace(r)).Select(r => r!.Trim()).Distinct().ToList();
+        return distinct.Count == 0 ? null : string.Join("; ", distinct);
     }
 
     private async Task<List<OrderRow>> ToRowsAsync(IQueryable<Order> query)
@@ -98,9 +178,9 @@ public class OrderModel : PageModel
         var orderIds = orders.Select(o => o.Id).ToList();
         var orderItems = await _db.OrderItems.AsNoTracking()
             .Where(oi => orderIds.Contains(oi.OrderId))
-            .Select(oi => new { oi.OrderId, oi.MenuItem!.Name, oi.MenuItem.Price, oi.Quantity, oi.Remarks })
+            .Select(oi => new { oi.OrderId, oi.ItemName, oi.UnitPrice, oi.Quantity, oi.Remarks })
             .ToListAsync();
-        var items = orderItems.ToLookup(oi => oi.OrderId, oi => new OrderItemRow(oi.Name, oi.Quantity, oi.Price, oi.Remarks));
+        var items = orderItems.ToLookup(oi => oi.OrderId, oi => new OrderItemRow(oi.ItemName, oi.Quantity, oi.UnitPrice, oi.Remarks));
 
         return orders.Select(o => new OrderRow(
             o.Id,
