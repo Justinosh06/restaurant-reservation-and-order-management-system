@@ -171,7 +171,7 @@ public class OrderModel : PageModel
                 o.Status,
                 o.CreatedAt,
                 o.Session!.TableId,
-                CustomerEmail = o.Customer!.Email
+                CustomerEmail = o.Customer == null ? null : o.Customer.Email
             })
             .ToListAsync();
 
@@ -186,7 +186,7 @@ public class OrderModel : PageModel
             o.Id,
             AdminDisplay.ShortId(o.Id),
             o.TableId,
-            o.CustomerEmail,
+            o.CustomerEmail ?? "Walk-in guest",
             items[o.Id].ToList(),
             o.CreatedAt,
             o.TotalAmount,
@@ -195,37 +195,43 @@ public class OrderModel : PageModel
 
     public async Task<IActionResult> OnPostAdvanceAsync([FromBody] AdvanceRequest request)
     {
-        var order = await _db.Orders.FindAsync(request.Id);
-        if (order is null)
+        var expected = request.ExpectedStatus switch
         {
-            return NotFound(new { error = "This order no longer exists. Refresh the page." });
+            "Pending" => OrderStatus.InQueue,
+            "Preparing" => OrderStatus.Preparing,
+            _ => (OrderStatus?)null
+        };
+        if (expected is null)
+        {
+            return BadRequest(new { error = "This order can't be advanced from its current status." });
         }
 
-        var current = AdminDisplay.OrderStatusLabel(order.Status);
-        if (current != request.ExpectedStatus)
-        {
-            return new ConflictObjectResult(new { error = $"This order was already moved to {current} by someone else.", id = order.Id, status = current });
-        }
-
-        OrderStatus? next = order.Status switch
+        var next = expected.Value switch
         {
             OrderStatus.InQueue => OrderStatus.Preparing,
             OrderStatus.Preparing => OrderStatus.Served,
-            _ => null
+            _ => throw new InvalidOperationException("An active order status has no next state.")
         };
 
-        if (next is null)
+        var servedAt = DateTime.UtcNow;
+        var affected = await _db.Orders
+            .Where(order => order.Id == request.Id && order.Status == expected.Value)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(order => order.Status, next)
+                .SetProperty(order => order.ServedAt, order => next == OrderStatus.Served ? servedAt : order.ServedAt));
+
+        if (affected == 0)
         {
-            return BadRequest(new { error = "This order is already served." });
+            var order = await _db.Orders.AsNoTracking().FirstOrDefaultAsync(order => order.Id == request.Id);
+            if (order is null)
+            {
+                return NotFound(new { error = "This order no longer exists. Refresh the page." });
+            }
+
+            var current = AdminDisplay.OrderStatusLabel(order.Status);
+            return new ConflictObjectResult(new { error = $"This order was already moved to {current} by someone else.", id = order.Id, status = current });
         }
 
-        order.Status = next.Value;
-        if (order.Status == OrderStatus.Served)
-        {
-            order.ServedAt = DateTime.UtcNow;
-        }
-        await _db.SaveChangesAsync();
-
-        return new JsonResult(new { id = order.Id, status = AdminDisplay.OrderStatusLabel(order.Status) });
+        return new JsonResult(new { id = request.Id, status = AdminDisplay.OrderStatusLabel(next) });
     }
 }
