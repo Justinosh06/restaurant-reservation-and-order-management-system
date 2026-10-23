@@ -6,70 +6,61 @@
     ViewData["Title"] = "Menu";
 }
 
-<link rel="stylesheet" href="~/css/menu_index.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/css/menu_search.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/table_page.css" asp-append-version="true" />
 
-@* Search and category filters work like the table menu (Pages/Table/Index), driven by tableMenu.js.
-   The only food count is the one beside the heading; it follows the search and the chosen category. *@
+@* Same layout as the table ordering menu (Pages/Table/Index): title with the food count, search and category
+   filters (tableMenu.js), and the same dish cards. View only, so the cards have no add (+) button. *@
 <div class="menu-container">
-    <section class="menu-intro">
-        <div>
-            <p class="menu-eyebrow">Fresh from our kitchen</p>
-            <h1 class="menu-title">Explore the menu</h1>
-            <p class="menu-description">Find something delicious to make your day.</p>
-        </div>
-        <p class="menu-result-count">
-            <span id="menu-total-count">@Model.Items.Count</span>
-            <span>items</span>
-        </p>
-    </section>
+    <div class="menu-header">
+        <h1 class="title">Menu<span class="content-number" id="menu-total-count">@Model.Items.Count</span></h1>
 
-    <nav class="pill-filter-row" aria-label="Search and filter the menu">
-        <div class="menu-search">
-            <button type="button" class="searchbar-btn" aria-label="Search menu" aria-expanded="false">
-                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            </button>
+        <div class="pill-filter-row">
+            <div class="menu-search">
+                <button type="button" class="searchbar-btn" aria-label="Search menu" aria-expanded="false">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                </button>
 
-            <div class="search-modal" role="dialog" aria-modal="true" aria-label="Search menu" hidden>
-                <form class="searchbar-popup">
-                    <input id="menu-search-input" class="searchbar-input" type="search" placeholder="Search menu items" autocomplete="off" />
-                    <button type="submit" class="searchbar-submit">Search</button>
-                    <button type="button" class="searchbar-close" aria-label="Close search">&times;</button>
-                </form>
-                <div class="search-recommendations" hidden>
-                    <div class="search-recommendation-group search-recent-searches" hidden>
-                        <h2>Recent searches</h2>
-                        <ul class="search-recommendation-list"></ul>
+                <div class="search-modal" role="dialog" aria-modal="true" aria-label="Search menu" hidden>
+                    <form class="searchbar-popup">
+                        <input id="menu-search-input" class="searchbar-input" type="search" placeholder="Search menu items" autocomplete="off" />
+                        <button type="submit" class="searchbar-submit">Search</button>
+                        <button type="button" class="searchbar-close" aria-label="Close search">&times;</button>
+                    </form>
+                    <div class="search-recommendations" hidden>
+                        <div class="search-recommendation-group search-recent-searches" hidden>
+                            <h2>Recent searches</h2>
+                            <ul class="search-recommendation-list"></ul>
+                        </div>
+                        <div class="search-recommendation-group search-top-rated" hidden>
+                            <h2>Top rated</h2>
+                            <ul class="search-recommendation-list"></ul>
+                        </div>
+                        <div class="search-recommendation-group search-matches" hidden>
+                            <h2>Suggestions</h2>
+                            <ul class="search-recommendation-list"></ul>
+                            <p class="search-recommendation-empty" hidden>No matching menu items.</p>
+                        </div>
                     </div>
-                    <div class="search-recommendation-group search-top-rated" hidden>
-                        <h2>Top rated</h2>
-                        <ul class="search-recommendation-list"></ul>
-                    </div>
-                    <div class="search-recommendation-group search-matches" hidden>
-                        <h2>Suggestions</h2>
-                        <ul class="search-recommendation-list"></ul>
-                        <p class="search-recommendation-empty" hidden>No matching menu items.</p>
-                    </div>
+                </div>
+
+                <div class="active-search" hidden>
+                    <button type="button" class="active-search-query"></button>
+                    <button type="button" class="clear-search" aria-label="Clear search">&times;</button>
                 </div>
             </div>
 
-            <div class="active-search" hidden>
-                <button type="button" class="active-search-query"></button>
-                <button type="button" class="clear-search" aria-label="Clear search">&times;</button>
-            </div>
+            <button type="button" class="filter-pill active" data-category="all">All</button>
+
+            @foreach (var type in Model.Items.Select(item => item.MenuItemType).Distinct().OrderBy(type => type))
+            {
+                <button type="button" class="filter-pill" data-category="@type.ToString().ToLower()">@type</button>
+            }
         </div>
-
-        <button type="button" class="filter-pill active" data-category="all">All</button>
-
-        @foreach (var type in Enum.GetValues<MenuItemType>())
-        {
-            <button type="button" class="filter-pill" data-category="@type.ToString().ToLower()">@type</button>
-        }
-    </nav>
+    </div>
 
     @if (Model.Items.Count == 0)
     {
-        <p class="menu-empty-state">Our menu is being updated. Please check back soon.</p>
+        <p class="text-secondary">Our menu is being updated. Please check back soon.</p>
     }
 
     <div class="menu-grid">
@@ -90,21 +81,21 @@
                         }
                         else
                         {
-                            <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") thumbnail-placeholder" aria-hidden="true"></i>
+                            <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") icon" aria-hidden="true"></i>
                         }
-                        <span class="category">
-                            <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils")" aria-hidden="true"></i>
-                            @item.MenuItemType
-                        </span>
                     </div>
 
                     <div class="info-container">
-                        <h3 class="item-title">@item.Name</h3>
-                        <div class="bottom-section">
-                            <span class="price">@Model.Currency.FormatCents(item.Price)</span>
-                            <span class="item-link-hint" aria-hidden="true">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        <div class="left-section">
+                            <h3 class="item-title">@item.Name</h3>
+                            <span class="category">
+                                <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils me-1")" aria-hidden="true"></i>
+                                @item.MenuItemType
                             </span>
+                        </div>
+
+                        <div class="right-section">
+                            <span class="price">@Model.Currency.FormatCents(item.Price)</span>
                         </div>
                     </div>
                 </div>

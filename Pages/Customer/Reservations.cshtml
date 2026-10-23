@@ -1,28 +1,151 @@
 @page
+@using RestaurantReservation.Infrastructure.Reservations
 @model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.ReservationsModel
 @{
-    ViewData["Title"] = "Upcoming Reservations";
+    ViewData["Title"] = "Reservations";
+
+    var tabs = new[]
+    {
+        (Key: ReservationsModel.UpcomingTab, Label: "Upcoming", Count: Model.Upcoming.Count),
+        (Key: ReservationsModel.DoneTab, Label: "Done", Count: Model.Done.Count),
+        (Key: ReservationsModel.CancelledTab, Label: "Cancelled", Count: Model.Cancelled.Count)
+    };
 }
+
+<link rel="stylesheet" href="~/css/confirm-dialog.css" asp-append-version="true" />
 
 <section class="profile">
     <div class="page-head">
-        <h1 class="section-title">Upcoming reservations</h1>
+        <h1 class="section-title">Reservations</h1>
         <a href="/Customer/Reserve" class="pill-btn">Reserve a table</a>
     </div>
 
-    @if (Model.Reservations.Count == 0)
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
-        <p class="empty-note">You have no upcoming reservations. Book a table and it will show up here.</p>
+        <p class="notice">@Model.StatusMessage</p>
+    }
+
+    <nav class="res-tabs" aria-label="Show reservations">
+        @foreach (var tab in tabs)
+        {
+            <a asp-route-tab="@tab.Key" class="res-tab @(Model.ActiveTab == tab.Key ? "active" : "")"
+               aria-current="@(Model.ActiveTab == tab.Key ? "page" : null)">
+                @tab.Label <span class="res-tab-count">@tab.Count</span>
+            </a>
+        }
+    </nav>
+
+    @if (Model.Shown.Count == 0)
+    {
+        <p class="empty-note">
+            @(Model.ActiveTab switch
+            {
+                ReservationsModel.DoneTab => "No past reservations yet. Your bookings show up here after your visit.",
+                ReservationsModel.CancelledTab => "You have no cancelled reservations.",
+                _ => "You have no upcoming reservations. Book a table and it will show up here."
+            })
+        </p>
     }
     else
     {
         <div class="reservation-list">
-            @foreach (var reservation in Model.Reservations)
+            @foreach (var reservation in Model.Shown)
             {
-                <article class="upcoming-card">
+                var cancelled = reservation.Status == RestaurantReservation.Models.ReservationStatus.Cancelled;
+
+                <article class="upcoming-card @(cancelled ? "cancelled" : "")">
                     <partial name="_UpcomingReservation" model="reservation" />
+
+                    @* The deposit paid when booking: Paid, or Refunded once the booking is cancelled. *@
+                    @if (Model.Deposits.TryGetValue(reservation.Id, out var deposit))
+                    {
+                        var depositText = deposit.State switch
+                        {
+                            RestaurantReservation.Infrastructure.Payments.PaymentState.Paid => "Paid",
+                            RestaurantReservation.Infrastructure.Payments.PaymentState.Refunded => "Refunded",
+                            _ => "Waiting for payment"
+                        };
+                        var depositClass = deposit.State.ToString().ToLowerInvariant();
+
+                        <details class="res-payment">
+                            <summary>
+                                <span><i class="fa-solid fa-credit-card" aria-hidden="true"></i> RM@(deposit.Amount.ToString("0.00")) deposit</span>
+                                <span class="status-pill @(depositClass == "pending" ? "muted" : depositClass)">@depositText</span>
+                                <i class="fa-solid fa-chevron-down res-payment-arrow" aria-hidden="true"></i>
+                            </summary>
+                            <partial name="_PaymentDetails" model="deposit" />
+                        </details>
+                    }
+
+                    @* Only bookings still to come can be cancelled, up to 24 hours before. *@
+                    @if (Model.ActiveTab == ReservationsModel.UpcomingTab && !cancelled
+                        && reservation.Status is RestaurantReservation.Models.ReservationStatus.Pending or RestaurantReservation.Models.ReservationStatus.Confirmed)
+                    {
+                        <div class="res-actions">
+                            @if (Model.CanCancel(reservation))
+                            {
+                                <span class="hint">You can cancel up to @ReservationCancellation.Notice.TotalHours.ToString("0") hours before.</span>
+                                <form method="post" asp-page-handler="Cancel" class="cancel-booking-form">
+                                    <input type="hidden" name="reservationId" value="@reservation.Id" />
+                                    <button type="submit" class="pill-btn ghost small-btn danger-btn">Cancel booking</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="hint">
+                                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                    Less than @ReservationCancellation.Notice.TotalHours.ToString("0") hours to go, so it can't be cancelled online. Please call the restaurant.
+                                </span>
+                            }
+                        </div>
+                    }
                 </article>
             }
         </div>
     }
 </section>
+
+@section Scripts {
+    <script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
+    <script>
+        // Payment details: one open at a time; a click outside the open one, or Escape, closes it.
+        const paymentPanels = document.querySelectorAll(".res-payment");
+        paymentPanels.forEach(function (panel) {
+            panel.addEventListener("toggle", function () {
+                if (panel.open) {
+                    paymentPanels.forEach(function (other) {
+                        if (other !== panel) {
+                            other.open = false;
+                        }
+                    });
+                }
+            });
+        });
+        document.addEventListener("click", function (event) {
+            paymentPanels.forEach(function (panel) {
+                if (panel.open && !panel.contains(event.target)) {
+                    panel.open = false;
+                }
+            });
+        });
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                paymentPanels.forEach(function (panel) {
+                    panel.open = false;
+                });
+            }
+        });
+
+        // Same question as the booking page before a booking is cancelled.
+        document.querySelectorAll(".cancel-booking-form").forEach(function (cancelForm) {
+            AppDialog.guardSubmit(cancelForm, {
+                title: "Cancel this booking?",
+                message: "If you paid a deposit, it goes back to your card (usually 5–10 working days).",
+                confirmText: "Cancel booking",
+                cancelText: "Keep booking",
+                danger: true,
+                icon: "fa-calendar-xmark"
+            });
+        });
+    </script>
+}

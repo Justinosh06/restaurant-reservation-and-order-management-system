@@ -30,24 +30,41 @@
         </div>
     </dl>
 
-    <h2 class="sub-title">Order history</h2>
+    @* Order history on the left, how the bill was paid on the right (below on phones). *@
+    <div class="visit-body">
+        <div>
+            <h2 class="sub-title">Order history</h2>
 
-    <div class="order-list">
-        @foreach (var order in Model.Visit.Orders)
-        {
-            <a class="order-card" asp-page="/Customer/Order" asp-route-id="@order.Id">
-                <div>
-                    <span class="order-code">Order #@order.Id</span>
-                    <span class="hint">Qty: @Model.OrderItems[order.Id].Sum(i => i.Quantity)</span>
-                </div>
-                <div class="order-side">
-                    <span class="hint">@ToLocal(order.CreatedAt).ToString("HH:mm")</span>
-                    <div class="order-total-row">
-                        <span class="order-total">@Model.Currency.FormatCents(order.TotalAmount)</span>
-                        <span class="status-pill @(order.Status == OrderStatus.Cancelled ? "muted" : "")">@order.Status</span>
-                    </div>
-                </div>
-            </a>
-        }
+            <div class="order-list">
+                @foreach (var order in Model.Visit.Orders)
+                {
+                    <a class="order-card" asp-page="/Customer/Order" asp-route-id="@order.Id">
+                        <div>
+                            <span class="order-code">Order #@order.Id</span>
+                            <span class="hint">Qty: @Model.OrderItems[order.Id].Sum(i => i.Quantity)</span>
+                        </div>
+                        <div class="order-side">
+                            <span class="hint">@ToLocal(order.CreatedAt).ToString("HH:mm")</span>
+                            <div class="order-total-row">
+                                <span class="order-total">@Model.Currency.FormatCents(order.TotalAmount)</span>
+                                <span class="status-pill @(order.Status == OrderStatus.Cancelled ? "muted" : "")">@order.Status</span>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+
+        <aside class="visit-payments" aria-labelledby="paymentTitle">
+            <h2 class="sub-title" id="paymentTitle">Payment</h2>
+            @if (Model.Payments.Count == 0)
+            {
+                <p class="empty-note">No online payment for this visit yet. It shows here once the bill is paid.</p>
+            }
+            @foreach (var payment in Model.Payments)
+            {
+                <partial name="_PaymentDetails" model="payment" />
+            }
+        </aside>
     </div>
 </section>

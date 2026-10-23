@@ -23,3 +23,42 @@
         font-size: 1.6rem;
     }
 }
+
+/* Phones: table_page.css turns each dish card into a short row but leaves the name and price positioned at the
+   card's bottom corner, so they spill outside it. On the online menu they sit beside the picture instead.
+   ".page-content" makes these rules win over table_page.css, which loads later. */
+@media only screen and (max-width: 480px) {
+    .page-content .menu-container .menu-grid .item-card {
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        height: auto;
+        min-height: 120px;
+        aspect-ratio: auto;
+        border-radius: 24px;
+
+        .thumbnail-container {
+            width: 96px;
+            height: 96px;
+            margin-bottom: 0;
+        }
+
+        .info-container {
+            position: static;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+
+            .left-section .item-title {
+                font-size: 1.15rem;
+                text-align: left;
+            }
+
+            .right-section .price {
+                font-size: 1.35rem;
+            }
+        }
+    }
+}
