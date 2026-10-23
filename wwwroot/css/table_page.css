@@ -362,6 +362,7 @@
                     .right-section {
                         .price {
                             font-size: 1.1rem;
+                            white-space: nowrap;
                         }
                     }
                 }
