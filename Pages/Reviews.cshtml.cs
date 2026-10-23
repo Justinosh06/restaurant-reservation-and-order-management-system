@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Reviews;
 using RestaurantReservation.Models;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages;
@@ -41,6 +42,12 @@ public class ReviewsModel : PageModel
     // The reviews shown in the list: all, or only the chosen star rating; newest first.
     public IReadOnlyList<Feedback> Reviews { get; private set; } = [];
 
+    // The options each review's dish was ordered with, by feedback id (see ReviewOptions).
+    public Dictionary<string, IReadOnlyList<IReadOnlyDictionary<string, string>>> ReviewOptionSets { get; private set; } = [];
+
+    public IReadOnlyList<IReadOnlyDictionary<string, string>> OptionsFor(Feedback review) =>
+        ReviewOptionSets.TryGetValue(review.Id, out var sets) ? sets : [];
+
     public async Task<IActionResult> OnGetAsync()
     {
         if (Rating is not (null or >= 1 and <= 5))
@@ -73,8 +80,9 @@ public class ReviewsModel : PageModel
             : Math.Round(thisMonth.Average(f => f.Rating) - lastMonth.Average(f => f.Rating), 1);
 
         Reviews = Rating is { } stars ? all.Where(f => f.Rating == stars).ToList() : all;
+        ReviewOptionSets = await ReviewOptions.LoadAsync(_db, Reviews);
         return Page();
     }
 
-    private static DateTime Local(DateTime utc) => RestaurantReservation.Infrastructure.Reviews.ReviewDisplay.Local(utc);
+    private static DateTime Local(DateTime utc) => ReviewDisplay.Local(utc);
 }

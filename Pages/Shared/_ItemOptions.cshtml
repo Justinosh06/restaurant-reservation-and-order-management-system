@@ -1,0 +1,14 @@
+@using RestaurantReservation.Infrastructure.Reviews
+@model IEnumerable<IReadOnlyDictionary<string, string>>
+
+@* The options a dish was ordered with, one small grey chip per choice ("Temperature: Iced"). Several option sets
+   (the same dish ordered twice, Iced and Hot) each get their own row. Styles are in site.css. *@
+@foreach (var options in Model.Where(o => o.Count > 0))
+{
+    <span class="item-options">
+        @foreach (var label in ReviewOptions.Labels(options))
+        {
+            <span class="item-option">@label</span>
+        }
+    </span>
+}

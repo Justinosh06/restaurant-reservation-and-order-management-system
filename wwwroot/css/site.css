@@ -48,3 +48,22 @@ button {
   background: var(--primary-color);
   color: var(--secondary-color);
 }
+
+/* Options a dish was ordered with (Pages/Shared/_ItemOptions): small grey chips, readable on white and grey cards. */
+.item-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.item-option {
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #444444;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}

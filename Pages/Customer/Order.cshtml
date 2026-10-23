@@ -70,6 +70,7 @@
 
                     <div>
                         <strong class="item-name">@item.MenuItem?.Name</strong>
+                        <partial name="_ItemOptions" model="new IReadOnlyDictionary<string, string>[] { item.Options }" />
                         @if (!string.IsNullOrWhiteSpace(item.Remarks))
                         {
                             <span class="hint d-block">Note: @item.Remarks</span>

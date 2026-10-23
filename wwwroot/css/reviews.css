@@ -267,6 +267,12 @@
     text-decoration: none;
 }
 
+/* The options the dish was ordered with, under its name. */
+.rv-card-side .item-options {
+    justify-content: flex-end;
+    margin-top: 0;
+}
+
 .rv-dish:hover {
     color: black;
     text-decoration: underline;
@@ -336,7 +342,14 @@
     .rv-card-side {
         grid-column: 1 / -1;
         flex-direction: row;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
+        row-gap: 8px;
+    }
+
+    .rv-card-side .item-options {
+        flex-basis: 100%;
+        justify-content: flex-start;
     }
 }

@@ -120,6 +120,7 @@
                                         }
                                     </span>
                                 </div>
+                                <partial name="_ItemOptions" model="Model.OptionsFor(review)" />
                                 @if (!string.IsNullOrWhiteSpace(review.Description))
                                 {
                                     <p>@review.Description</p>

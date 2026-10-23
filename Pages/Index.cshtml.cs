@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Reviews;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 using Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
@@ -50,6 +51,12 @@ public class IndexModel : PageModel
 
     // Up to three reviews to show: the best-rated ones with a comment, newest first among equals.
     public IReadOnlyList<Feedback> FeaturedReviews { get; private set; } = [];
+
+    // The options each review's dish was ordered with, by feedback id (see ReviewOptions).
+    public Dictionary<string, IReadOnlyList<IReadOnlyDictionary<string, string>>> ReviewOptionSets { get; private set; } = [];
+
+    public IReadOnlyList<IReadOnlyDictionary<string, string>> OptionsFor(Feedback review) =>
+        ReviewOptionSets.TryGetValue(review.Id, out var sets) ? sets : [];
 
     // The booking card follows the same rules as the booking page (Pages/Customer/Reserve).
     public DateOnly FirstBookingDay => DateOnly.FromDateTime(DateTime.Now).AddDays(ReserveModel.MinDaysAhead);
@@ -118,6 +125,7 @@ public class IndexModel : PageModel
             .ThenByDescending(f => f.CreatedAt)
             .Take(3)
             .ToList();
+        ReviewOptionSets = await ReviewOptions.LoadAsync(_db, FeaturedReviews);
     }
 
     // GET /?handler=Slots&date=2026-10-30 - the booking times on that day, grouped into Morning, Afternoon and

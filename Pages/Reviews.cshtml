@@ -144,6 +144,7 @@
                                         <i class="fa-solid fa-utensils" aria-hidden="true"></i> @review.MenuItem.Name
                                     </a>
                                 }
+                                <partial name="_ItemOptions" model="Model.OptionsFor(review)" />
                             </div>
                         </header>
                         <p class="rv-text @(string.IsNullOrWhiteSpace(review.Description) ? "muted" : "")">
