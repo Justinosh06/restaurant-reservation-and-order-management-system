@@ -56,8 +56,12 @@
 
             @if (Model.ActiveTab == "Order")
             {
-                <form method="post" asp-page-handler="AddToCart" asp-route-tableId="@Model.TableId" asp-route-menuItemId="@Model.MenuItemId" class="d-flex flex-column">
+                <form id="add-to-cart-form" method="post" asp-page-handler="AddToCart" asp-route-tableId="@Model.TableId" asp-route-menuItemId="@Model.MenuItemId" class="d-flex flex-column" novalidate>
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div id="option-validation-alert" class="alert rounded-5 d-none" role="alert" aria-live="assertive">
+                        <i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>
+                        Please choose an option for each menu item option before adding it to your cart.
+                    </div>
                     @if (Model.Item.Options.Count > 0)
                     {
                         <section class="menu-item-options" aria-label="Menu item options">
