@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
 using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Reviews;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
@@ -49,6 +50,7 @@ public class MenuItemModel : PageModel
     public RestaurantReservation.Models.MenuItem? Item { get; private set; }
     public double AverageRating { get; private set; }
     public int RatingCount { get; private set; }
+    public IReadOnlyList<Feedback> Reviews { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(string tableId, string menuItemId, string? tab = "Order")
     {
@@ -78,6 +80,13 @@ public class MenuItemModel : PageModel
 
         if (ActiveTab == "About")
         {
+            Reviews = await _db.Feedbacks
+                .AsNoTracking()
+                .Where(feedback => feedback.MenuItemId == Item.Id)
+                .Include(feedback => feedback.Customer)
+                .OrderByDescending(feedback => feedback.CreatedAt)
+                .ToListAsync();
+
             var rating = await _db.Feedbacks
                 .AsNoTracking()
                 .Where(feedback => feedback.MenuItemId == Item.Id)

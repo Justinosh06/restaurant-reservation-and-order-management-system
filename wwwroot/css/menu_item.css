@@ -196,6 +196,68 @@
                 }
             }
 
+            .reviews-section {
+                margin-top: 24px;
+                font-family: "Bricolage Grotesque", sans-serif;
+
+                .reviews-title {
+                    margin-bottom: 12px;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                }
+
+                .reviews-empty {
+                    margin: 0;
+                    color: #888888;
+                }
+
+                .reviews-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .review-card {
+                    padding: 16px;
+                    border: 1px solid #e5e5e5;
+                    border-radius: 16px;
+
+                    .review-header {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: space-between;
+                        gap: 12px;
+                    }
+
+                    .reviewer-name {
+                        display: block;
+                        font-weight: 700;
+                    }
+
+                    .review-date {
+                        color: #888888;
+                        font-size: 0.9rem;
+                    }
+
+                    .review-stars {
+                        display: inline-flex;
+                        flex-shrink: 0;
+                        gap: 2px;
+                        color: black;
+                    }
+
+                    .review-text {
+                        margin: 12px 0 0;
+                        overflow-wrap: anywhere;
+                    }
+
+                    .review-text.muted {
+                        color: #888888;
+                        font-style: italic;
+                    }
+                }
+            }
+
             .options-title {
                 font-size: 1.25rem;
                 font-weight: 700;

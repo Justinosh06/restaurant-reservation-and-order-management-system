@@ -1,6 +1,7 @@
 @page "/Table/{tableId}/MenuItem/{menuItemId}"
 @model RestaurantReservation.Pages.Table.MenuItem.MenuItemModel
 @using RestaurantReservation.Infrastructure
+@using RestaurantReservation.Infrastructure.Reviews
 @{
     ViewData["Title"] = Model.Item?.Name ?? "Menu item";
 
@@ -127,6 +128,41 @@
                             </span>
                             <span class="rating-value">@Model.AverageRating.ToString("0.0")</span>
                             <span class="rating-count">(@Model.RatingCount @(Model.RatingCount == 1 ? "review" : "reviews"))</span>
+                        </div>
+                    }
+                </section>
+
+                <section class="reviews-section" aria-labelledby="reviews-heading">
+                    <h2 id="reviews-heading" class="reviews-title">Customer reviews</h2>
+                    @if (Model.Reviews.Count == 0)
+                    {
+                        <p class="reviews-empty">No reviews yet. Be the first to share your thoughts after your meal.</p>
+                    }
+                    else
+                    {
+                        <div class="reviews-list">
+                            @foreach (var review in Model.Reviews)
+                            {
+                                <article class="review-card">
+                                    <header class="review-header">
+                                        <div>
+                                            <strong class="reviewer-name">@ReviewDisplay.Name(review.Customer)</strong>
+                                            <time class="review-date" datetime="@review.CreatedAt.ToString("O")">
+                                                @ReviewDisplay.Local(review.CreatedAt).ToString("d MMM yyyy")
+                                            </time>
+                                        </div>
+                                        <span class="review-stars" aria-label="@review.Rating out of 5 stars">
+                                            @for (var star = 1; star <= 5; star++)
+                                            {
+                                                <i class="@StarIcon(review.Rating, star)" aria-hidden="true"></i>
+                                            }
+                                        </span>
+                                    </header>
+                                    <p class="review-text @(string.IsNullOrWhiteSpace(review.Description) ? "muted" : "")">
+                                        @(string.IsNullOrWhiteSpace(review.Description) ? "Rated without a comment." : review.Description)
+                                    </p>
+                                </article>
+                            }
                         </div>
                     }
                 </section>
