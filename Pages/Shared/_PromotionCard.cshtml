@@ -5,13 +5,16 @@
     // The promotion runs to the end of its last day; the countdown counts down to that moment.
     var endsAt = Model.EndDate.ToDateTime(new TimeOnly(23, 59, 59));
 
-    // e.g. "20% off" or "RM 10.00 off, min. spend RM 100.00".
+    var currencySymbol = ViewData["CurrencySymbol"]?.ToString()
+        ?? throw new InvalidOperationException("The restaurant currency symbol was not provided.");
+
+    // e.g. "20% off" or "$ 10.00 off, min. spend $ 100.00".
     string DiscountText(RestaurantReservation.Models.Promotion promotion)
     {
         var off = promotion.DiscountType == RestaurantReservation.Models.PromotionDiscountType.Percentage
             ? $"{promotion.DiscountValue}% off"
-            : $"RM {promotion.DiscountValue / 100m:F2} off";
-        return promotion.MinimumSpend > 0 ? $"{off}, min. spend RM {promotion.MinimumSpend / 100m:F2}" : off;
+            : $"{currencySymbol} {promotion.DiscountValue / 100m:F2} off";
+        return promotion.MinimumSpend > 0 ? $"{off}, min. spend {currencySymbol} {promotion.MinimumSpend / 100m:F2}" : off;
     }
 }
 

@@ -2,6 +2,7 @@
 @model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.PromotionsModel
 @{
     ViewData["Title"] = "Promotions";
+    ViewData["CurrencySymbol"] = Model.CurrencySymbol;
 }
 
 <link rel="stylesheet" href="~/css/promotion_popup.css" asp-append-version="true" />

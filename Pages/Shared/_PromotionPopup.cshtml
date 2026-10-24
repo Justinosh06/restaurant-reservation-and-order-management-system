@@ -1,13 +1,17 @@
 @using Microsoft.EntityFrameworkCore
 @using RestaurantReservation.Data
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Admin
 @using RestaurantReservation.Models
 @inject ApplicationDbContext Db
+@inject RestaurantCurrency RestaurantCurrency
 @{
     // Promotion posters that pop up one after another, on the landing page and the table ordering page.
     // Only promotions running today are shown. promotionPopup.js skips any the visitor already closed
     // in this browser tab (sessionStorage), so logging in or reloading does not show them again.
     // The poster is for reading only: the close button is the one thing to click.
     var today = DateOnly.FromDateTime(DateTime.Now);
+    ViewData["CurrencySymbol"] = (await RestaurantCurrency.GetAsync()).GetSymbol();
     var promotions = await Db.Promotions
         .AsNoTracking()
         .Where(p => p.StartDate <= today && p.EndDate >= today)
