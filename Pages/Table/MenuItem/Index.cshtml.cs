@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Table.MenuItem;
@@ -12,6 +15,7 @@ public class MenuItemModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly DiningSessionService _diningSessions;
+    private readonly RestaurantCurrency _restaurantCurrency;
 
     // A dish without options posts no "Options[...]" fields. Without an explicit Name, model binding then falls back
     // to binding the whole form (Quantity, Remarks, the antiforgery token) into this dictionary, so the dish looked
@@ -27,14 +31,20 @@ public class MenuItemModel : PageModel
     [BindProperty]
     public int Quantity { get; set; } = 1;
 
-    public MenuItemModel(ApplicationDbContext db, DiningSessionService diningSessions)
+    public MenuItemModel(
+        ApplicationDbContext db,
+        DiningSessionService diningSessions,
+        RestaurantCurrency restaurantCurrency)
     {
         _db = db;
         _diningSessions = diningSessions;
+        _restaurantCurrency = restaurantCurrency;
     }
 
     public string TableId { get; set; } = string.Empty;
     public string MenuItemId { get; set; } = string.Empty;
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
     public string ActiveTab { get; private set; } = "Order";
     public RestaurantReservation.Models.MenuItem? Item { get; private set; }
     public double AverageRating { get; private set; }
@@ -54,6 +64,7 @@ public class MenuItemModel : PageModel
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
 
+        Currency = await _restaurantCurrency.GetAsync();
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
         MenuItemId = menuItemId.ToUpper();
         ActiveTab = string.Equals(tab, "About", StringComparison.OrdinalIgnoreCase) ? "About" : "Order";
@@ -104,6 +115,7 @@ public class MenuItemModel : PageModel
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
 
+        Currency = await _restaurantCurrency.GetAsync();
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
         Item = await _db.MenuItems
             .FirstOrDefaultAsync(item => item.Id == MenuItemId && item.Availability);

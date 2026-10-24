@@ -122,7 +122,7 @@ else
                         </div>
 
                         <div class="right-section">
-                            <span class="price">RM @item.PriceInMainUnit.ToString("F2")</span>
+                            <span class="price">@Model.CurrencySymbol @item.PriceInMainUnit.ToString("F2")</span>
                         </div>
                     </div>
 

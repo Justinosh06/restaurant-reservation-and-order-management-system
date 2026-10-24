@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Models.Enums;
 using Stripe;
 using Stripe.Checkout;
 
@@ -22,13 +24,15 @@ public class StripePaymentService : IPaymentService
         int reservationDepositCredit,
         int promoDiscount,
         string? promotionCode,
+        CurrencyType currency,
         string domain)
     {
+        var currencyCode = currency.GetCode().ToLowerInvariant();
         var lineItems = items.Select(item => new SessionLineItemOptions
         {
             PriceData = new SessionLineItemPriceDataOptions
             {
-                Currency = "myr",
+                Currency = currencyCode,
                 UnitAmount = (long)(item.UnitPrice * 100m),
                 ProductData = new SessionLineItemPriceDataProductDataOptions
                 {
@@ -61,7 +65,7 @@ public class StripePaymentService : IPaymentService
 
         // Stripe takes one discount per checkout, so the promo code and the deposit go into a single coupon.
         // The amounts are part of the idempotency keys: applying or removing a code makes a new checkout.
-        var discountKey = $"{tableId}:{diningSessionId}:{paymentAttemptId}:{reservationDepositCredit}:{promoDiscount}:{promotionCode}";
+        var discountKey = $"{tableId}:{diningSessionId}:{paymentAttemptId}:{currencyCode}:{reservationDepositCredit}:{promoDiscount}:{promotionCode}";
         var totalDiscount = reservationDepositCredit + promoDiscount;
         if (totalDiscount > 0)
         {
@@ -75,7 +79,7 @@ public class StripePaymentService : IPaymentService
                 new CouponCreateOptions
                 {
                     AmountOff = totalDiscount,
-                    Currency = "myr",
+                    Currency = currencyCode,
                     Duration = "once",
                     Name = couponName
                 },
@@ -100,16 +104,18 @@ public class StripePaymentService : IPaymentService
         string customerName,
         string? customerEmail,
         double depositAmount,
+        CurrencyType currency,
         string successUrl,
         string cancelUrl)
     {
+        var currencyCode = currency.GetCode().ToLowerInvariant();
         var lineItems = new List<SessionLineItemOptions>
         {
             new SessionLineItemOptions
             {
                 PriceData = new SessionLineItemPriceDataOptions
                 {
-                    Currency = "myr",
+                    Currency = currencyCode,
                     UnitAmount = (long)(depositAmount * 100),
                     ProductData = new SessionLineItemPriceDataProductDataOptions
                     {

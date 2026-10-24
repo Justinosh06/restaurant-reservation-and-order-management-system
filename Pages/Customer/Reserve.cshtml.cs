@@ -5,8 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 using Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 using Stripe;
@@ -15,7 +18,11 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 
 // Customers pick a party size, a date and a time, then pay a deposit on Stripe Checkout.
 // Tables are not chosen here: the booking starts as Pending and staff seat it on Table Management.
-public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILogger<ReserveModel> logger) : PageModel
+public class ReserveModel(
+    ApplicationDbContext db,
+    IPaymentService payments,
+    RestaurantCurrency restaurantCurrency,
+    ILogger<ReserveModel> logger) : PageModel
 {
     public const double Deposit = 20.00;
 
@@ -43,6 +50,9 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
 
     [TempData]
     public string? StatusMessage { get; set; }
+
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
 
     public DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
 
@@ -152,6 +162,8 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
         }
 
         // Saved first so the seats are held while the customer pays; it only counts once paid.
+        Currency = await restaurantCurrency.GetAsync();
+
         var reservation = new RestaurantReservation.Models.Reservation
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -175,6 +187,7 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
                 User.FindFirstValue(ClaimTypes.Name) ?? "Guest",
                 User.FindFirstValue(ClaimTypes.Email),
                 Deposit,
+                Currency,
                 successUrl: $"{Request.Scheme}://{Request.Host}/Payment/{{CHECKOUT_SESSION_ID}}",
                 cancelUrl: $"{page}?handler=PaymentCancelled&reservationId={reservation.Id}");
             reservation.StripeSessionId = session.Id;
@@ -201,6 +214,8 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
 
     private async Task LoadPageAsync()
     {
+        Currency = await restaurantCurrency.GetAsync();
+
         ClosedDays = (await LoadHoursAsync())
             .Where(day => day.IsClosed)
             .Select(day => (int)day.DayOfWeek)

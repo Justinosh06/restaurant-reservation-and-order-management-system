@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Payments;
 using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
@@ -85,11 +87,16 @@ public class ReservationsModel(
             ? Task.FromResult<StripePaymentInfo?>(null)
             : stripe.GetAsync(r.StripeSessionId, expectRefunded: r.DepositStatus == DepositStatus.Refunded)));
 
+        var currency = await db.RestaurantSettings.AsNoTracking()
+            .Select(settings => (CurrencyType?)settings.DefaultCurrency)
+            .FirstOrDefaultAsync() ?? CurrencyType.MYR;
+
         Deposits = paid.Select((reservation, index) => (reservation, info: details[index])).ToDictionary(
             pair => pair.reservation.Id,
             pair => new PaymentPanel
             {
                 AmountCents = pair.reservation.DepositAmount ?? 0,
+                CurrencySymbol = currency.GetSymbol(),
                 State = pair.reservation.DepositStatus switch
                 {
                     DepositStatus.Refunded => PaymentState.Refunded,

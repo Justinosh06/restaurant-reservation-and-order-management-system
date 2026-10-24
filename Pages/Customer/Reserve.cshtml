@@ -14,7 +14,7 @@
     <div class="reserve-heading">
         <div>
             <h1>Book a table</h1>
-            <p>Pick a day and a time, then pay a RM@(ReserveModel.Deposit.ToString("0")) deposit to hold your table.</p>
+            <p>Pick a day and a time, then pay a @Model.CurrencySymbol@(ReserveModel.Deposit.ToString("0")) deposit to hold your table.</p>
         </div>
         <a asp-page="/Customer/Reservations" class="reserve-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to reservations</a>
     </div>
@@ -103,7 +103,7 @@
             </div>
             <div class="reserve-footer">
                 <span id="summary">Choose a date and time.</span>
-                <button type="submit" id="bookButton" disabled><i class="fa-brands fa-cc-stripe" aria-hidden="true"></i> Pay RM@(ReserveModel.Deposit.ToString("0")) deposit</button>
+                <button type="submit" id="bookButton" disabled><i class="fa-brands fa-cc-stripe" aria-hidden="true"></i> Pay @Model.CurrencySymbol@(ReserveModel.Deposit.ToString("0")) deposit</button>
                 <span class="deposit-note">Secure payment by Stripe. Refunded if you cancel at least 24 hours before.</span>
             </div>
         </div>

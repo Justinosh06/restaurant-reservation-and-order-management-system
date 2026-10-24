@@ -97,7 +97,7 @@
                         </div>
 
                         <button type="submit" class="add-to-cart-btn">
-                            <span class="price">RM @Model.Item.PriceInMainUnit.ToString("F2")</span>
+                            <span class="price">@Model.CurrencySymbol @Model.Item.PriceInMainUnit.ToString("F2")</span>
                             Add to Cart
                         </button>
                     </div>

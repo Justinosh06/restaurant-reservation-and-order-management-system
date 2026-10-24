@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Table;
@@ -32,13 +34,11 @@ public class SessionOrderViewModel
 
 public class CheckoutModel : PageModel
 {
-    // Stripe's smallest card payment in ringgit; a checkout for less is refused.
-    private const decimal StripeMinimumCharge = 2.00m;
-
     private readonly ApplicationDbContext _db;
     private readonly IPaymentService _paymentService;
     private readonly DiningSessionService _diningSessions;
     private readonly RestaurantClock _clock;
+    private readonly RestaurantCurrency _restaurantCurrency;
     private readonly ILogger<CheckoutModel> _logger;
 
     public CheckoutModel(
@@ -46,16 +46,20 @@ public class CheckoutModel : PageModel
         IPaymentService paymentService,
         DiningSessionService diningSessions,
         RestaurantClock clock,
+        RestaurantCurrency restaurantCurrency,
         ILogger<CheckoutModel> logger)
     {
         _db = db;
         _paymentService = paymentService;
         _diningSessions = diningSessions;
         _clock = clock;
+        _restaurantCurrency = restaurantCurrency;
         _logger = logger;
     }
 
     public string TableId { get; private set; } = string.Empty;
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
     public bool IsCustomerBound { get; private set; }
     public bool IsSessionClosed { get; private set; }
     public List<SessionOrderViewModel> SessionOrders { get; private set; } = [];
@@ -92,6 +96,7 @@ public class CheckoutModel : PageModel
             return session.Result;
         }
 
+        Currency = await _restaurantCurrency.GetAsync();
         IsCustomerBound = session.Session!.CustomerId is not null;
         await LoadSessionOrdersAsync(session.Session!.Id);
         PromoRemovedNotice = await LoadPromotionAsync(session.Session);
@@ -108,6 +113,7 @@ public class CheckoutModel : PageModel
             return session.Result;
         }
 
+        Currency = await _restaurantCurrency.GetAsync();
         IsCustomerBound = session.Session!.CustomerId is not null;
         await LoadSessionOrdersAsync(session.Session!.Id);
         var promoRemoved = await LoadPromotionAsync(session.Session);
@@ -165,7 +171,7 @@ public class CheckoutModel : PageModel
                     Id = Guid.NewGuid().ToString("N"),
                     OrderId = order.Id,
                     Amount = order.TotalAmount - orderPromo - orderCredit,
-                    Currency = RestaurantReservation.Models.Enums.CurrencyType.MYR,
+                    Currency = Currency,
                     Status = TransactionStatus.Succeeded,
                     PaymentMethod = PaymentMethod.Other,
                     CreatedAt = DateTime.UtcNow,
@@ -207,9 +213,10 @@ public class CheckoutModel : PageModel
         var domain = $"{Request.Scheme}://{Request.Host}";
 
         // A promo code or deposit can leave less than Stripe will charge; that remainder is paid at the counter.
-        if (AmountDue < StripeMinimumCharge)
+        var stripeMinimumCharge = GetStripeMinimumCharge(Currency);
+        if (AmountDue < stripeMinimumCharge)
         {
-            StatusMessage = $"The amount left to pay (RM {AmountDue:F2}) is below the RM {StripeMinimumCharge:F2} minimum for card payments. Please pay it at the counter.";
+            StatusMessage = $"The amount left to pay ({CurrencySymbol} {AmountDue:F2}) is below the {CurrencySymbol} {stripeMinimumCharge:F2} minimum for card payments. Please pay it at the counter.";
             return RedirectToPage("/Table/Checkout", new { tableId = TableId });
         }
 
@@ -224,6 +231,7 @@ public class CheckoutModel : PageModel
                 (int)(ReservationDepositCredit * 100m),
                 (int)(PromoDiscount * 100m),
                 PromoDiscount > 0 ? AppliedPromotion?.Code : null,
+                Currency,
                 domain);
         }
         catch (Stripe.StripeException error)
@@ -294,7 +302,7 @@ public class CheckoutModel : PageModel
             : promotion.EndDate < _clock.Today
                 ? $"{code} expired on {promotion.EndDate:d MMM yyyy}."
             : subtotal < promotion.MinimumSpend
-                ? $"{code} needs a minimum spend of RM {promotion.MinimumSpend / 100m:F2}. Your orders come to RM {TotalAmount:F2}."
+                ? $"{code} needs a minimum spend of {CurrencySymbol} {promotion.MinimumSpend / 100m:F2}. Your orders come to {CurrencySymbol} {TotalAmount:F2}."
             : null;
         if (PromoError is not null)
         {
@@ -351,6 +359,13 @@ public class CheckoutModel : PageModel
         _db.Sessions
             .Where(active => active.Id == sessionId && active.EndingTime == null)
             .ExecuteUpdateAsync(updates => updates.SetProperty(active => active.PromotionId, (string?)null));
+
+    private static decimal GetStripeMinimumCharge(CurrencyType currency) => currency switch
+    {
+        CurrencyType.MYR => 2.00m,
+        CurrencyType.USD or CurrencyType.EUR => 0.50m,
+        _ => throw new ArgumentOutOfRangeException(nameof(currency), currency, "Unsupported Stripe currency.")
+    };
 
     private async Task<(RestaurantReservation.Models.Session? Session, IActionResult? Result)>
         GetActiveSessionAsync(string tableId)

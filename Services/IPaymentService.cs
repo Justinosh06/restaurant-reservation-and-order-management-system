@@ -1,5 +1,6 @@
 using Stripe;
 using Stripe.Checkout;
+using RestaurantReservation.Models.Enums;
 
 namespace RestaurantReservation.Services;
 
@@ -13,6 +14,7 @@ public interface IPaymentService
         int reservationDepositCredit,
         int promoDiscount,
         string? promotionCode,
+        CurrencyType currency,
         string domain);
 
     // The checkout page expires after 30 minutes (Stripe's minimum), so an unpaid booking never holds seats for long.
@@ -21,6 +23,7 @@ public interface IPaymentService
         string customerName,
         string? customerEmail,
         double depositAmount,
+        CurrencyType currency,
         string successUrl,
         string cancelUrl);
 

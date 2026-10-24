@@ -2,6 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Table;
@@ -10,14 +13,21 @@ public class IndexModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly DiningSessionService _diningSessions;
+    private readonly RestaurantCurrency _restaurantCurrency;
 
-    public IndexModel(ApplicationDbContext db, DiningSessionService diningSessions)
+    public IndexModel(
+        ApplicationDbContext db,
+        DiningSessionService diningSessions,
+        RestaurantCurrency restaurantCurrency)
     {
         _db = db;
         _diningSessions = diningSessions;
+        _restaurantCurrency = restaurantCurrency;
     }
 
     public string TableId { get; set; } = string.Empty;
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
     public bool HasActiveSession { get; private set; }
     public List<RestaurantReservation.Models.MenuItem> MenuItems { get; private set; } = [];
     public List<string> TopRatedMenuItemIds { get; private set; } = [];
@@ -41,6 +51,7 @@ public class IndexModel : PageModel
             return Page();
         }
 
+        Currency = await _restaurantCurrency.GetAsync();
         HasActiveSession = true;
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
 
