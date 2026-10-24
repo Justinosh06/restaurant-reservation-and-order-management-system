@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
 using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Infrastructure.Reviews;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
@@ -17,6 +18,7 @@ public class MenuItemModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly DiningSessionService _diningSessions;
     private readonly RestaurantCurrency _restaurantCurrency;
+    private readonly RestaurantOrderingHours _orderingHours;
 
     // A dish without options posts no "Options[...]" fields. Without an explicit Name, model binding then falls back
     // to binding the whole form (Quantity, Remarks, the antiforgery token) into this dictionary, so the dish looked
@@ -35,11 +37,13 @@ public class MenuItemModel : PageModel
     public MenuItemModel(
         ApplicationDbContext db,
         DiningSessionService diningSessions,
-        RestaurantCurrency restaurantCurrency)
+        RestaurantCurrency restaurantCurrency,
+        RestaurantOrderingHours orderingHours)
     {
         _db = db;
         _diningSessions = diningSessions;
         _restaurantCurrency = restaurantCurrency;
+        _orderingHours = orderingHours;
     }
 
     public string TableId { get; set; } = string.Empty;
@@ -62,6 +66,11 @@ public class MenuItemModel : PageModel
         TableId = tableId.ToUpper();
         var activeSession = await _diningSessions.GetActiveSessionAsync(TableId);
         if (activeSession is null)
+        {
+            return RedirectToPage("/Table/Index", new { tableId = TableId });
+        }
+
+        if (await _orderingHours.IsOrderingClosedAsync())
         {
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
@@ -124,6 +133,11 @@ public class MenuItemModel : PageModel
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
 
+        if (await _orderingHours.IsOrderingClosedAsync())
+        {
+            return RedirectToPage("/Table/Index", new { tableId = TableId });
+        }
+
         Currency = await _restaurantCurrency.GetAsync();
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
         Item = await _db.MenuItems
@@ -164,6 +178,11 @@ public class MenuItemModel : PageModel
         }
 
         var selectedOptions = new Dictionary<string, string>(Options, StringComparer.Ordinal);
+        if (await _orderingHours.IsOrderingClosedAsync())
+        {
+            return RedirectToPage("/Table/Index", new { tableId = TableId });
+        }
+
         var matchingCartItems = await _db.CartItems
             .Where(cartItem =>
                 cartItem.SessionId == activeSession.Id &&
