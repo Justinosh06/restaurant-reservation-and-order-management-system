@@ -7,7 +7,7 @@
 <div class="admin-page px-3 pt-3 pb-4">
     <div class="mb-4">
         <h1 class="h4 fw-semibold mb-1">Customers</h1>
-        <p class="text-body-secondary mb-0">Look up registered customer accounts and their bookings and orders. Accounts are managed by the customers themselves, so details can't be changed here.</p>
+        <p class="small text-body-secondary mb-0">Manage customers and view their activity.</p>
     </div>
 
     <section class="card border-0 bg-body-tertiary rounded-4">
@@ -47,8 +47,8 @@
                             <th class="text-body-secondary fw-medium">Customer</th>
                             <th class="text-body-secondary fw-medium d-none d-xl-table-cell">Email</th>
                             <th class="text-body-secondary fw-medium d-none d-xxl-table-cell">Phone</th>
-                            <th class="text-body-secondary fw-medium text-end d-none d-xl-table-cell">Reservations</th>
-                            <th class="text-body-secondary fw-medium text-end d-none d-xl-table-cell">Orders</th>
+                            <th class="text-body-secondary fw-medium text-end d-none d-xxl-table-cell">Reservations</th>
+                            <th class="text-body-secondary fw-medium text-end d-none d-xxl-table-cell">Orders</th>
                             <th class="text-body-secondary fw-medium text-end">Spent</th>
                             <th class="text-body-secondary fw-medium d-none d-sm-table-cell">Last visit</th>
                             <th class="text-body-secondary fw-medium text-end pe-3">Actions</th>
@@ -77,8 +77,29 @@
             </div>
             <div class="modal-body" id="customer-detail"></div>
             <div class="modal-footer">
-                <span class="small text-body-secondary me-auto"><i class="fa-solid fa-lock me-1"></i>View only. Passwords are never shown.</span>
+                <span class="small text-body-secondary me-auto"><i class="fa-solid fa-lock me-1"></i>Details can't be edited here. Passwords are never shown.</span>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h5 id="delete-modal-title">Delete customer account?</h5>
+                <p class="mb-2"><span id="delete-name" class="fw-medium"></span> <span id="delete-email" class="text-body-secondary"></span></p>
+                <ul class="small text-body-secondary mb-0 ps-3">
+                    <li>They can no longer sign in, and are signed out if they are signed in now.</li>
+                    <li>Their past orders and bookings stay in your records as a guest, so revenue and analytics don't change.</li>
+                    <li>Their reviews are removed.</li>
+                </ul>
+                <div class="alert alert-danger small mt-3 mb-0 d-none" id="delete-error" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Delete account</button>
             </div>
         </div>
     </div>

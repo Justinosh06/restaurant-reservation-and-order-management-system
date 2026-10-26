@@ -260,7 +260,7 @@
     }
 
     .customer-table td:nth-child(2) {
-        max-width: 11rem;
+        max-width: 10rem;
     }
 }
 

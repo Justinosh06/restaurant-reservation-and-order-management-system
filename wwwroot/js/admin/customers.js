@@ -53,13 +53,16 @@
                 </td>
                 <td class="d-none d-xl-table-cell">${email}</td>
                 <td class="d-none d-xxl-table-cell">${c.phone ? AdminUI.escapeHtml(c.phone) : notGiven}</td>
-                <td class="text-end d-none d-xl-table-cell">${c.reservations}</td>
-                <td class="text-end d-none d-xl-table-cell">${c.orders}</td>
+                <td class="text-end d-none d-xxl-table-cell">${c.reservations}</td>
+                <td class="text-end d-none d-xxl-table-cell">${c.orders}</td>
                 <td class="text-end text-nowrap">${AdminUI.formatCurrency(c.spent)}</td>
                 <td class="d-none d-sm-table-cell text-nowrap">${c.lastVisit ? AdminUI.formatDate(c.lastVisit) : `<span class="text-body-secondary">Never</span>`}</td>
-                <td class="text-end pe-3">
+                <td class="text-end text-nowrap pe-3">
                     <button type="button" class="btn btn-sm btn-light border" data-view="${AdminUI.escapeHtml(c.id)}" aria-label="View ${email}" title="View details">
                         <i class="fa-regular fa-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${AdminUI.escapeHtml(c.id)}" aria-label="Delete ${email}" title="Delete account">
+                        <i class="fa-regular fa-trash-can"></i>
                     </button>
                 </td>
             </tr>`;
@@ -205,9 +208,43 @@
             });
     };
 
+    const deleteModal = new bootstrap.Modal(document.getElementById("delete-modal"));
+    const deleteErrorEl = document.getElementById("delete-error");
+    const confirmDeleteBtn = document.getElementById("confirm-delete");
+    let pendingDeleteId = null;
+
+    const openDelete = (id) => {
+        const customer = customers.find(c => c.id === id);
+        if (!customer) return;
+        pendingDeleteId = id;
+        document.getElementById("delete-name").textContent = customer.name || "No name";
+        document.getElementById("delete-email").textContent = customer.email;
+        deleteErrorEl.classList.add("d-none");
+        deleteModal.show();
+    };
+
+    // The server refuses while the customer is dining or has a booking to come; the reason shows in the dialog.
+    confirmDeleteBtn.addEventListener("click", async () => {
+        AdminUI.setBusy(confirmDeleteBtn, true);
+        try {
+            await AdminUI.post("Delete", { id: pendingDeleteId });
+            customers = customers.filter(c => c.id !== pendingDeleteId);
+            deleteModal.hide();
+            AdminUI.showToast("Customer account deleted");
+            render();
+        } catch (error) {
+            deleteErrorEl.textContent = error.message;
+            deleteErrorEl.classList.remove("d-none");
+        } finally {
+            AdminUI.setBusy(confirmDeleteBtn, false);
+        }
+    });
+
     rowsEl.addEventListener("click", (e) => {
-        const button = e.target.closest("[data-view]");
-        if (button) openDetail(button.dataset.view);
+        const viewButton = e.target.closest("[data-view]");
+        if (viewButton) openDetail(viewButton.dataset.view);
+        const deleteButton = e.target.closest("[data-delete]");
+        if (deleteButton) openDelete(deleteButton.dataset.delete);
     });
 
     pagesEl.addEventListener("click", (e) => {

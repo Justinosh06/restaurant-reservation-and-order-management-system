@@ -1,7 +1,9 @@
 using Stripe;
 using Stripe.Checkout;
 
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -115,6 +117,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 ? SiteHosts.MainSiteUrl(context.Request, "/AccessDenied")
                 : context.RedirectUri);
             return Task.CompletedTask;
+        };
+        // A customer whose account an admin deleted is signed out on their next request, instead of
+        // carrying on with a login cookie for an account that no longer exists.
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            if (context.Principal?.IsInRole(AppRoles.Customer) != true)
+            {
+                return;
+            }
+
+            var customerId = context.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+            if (customerId is null || !await db.Customers.AnyAsync(c => c.Id == customerId))
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
         };
     });
 

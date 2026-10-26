@@ -7,11 +7,13 @@ using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Pages.Admin.Customers;
 
-// Read-only: there are no POST handlers, so admins can look up customer accounts but not change or delete
-// them. Every query selects only the fields shown, so the password hash is never read from the database.
+// Admins can look up customer accounts and delete them, but not edit their details (customers manage those
+// themselves). Every query selects only the fields shown, so the password hash is never read from the database.
 public class CustomerModel : PageModel
 {
     private const int HistoryLimit = 10;
+
+    public record DeleteCustomerRequest(string Id);
 
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
@@ -109,5 +111,52 @@ public class CustomerModel : PageModel
                 total = o.TotalAmount
             })
         });
+    }
+
+    // Deletes the account but keeps the restaurant's records: past orders, bookings and dining sessions stay
+    // (shown as a guest), so revenue and analytics don't change. Their reviews are removed, since a review
+    // must belong to a customer. Not allowed while they are dining or have a booking still to come: cancel
+    // the booking first, so a paid deposit is refunded the usual way.
+    public async Task<IActionResult> OnPostDeleteAsync([FromBody] DeleteCustomerRequest request)
+    {
+        var customer = await _db.Customers.FindAsync(request.Id);
+        if (customer is null)
+        {
+            return NotFound(new { error = "This customer account no longer exists. Refresh the page." });
+        }
+
+        if (await _db.Sessions.AnyAsync(s => s.CustomerId == customer.Id && s.EndingTime == null))
+        {
+            return BadRequest(new { error = "This customer is dining right now. Delete the account after their session ends." });
+        }
+
+        var now = _clock.Now;
+        var today = DateOnly.FromDateTime(now);
+        var upcoming = (await _db.Reservations.AsNoTracking()
+                .Where(r => r.CustomerId == customer.Id && r.Date >= today
+                    && (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed || r.Status == ReservationStatus.CheckedIn))
+                .Select(r => new { r.Date, r.TimeSlot })
+                .ToListAsync())
+            .Count(r => r.Date.ToDateTime(r.TimeSlot) > now);
+        if (upcoming > 0)
+        {
+            return BadRequest(new
+            {
+                error = $"This customer has {upcoming} upcoming {(upcoming == 1 ? "booking" : "bookings")}. "
+                    + "Cancel them in Reservation Management first, so any deposit is refunded."
+            });
+        }
+
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        await _db.Orders.Where(o => o.CustomerId == customer.Id).ExecuteUpdateAsync(s => s.SetProperty(o => o.CustomerId, (string?)null));
+        // IgnoreQueryFilters: bookings still waiting for their deposit are hidden by default but still point here.
+        await _db.Reservations.IgnoreQueryFilters().Where(r => r.CustomerId == customer.Id).ExecuteUpdateAsync(s => s.SetProperty(r => r.CustomerId, (string?)null));
+        await _db.Sessions.Where(x => x.CustomerId == customer.Id).ExecuteUpdateAsync(s => s.SetProperty(x => x.CustomerId, (string?)null));
+        await _db.Feedbacks.Where(f => f.CustomerId == customer.Id).ExecuteDeleteAsync();
+        _db.Customers.Remove(customer);
+        await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return new NoContentResult();
     }
 }
