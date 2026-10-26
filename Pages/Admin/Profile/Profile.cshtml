@@ -6,7 +6,6 @@
     ViewData["Title"] = "Profile";
     var account = Model.Account;
     var avatarGender = account.Gender == RestaurantReservation.Models.Enums.Gender.Female ? "female" : "male";
-    var maxImageMb = ImageUploadService.MaxImageBytes / (1024 * 1024);
 }
 
 <div class="admin-page px-3 pt-3 pb-4">
@@ -22,15 +21,8 @@
             <section class="card border-0 bg-body-tertiary rounded-4">
                 <div class="card bg-body border-0 rounded-4 m-1">
                     <div class="card-body text-center py-4">
-                        <div class="avatar mx-auto mb-3 border @(string.IsNullOrEmpty(account.ImageUrl) ? avatarGender : "photo")" style="width: 112px; height: 112px;" id="profile-summary-avatar">
-                            @if (string.IsNullOrEmpty(account.ImageUrl))
-                            {
-                                <img class="avatar-img" src="~/images/avatar-@(avatarGender).png" alt="" />
-                            }
-                            else
-                            {
-                                <img class="avatar-photo" src="@account.ImageUrl" alt="" />
-                            }
+                        <div class="avatar mx-auto mb-3 border @avatarGender" style="width: 112px; height: 112px;">
+                            <img class="avatar-img" src="~/images/avatar-@(avatarGender).png" alt="" />
                         </div>
                         <div class="fw-semibold fs-5 text-truncate" id="profile-summary-name">@(string.IsNullOrWhiteSpace(account.Name) ? "No name set" : account.Name)</div>
                         <div class="small text-body-secondary text-truncate" id="profile-summary-email">@account.Email</div>
@@ -46,37 +38,8 @@
         <div class="col-lg-8">
             <section class="card border-0 bg-body-tertiary rounded-4">
                 <div class="small text-body-secondary fw-medium px-3 pt-3 pb-2">Account details</div>
-                <form class="card bg-body border-0 rounded-4 m-1" id="profile-form" novalidate
-                      data-gender="@avatarGender" data-image-url="@account.ImageUrl">
+                <form class="card bg-body border-0 rounded-4 m-1" id="profile-form" novalidate>
                     <div class="card-body">
-                        <div class="mb-4">
-                            <span class="form-label d-block">Profile picture</span>
-                            <div class="d-flex flex-wrap align-items-center gap-3">
-                                <button type="button" class="avatar border p-0 @(string.IsNullOrEmpty(account.ImageUrl) ? avatarGender : "photo")"
-                                        style="width: 88px; height: 88px;" id="profile-image-drop" aria-label="Choose a profile picture">
-                                    @if (string.IsNullOrEmpty(account.ImageUrl))
-                                    {
-                                        <img class="avatar-img" src="~/images/avatar-@(avatarGender).png" alt="" />
-                                    }
-                                    else
-                                    {
-                                        <img class="avatar-photo" src="@account.ImageUrl" alt="" />
-                                    }
-                                </button>
-                                <div>
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-sm btn-light border" id="profile-image-choose"><i class="fa-solid fa-upload me-1"></i>Upload new</button>
-                                        <button type="button" class="btn btn-sm btn-light border text-danger @(string.IsNullOrEmpty(account.ImageUrl) ? "d-none" : "")" id="profile-image-remove">Remove</button>
-                                    </div>
-                                    <small class="form-text d-block mt-1">JPG, PNG or WebP, up to @maxImageMb MB. Click the picture or drop an image on it.</small>
-                                    <small class="text-danger" id="profile-image-error"></small>
-                                </div>
-                            </div>
-                            <input type="file" id="profile-image" class="d-none"
-                                   accept="@ImageUploadService.AcceptAttribute"
-                                   data-max-bytes="@ImageUploadService.MaxImageBytes" />
-                        </div>
-
                         <div class="mb-3">
                             <label for="profile-name" class="form-label">Name</label>
                             <input type="text" class="form-control" id="profile-name" value="@account.Name"

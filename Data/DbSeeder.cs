@@ -122,11 +122,9 @@ public static class DbSeeder
             END
             """);
 
-        // Admin portal profile (name and picture) and announcement notifications.
+        // Admin portal profile name and announcement notifications.
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Admins', 'Name') IS NULL ALTER TABLE Admins ADD Name nvarchar(100) NULL");
-        await db.Database.ExecuteSqlRawAsync(
-            "IF COL_LENGTH('Admins', 'ImageUrl') IS NULL ALTER TABLE Admins ADD ImageUrl nvarchar(max) NULL");
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Admins', 'AnnouncementsSeenAt') IS NULL ALTER TABLE Admins ADD AnnouncementsSeenAt datetime2 NULL");
 

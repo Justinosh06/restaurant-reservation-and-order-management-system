@@ -10,12 +10,11 @@ public record AdminPortalInfo(
     string DisplayName,
     string Email,
     string RoleLabel,
-    string? ImageUrl,
     string AvatarGender,
     IReadOnlyList<AnnouncementNotice> Notifications,
     int UnreadCount);
 
-// What the admin layout shows for the signed-in account: its name and picture in the sidebar,
+// What the admin layout shows for the signed-in account: its name and gender avatar in the sidebar,
 // and the announcements in the notification bell. Read from the database on every page, so a
 // profile change or a new announcement shows on the next page load.
 public class AdminPortalService
@@ -44,7 +43,6 @@ public class AdminPortalService
             DisplayName: string.IsNullOrWhiteSpace(admin?.Name) ? roleLabel : admin.Name,
             Email: email,
             RoleLabel: roleLabel,
-            ImageUrl: admin?.ImageUrl,
             AvatarGender: string.Equals(gender, "Female", StringComparison.OrdinalIgnoreCase) ? "female" : "male",
             Notifications: live.Select(a => AnnouncementFeed.ToNotice(a, seenAt)).ToList(),
             UnreadCount: unreadCount);

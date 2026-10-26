@@ -143,7 +143,6 @@ public class StaffModel : PageModel
         displayId = AdminDisplay.ShortId(admin.Id),
         email = admin.Email,
         name = admin.Name,
-        imageUrl = admin.ImageUrl,
         role = admin.Role.ToString(),
         gender = admin.Gender?.ToString(),
         isCurrentUser = admin.Id == CurrentAdminId
