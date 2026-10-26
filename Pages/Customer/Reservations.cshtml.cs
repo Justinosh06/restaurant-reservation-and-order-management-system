@@ -20,7 +20,8 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 // Upcoming bookings can be cancelled here up to 24 hours before (same rule as the booking page); a paid deposit is
 // refunded, and each booking shows its deposit payment (Paid or Refunded) from Stripe.
 public class ReservationsModel(
-    ApplicationDbContext db, IPaymentService payments, StripePaymentDetails stripe, ILogger<ReservationsModel> logger) : PageModel
+    ApplicationDbContext db, IPaymentService payments, StripePaymentDetails stripe, ReservationEmailQueue reservationEmails,
+    ILogger<ReservationsModel> logger) : PageModel
 {
     public const string UpcomingTab = "upcoming";
     public const string DoneTab = "done";
@@ -116,7 +117,7 @@ public class ReservationsModel(
     public async Task<IActionResult> OnPostCancelAsync(string? reservationId)
     {
         StatusMessage = await ReservationCancellation.CancelAsync(
-            db, payments, logger, User.FindFirstValue(ClaimTypes.NameIdentifier), reservationId);
+            db, payments, reservationEmails, logger, User.FindFirstValue(ClaimTypes.NameIdentifier), reservationId);
         return RedirectToPage(new { tab = UpcomingTab });
     }
 }

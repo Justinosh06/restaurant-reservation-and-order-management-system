@@ -22,6 +22,7 @@ public class ReserveModel(
     ApplicationDbContext db,
     IPaymentService payments,
     RestaurantCurrency restaurantCurrency,
+    ReservationEmailQueue reservationEmails,
     ILogger<ReserveModel> logger) : PageModel
 {
     public const double Deposit = 20.00;
@@ -208,7 +209,7 @@ public class ReserveModel(
     public async Task<IActionResult> OnPostCancelAsync(string? reservationId)
     {
         StatusMessage = await ReservationCancellation.CancelAsync(
-            db, payments, logger, User.FindFirstValue(ClaimTypes.NameIdentifier), reservationId);
+            db, payments, reservationEmails, logger, User.FindFirstValue(ClaimTypes.NameIdentifier), reservationId);
         return RedirectToPage();
     }
 
