@@ -25,6 +25,26 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    // "1 order isn't finished" / "2 orders aren't finished".
+    function openOrdersTitle(count) {
+        return count === 1 ? "1 order isn't finished" : count + " orders aren't finished";
+    }
+
+    // The table's unfinished orders, listed above End dining session, which stays off until they're done.
+    function showOpenOrders(lines) {
+        const note = document.getElementById("endSessionBlocked");
+        const list = document.getElementById("endSessionBlockedList");
+        list.replaceChildren();
+        lines.forEach(function (line) {
+            const item = document.createElement("li");
+            item.textContent = line;
+            list.appendChild(item);
+        });
+        document.getElementById("endSessionBlockedTitle").textContent = openOrdersTitle(lines.length);
+        note.hidden = lines.length === 0;
+        document.getElementById("endSessionButton").disabled = lines.length > 0;
+    }
+
     function openTable(id) {
         const table = document.querySelector(
             '.floor-table[data-table-id="' + CSS.escape(id) + '"]'
@@ -49,6 +69,7 @@ document.addEventListener("DOMContentLoaded", function () {
         removeTableId.value = id;
         endSessionTableId.value = id;
         activeSessionManagement.hidden = table.dataset.activeSession !== "true";
+        showOpenOrders(JSON.parse(table.dataset.openOrders || "[]"));
         removeTableId.dataset.unseatCount = table.dataset.unseatCount || "0";
         removeTableId.dataset.sharedCount = table.dataset.sharedCount || "0";
         removeTableId.dataset.seatedNow = table.dataset.seatedNow || "false";
@@ -222,12 +243,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     AppDialog.guardSubmit(endSessionForm, {
         title: "End this dining session?",
-        message: "This closes the session and clears any items still in the table's cart. Orders still in progress prevent the session from ending.",
+        message: "This closes the session and clears any items still in the table's cart.",
         confirmText: "End session",
         cancelText: "Keep session",
         danger: true,
         icon: "fa-right-from-bracket"
     });
+
+    // End dining session was refused: say which orders are still open and what to do.
+    const refused = document.getElementById("endSessionRefused");
+    if (refused) {
+        const lines = refused.dataset.orders.split("\n").filter(Boolean);
+        AppDialog.alert({
+            title: "Can't end the session at " + refused.dataset.table,
+            message: openOrdersTitle(lines.length) + ":\n"
+                + lines.map(function (line) { return "• " + line; }).join("\n")
+                + "\n\nServe each order and take payment at the table's checkout, then end the session.",
+            icon: "fa-circle-exclamation"
+        });
+    }
 
     floorTables.forEach(function (button) {
         button.addEventListener("click", function () {

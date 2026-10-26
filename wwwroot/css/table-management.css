@@ -1024,8 +1024,38 @@ body:has(.service-app) {
     cursor: pointer;
 }
 
-.remove-table-button:hover {
+.remove-table-button:hover:not(:disabled) {
     background: var(--red-soft);
+}
+
+.remove-table-button:disabled {
+    border-color: #e1e5df;
+    color: #a0a49d;
+    cursor: not-allowed;
+}
+
+/* Why the dining session can't be ended yet: the table's unfinished orders. */
+.end-session-blocked {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid #f3d9a4;
+    border-radius: 9px;
+    background: #fff8e8;
+    color: #6b4e12;
+    font-size: 12px;
+}
+
+.end-session-blocked[hidden] {
+    display: none;
+}
+
+.end-session-blocked ul {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding-left: 18px;
 }
 
 @media (max-width: 760px) {

@@ -68,6 +68,13 @@
         {
             <div class="status-message" role="status">@Model.StatusMessage</div>
         }
+        @if (Model.EndSessionBlockedTable is not null)
+        {
+            @* Shown as a pop-up by table-management.js: why the session couldn't be ended. *@
+            <div id="endSessionRefused" hidden
+                 data-table="@Model.EndSessionBlockedTable"
+                 data-orders="@Model.EndSessionBlockedOrders"></div>
+        }
 
         <div class="table-workspace">
         <section class="floorplan-shell" id="floorplan" aria-label="Restaurant floor plan">
@@ -107,6 +114,7 @@
                             data-capacity="@table.Capacity"
                             data-menu-url="@Model.MenuUrl(table.Id)"
                             data-active-session="@(hasActiveSession ? "true" : "false")"
+                            data-open-orders="@System.Text.Json.JsonSerializer.Serialize(Model.OpenOrderLines.GetValueOrDefault(table.Id) ?? [])"
                             data-unseat-count="@Model.UnseatCounts.GetValueOrDefault(table.Id)"
                             data-shared-count="@Model.SharedCounts.GetValueOrDefault(table.Id)"
                             data-seated-now="@(Model.SeatedNowTableIds.Contains(table.Id) ? "true" : "false")"
@@ -279,10 +287,15 @@
                 <h3>Dining session</h3>
                 <span>Active</span>
             </div>
-            <p>End this session if it was started by mistake. Sessions with orders still in progress cannot be ended.</p>
+            <p>End this session when the guests have left. Every order has to be paid for (or cancelled) first.</p>
+            <div class="end-session-blocked" id="endSessionBlocked" hidden>
+                <strong><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> <span id="endSessionBlockedTitle"></span></strong>
+                <ul id="endSessionBlockedList"></ul>
+                <span>Serve each order and take payment at the table's checkout, then end the session.</span>
+            </div>
             <form method="post" asp-page-handler="EndSession" class="end-session-form" id="endSessionForm">
                 <input type="hidden" name="tableId" id="endSessionTableId" />
-                <button type="submit" class="remove-table-button">End dining session</button>
+                <button type="submit" class="remove-table-button" id="endSessionButton">End dining session</button>
             </form>
         </section>
 

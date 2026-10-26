@@ -74,24 +74,29 @@ public sealed class DiningSessionService
         }
     }
 
-    public async Task<bool> EndSessionAsync(string tableId)
+    // An order keeps its table's session open until it is paid for (Completed) or cancelled.
+    public static bool IsOpen(Order order) =>
+        order.Status != OrderStatus.Cancelled &&
+        order.Status != OrderStatus.Completed;
+
+    // Ends the table's session, or says why it can't: no session is open, or OpenOrders
+    // (with their items) aren't finished yet, so staff can be told which ones.
+    public async Task<EndSessionResult> EndSessionAsync(string tableId)
     {
         var session = await _db.Sessions
             .Include(session => session.Orders)
+            .ThenInclude(order => order.OrderItems)
             .SingleOrDefaultAsync(session => session.TableId == tableId && session.EndingTime == null);
 
         if (session is null)
         {
-            return false;
+            return new EndSessionResult(EndSessionOutcome.NoActiveSession, []);
         }
 
-        var hasActiveOrders = session.Orders.Any(order =>
-            order.Status != OrderStatus.Cancelled &&
-            order.Status != OrderStatus.Completed);
-
-        if (hasActiveOrders)
+        var openOrders = session.Orders.Where(IsOpen).OrderBy(order => order.CreatedAt).ToList();
+        if (openOrders.Count > 0)
         {
-            return false;
+            return new EndSessionResult(EndSessionOutcome.OrdersOpen, openOrders);
         }
 
         session.EndingTime = DateTime.UtcNow;
@@ -106,7 +111,7 @@ public sealed class DiningSessionService
         }
 
         await _db.SaveChangesAsync();
-        return true;
+        return new EndSessionResult(EndSessionOutcome.Ended, []);
     }
 
     public async Task CompleteCheckedInReservationsAsync(Session session)
@@ -147,3 +152,12 @@ public sealed class DiningSessionService
         }
     }
 }
+
+public enum EndSessionOutcome
+{
+    Ended,
+    NoActiveSession,
+    OrdersOpen
+}
+
+public sealed record EndSessionResult(EndSessionOutcome Outcome, IReadOnlyList<Order> OpenOrders);
