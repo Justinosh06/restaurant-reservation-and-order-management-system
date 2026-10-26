@@ -16,17 +16,13 @@
 
     const minutesSince = (date) => Math.max(0, Math.floor((Date.now() - new Date(date)) / 60000));
 
-    // e.g. "8 min" or "1h 25m"
-    const durationText = (minutes) =>
-        minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-
     const isOverdue = (o) => minutesSince(o.createdAt) >= LATE_AFTER_MINUTES;
 
     // Orders waiting longer than LATE_AFTER_MINUTES get a red badge.
     const waitBadge = (o) => {
         const tone = isOverdue(o) ? "bg-danger-subtle text-danger-emphasis" : "bg-body-tertiary text-body-secondary";
         return `<span class="badge rounded-pill fw-medium ${tone}" title="Placed at ${AdminUI.formatTime(o.createdAt)}">
-            <i class="fa-regular fa-clock me-1"></i>Waiting ${durationText(minutesSince(o.createdAt))}</span>`;
+            <i class="fa-regular fa-clock me-1"></i>Waiting ${AdminUI.formatDuration(minutesSince(o.createdAt))}</span>`;
     };
 
     const itemList = (o) => {
@@ -54,7 +50,7 @@
                     <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                         <div class="overflow-hidden">
                             <div class="fw-semibold">Order #${AdminUI.escapeHtml(o.displayId)}</div>
-                            <div class="small text-body-secondary text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</div>
+                            <div class="small text-body-secondary text-truncate" title="${AdminUI.escapeHtml(o.customer ?? "Walk-in")}">${AdminUI.escapeHtml(o.customer ?? "Walk-in")}</div>
                         </div>
                         <span class="badge rounded-pill bg-body-tertiary text-body border fw-medium"><i class="fa-solid fa-chair me-1"></i>Table ${AdminUI.escapeHtml(o.table ?? "-")}</span>
                     </div>
@@ -76,7 +72,7 @@
             <div class="card-body d-flex align-items-center gap-2 py-2">
                 <i class="fa-solid fa-circle-check text-success"></i>
                 <span class="small fw-medium">Order #${AdminUI.escapeHtml(o.displayId)}</span>
-                <span class="small text-body-secondary ms-auto">Table ${AdminUI.escapeHtml(o.table ?? "-")} &middot; ordered ${durationText(minutesSince(o.createdAt))} ago</span>
+                <span class="small text-body-secondary ms-auto">Table ${AdminUI.escapeHtml(o.table ?? "-")} &middot; ordered ${AdminUI.formatDuration(minutesSince(o.createdAt))} ago</span>
             </div>
         </div>`;
 

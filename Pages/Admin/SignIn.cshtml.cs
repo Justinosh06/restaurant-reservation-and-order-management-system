@@ -1,9 +1,9 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
@@ -34,20 +34,7 @@ public class SignInModel : PageModel
             return Page();
         }
 
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, admin.Id),
-            new(ClaimTypes.Name, admin.Email),
-            new(ClaimTypes.Email, admin.Email),
-            new(ClaimTypes.Role, admin.Role.ToString())
-        };
-        if (admin.Gender.HasValue)
-        {
-            claims.Add(new Claim("gender", admin.Gender.Value.ToString()));
-        }
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, AdminClaims.CreatePrincipal(admin));
 
         // The dashboard ("/") is for Administrators only, so Staff start on the Orders page.
         return Redirect(admin.Role == AdminRole.Administrator ? "/" : "/Admin/Orders");

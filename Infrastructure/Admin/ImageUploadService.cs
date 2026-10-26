@@ -2,7 +2,7 @@ using System.Text;
 
 namespace RestaurantReservation.Infrastructure.Admin;
 
-// Checks and stores images uploaded from the admin portal (promotions, menu items, profile pictures).
+// Checks and stores images uploaded from the admin portal (promotions and menu items).
 // Each feature keeps its files in its own folder under wwwroot/uploads, e.g. "uploads/menu".
 public class ImageUploadService
 {

@@ -32,6 +32,13 @@ const AdminUI = (() => {
     const formatTime = (date) =>
         new Date(date).toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" });
 
+    // A number of minutes as "45 min" or "1h 25m".
+    const formatDuration = (minutes) =>
+        minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+
+    // Indexed like JavaScript's getDay() and .NET's DayOfWeek: 0 = Sunday.
+    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
     // Bootstrap badge colour for each status/role label. Add new labels here.
     const STATUS_BADGES = {
         Pending: "text-bg-warning",
@@ -125,7 +132,7 @@ const AdminUI = (() => {
     };
 
     return {
-        escapeHtml, formatCurrency, formatDate, formatTime, currencyCode, statusBadge, tableMessageRow,
+        escapeHtml, formatCurrency, formatDate, formatTime, formatDuration, DAY_NAMES, currencyCode, statusBadge, tableMessageRow,
         showToast, showError, get, post, postForm, setBusy
     };
 })();

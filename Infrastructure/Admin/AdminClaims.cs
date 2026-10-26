@@ -5,8 +5,8 @@ namespace RestaurantReservation.Infrastructure.Admin;
 
 public static class AdminClaims
 {
-    // The login cookie for an Administrator/Staff account, issued again after a profile or account change
-    // (Profile and Staffs pages). Keep the claims the same as Pages/Admin/SignIn.cshtml.cs, which signs in.
+    // The login cookie for an Administrator/Staff account: issued when they sign in (Pages/Admin/SignIn.cshtml.cs)
+    // and again after a profile or account change (Profile and Staffs pages).
     public static ClaimsPrincipal CreatePrincipal(Models.Admin admin)
     {
         var claims = new List<Claim>
