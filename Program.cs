@@ -128,6 +128,7 @@ builder.Services.AddRazorPages(options =>
 
     options.Conventions.AuthorizeFolder("/Admin/Dashboard", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Customers", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Promotions", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Menu", "AdministratorOnly");

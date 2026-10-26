@@ -59,6 +59,14 @@
           ]
         },
         {
+          "Title": "Customers",
+          "Icon": "fa-solid fa-users",
+          "Page": "/Admin/Customers/Customer",
+          "Roles": [
+            "Administrator"
+          ]
+        },
+        {
           "Title": "Announcement",
           "Icon": "fa-solid fa-bullhorn",
           "Page": "/Admin/Announcements/Announcement",

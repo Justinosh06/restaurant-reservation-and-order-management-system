@@ -234,6 +234,46 @@
     outline-offset: 1px;
 }
 
+/* Customers page (js/admin/customers.js): initials avatar beside each name. */
+.customer-avatar {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.customer-table td:nth-child(2) {
+    max-width: 16rem;
+}
+
+/* On phones the search box takes the full row and the dropdowns share the next one; long emails are
+   cut short so the table fits without scrolling sideways. */
+@media (max-width: 767.98px) {
+    .customer-toolbar,
+    .customer-toolbar .search-pill {
+        width: 100%;
+    }
+
+    .customer-table td:nth-child(2) {
+        max-width: 11rem;
+    }
+}
+
+/* Page numbers use the dark admin colour instead of Bootstrap's blue. */
+.admin-page .pagination {
+    --bs-pagination-color: var(--bs-body-color);
+    --bs-pagination-hover-color: var(--bs-body-color);
+    --bs-pagination-focus-color: var(--bs-body-color);
+    --bs-pagination-active-bg: var(--bs-dark);
+    --bs-pagination-active-border-color: var(--bs-dark);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.15);
+}
+
 /* Dashboard table utilization list (js/admin/dashboard.js): table, seats, a slim bar and the rate. */
 .utilization-row {
     display: grid;

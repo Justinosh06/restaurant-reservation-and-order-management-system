@@ -1,0 +1,90 @@
+@page "/Admin/Customers"
+@model RestaurantReservation.Pages.Admin.Customers.CustomerModel
+@{
+    ViewData["Title"] = "Customers";
+}
+
+<div class="admin-page px-3 pt-3 pb-4">
+    <div class="mb-4">
+        <h1 class="h4 fw-semibold mb-1">Customers</h1>
+        <p class="text-body-secondary mb-0">Look up registered customer accounts and their bookings and orders. Accounts are managed by the customers themselves, so details can't be changed here.</p>
+    </div>
+
+    <section class="card border-0 bg-body-tertiary rounded-4">
+        <div class="small text-body-secondary fw-medium px-3 pt-3 pb-2">Customer accounts <span class="fw-normal" id="customer-count"></span></div>
+
+        <div class="card bg-body border-0 rounded-4 m-1 mt-0 overflow-hidden">
+            <div class="d-flex flex-wrap align-items-center gap-2 p-3">
+                <select class="form-select form-select-sm w-auto filter-pill" id="customer-page-size" aria-label="Customers per page">
+                    <option value="10">10 per page</option>
+                    <option value="25">25 per page</option>
+                    <option value="50">50 per page</option>
+                </select>
+                <div class="d-flex flex-wrap gap-2 ms-md-auto customer-toolbar">
+                    <div class="input-group input-group-sm search-pill">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+                        <input type="search" id="customer-search" class="form-control" placeholder="Search name, email or phone" aria-label="Search customers" />
+                    </div>
+                    <select class="form-select form-select-sm w-auto filter-pill" id="customer-activity-filter" aria-label="Filter by activity">
+                        <option value="">All customers</option>
+                        <option value="booked">Booked a table</option>
+                        <option value="ordered">Placed an order</option>
+                        <option value="inactive">No activity yet</option>
+                    </select>
+                    <select class="form-select form-select-sm w-auto filter-pill" id="customer-sort" aria-label="Sort customers">
+                        <option value="name">Sort by name</option>
+                        <option value="spent">Most spent</option>
+                        <option value="lastVisit">Last visit</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0 customer-table">
+                    <thead>
+                        <tr>
+                            <th class="text-body-secondary fw-medium ps-3">#</th>
+                            <th class="text-body-secondary fw-medium">Customer</th>
+                            <th class="text-body-secondary fw-medium d-none d-xl-table-cell">Email</th>
+                            <th class="text-body-secondary fw-medium d-none d-xxl-table-cell">Phone</th>
+                            <th class="text-body-secondary fw-medium text-end d-none d-xl-table-cell">Reservations</th>
+                            <th class="text-body-secondary fw-medium text-end d-none d-xl-table-cell">Orders</th>
+                            <th class="text-body-secondary fw-medium text-end">Spent</th>
+                            <th class="text-body-secondary fw-medium d-none d-sm-table-cell">Last visit</th>
+                            <th class="text-body-secondary fw-medium text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customer-rows"></tbody>
+                </table>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-top px-3 py-2">
+                <span class="small text-body-secondary" id="customer-range" aria-live="polite"></span>
+                <nav aria-label="Customer pages">
+                    <ul class="pagination pagination-sm mb-0" id="customer-pages"></ul>
+                </nav>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="customer-modal" tabindex="-1" aria-labelledby="customer-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customer-modal-title">Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="customer-detail"></div>
+            <div class="modal-footer">
+                <span class="small text-body-secondary me-auto"><i class="fa-solid fa-lock me-1"></i>View only. Passwords are never shown.</span>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
+    <script src="~/js/admin/customers.js" asp-append-version="true"></script>
+}
