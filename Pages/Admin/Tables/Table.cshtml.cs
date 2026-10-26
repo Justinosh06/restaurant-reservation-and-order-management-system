@@ -101,7 +101,7 @@ public class TableManagementModel(
         SelectedTableId = Tables.FirstOrDefault(table => table.Id == tableId)?.Id;
     }
 
-    public async Task<IActionResult> OnPostAddTableAsync(int seats)
+    public async Task<IActionResult> OnPostAddTableAsync(int seats, TableShape shape = TableShape.Rectangle)
     {
         if (!SeatOptions.Contains(seats))
         {
@@ -119,13 +119,14 @@ public class TableManagementModel(
         {
             Id = NextTableId(tables),
             Capacity = seats,
+            Shape = Enum.IsDefined(shape) ? shape : TableShape.Rectangle,
             CoordinateX = column,
             CoordinateY = row
         };
         db.Tables.Add(table);
         await db.SaveChangesAsync();
 
-        StatusMessage = $"Table {table.Id} added with {seats} seats.";
+        StatusMessage = $"{(table.Shape == TableShape.Round ? "Round table" : "Table")} {table.Id} added with {seats} seats.";
         return RedirectToPage();
     }
 

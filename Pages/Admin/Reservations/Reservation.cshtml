@@ -35,6 +35,17 @@
             }
         </span>
     }
+
+    // A round table's chairs, spaced evenly around it (placed by .chair-ring in table-management.css).
+    void ChairRing(int count)
+    {
+        <span class="chair-ring" aria-hidden="true">
+            @for (var i = 0; i < count; i++)
+            {
+                <span class="chair" style="--angle: @((360.0 * i / count).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))deg"></span>
+            }
+        </span>
+    }
 }
 
 <link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
@@ -429,12 +440,13 @@
                     : startsSoon ? "fa-clock"
                     : "fa-calendar-check";
                 <button type="button"
-                        class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
+                        class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "") @(table.Shape == RestaurantReservation.Models.TableShape.Round ? "round" : "")"
                         data-table-id="@table.Id"
                         data-capacity="@table.Capacity"
                         aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : "reserved")">
                     @{ Chairs((table.Capacity + 1) / 2); }
                     <span class="table-top">
+                        @if (table.Shape == RestaurantReservation.Models.TableShape.Round) { ChairRing(table.Capacity); }
                         <span class="table-name">@table.Id</span>
                         @if (statusIcon is not null)
                         {

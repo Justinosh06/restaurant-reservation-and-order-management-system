@@ -112,6 +112,9 @@ namespace RestaurantReservation.Data
             modelBuilder.Entity<Table>(entity =>
             {
                 entity.HasKey(t => t.Id);
+                entity.Property(t => t.Shape)
+                      .HasConversion<string>()
+                      .HasMaxLength(20);
             });
 
             // -------------------------------------------------------------

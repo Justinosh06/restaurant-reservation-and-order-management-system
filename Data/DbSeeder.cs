@@ -48,6 +48,10 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'CheckedInAt') IS NULL ALTER TABLE Reservations ADD CheckedInAt datetime2 NULL");
 
+        // Tables can be drawn round; existing ones stay rectangular.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Tables', 'Shape') IS NULL ALTER TABLE Tables ADD Shape nvarchar(20) NOT NULL DEFAULT 'Rectangle'");
+
         // Customers used to have one FullName; it is now FirstName and LastName. Older databases get the two
         // columns, filled by splitting FullName at the first space, and FullName is dropped (it is required
         // there and no longer saved, so new customers couldn't register). Dynamic SQL because new databases

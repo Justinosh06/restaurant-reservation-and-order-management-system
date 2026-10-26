@@ -2643,3 +2643,175 @@ body:has(.service-app) {
         transform: scale(.6);
     }
 }
+
+/* Add table: Rectangle / Round switch above the preview. */
+.seat-stepper-head {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.shape-toggle {
+    display: flex;
+    margin: 0;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 50rem;
+    background: #fff;
+}
+
+.shape-toggle label {
+    margin: 0;
+    cursor: pointer;
+}
+
+.shape-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.shape-toggle span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 50rem;
+    color: #212529;
+    font-size: .8125rem;
+    transition: background .15s ease, color .15s ease;
+}
+
+.shape-toggle label:hover span {
+    background: #f1f3f5;
+}
+
+.shape-toggle input:checked + span {
+    background: #212529;
+    color: #fff;
+}
+
+.shape-toggle input:focus-visible + span {
+    outline: 2px solid #212529;
+    outline-offset: 2px;
+}
+
+.shape-swatch {
+    display: inline-block;
+    width: 13px;
+    height: 9px;
+    border: 1.5px solid currentColor;
+    border-radius: 3px;
+}
+
+.shape-swatch.round {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+/* The preview turns into a round table. */
+.seat-stepper-preview .table-top {
+    transition: width .2s ease, border-radius .2s ease, min-height .2s ease;
+}
+
+.seat-stepper.round .seat-stepper-preview .table-top {
+    width: 92px;
+    min-height: 92px;
+    border-radius: 50%;
+}
+
+/* Round tables on the floor plans: a circle with the chairs above and below. */
+.floor-table.round .table-top {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    min-height: 0;
+    min-width: 112px;
+    padding: 12px;
+    border-radius: 50%;
+}
+
+.floor-table.round .table-name {
+    position: static;
+    margin-bottom: -2px;
+}
+
+.floor-table.round .chair-row {
+    width: 70%;
+}
+
+/* Round tables: the chairs sit around the circle instead of in rows above and below.
+   Each chair is turned to --angle and pushed out from the centre by --ring-radius. */
+.chair-ring {
+    display: none;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.floor-table.round .chair-ring,
+.seat-stepper.round .chair-ring {
+    display: block;
+}
+
+.floor-table.round > .chair-row,
+.seat-stepper.round .seat-stepper-preview > .chair-row {
+    visibility: hidden;
+}
+
+.chair-ring .chair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 9px;
+    margin: -4.5px 0 0 -11px;
+    transform: rotate(var(--angle)) translateY(calc(-1 * var(--ring-radius)));
+}
+
+.floor-table.round .table-top {
+    --ring-radius: 64px;
+    width: 104px;
+    min-width: 0;
+    height: 104px;
+    aspect-ratio: auto;
+    overflow: visible;
+}
+
+/* The chair rows stay (hidden) so round and rectangle tables line up; the ring needs a bit more room. */
+.floor-table.round {
+    padding: 6px 14px;
+}
+
+.seat-stepper.round .seat-stepper-preview .table-top {
+    --ring-radius: 58px;
+    position: relative;
+    overflow: visible;
+}
+
+.seat-stepper.round .seat-stepper-preview .chair-ring .chair {
+    width: 24px;
+    margin-left: -12px;
+}
+
+/* Inside a round table there's less height, so the name, icon and booking sit closer together. */
+.floor-table.round .table-top {
+    gap: 3px;
+    padding: 8px;
+}
+
+.floor-table.round .table-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.floor-table.round .table-booking {
+    gap: 1px;
+}

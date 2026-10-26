@@ -161,6 +161,10 @@ document.addEventListener("DOMContentLoaded", function () {
             stepper.querySelector(".seat-stepper-value").textContent = seats + " seats";
             drawChairs(chairRows[0], Math.ceil(seats / 2));
             drawChairs(chairRows[1], Math.floor(seats / 2));
+            // The round preview spaces the same chairs evenly around the table.
+            stepper.querySelector("[data-chairs=ring]").innerHTML = Array.from({ length: seats }, function (_, i) {
+                return "<span class=\"chair\" style=\"--angle: " + (360 * i / seats) + "deg\"></span>";
+            }).join("");
             stepper.querySelectorAll(".seat-stepper-dots span").forEach(function (dot) {
                 dot.classList.toggle("active", Number(dot.dataset.seats) === seats);
             });
@@ -174,6 +178,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (index >= 0 && index < options.length) {
                     showSeats(options[index]);
                 }
+            });
+        });
+        stepper.querySelectorAll("input[name=shape]").forEach(function (radio) {
+            radio.addEventListener("change", function () {
+                stepper.classList.toggle("round", radio.value === "Round" && radio.checked);
             });
         });
         showSeats(Number(seatInput.value));
