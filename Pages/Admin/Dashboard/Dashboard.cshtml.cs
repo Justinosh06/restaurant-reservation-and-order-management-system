@@ -18,12 +18,15 @@ public class DashboardModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
     private readonly AnalyticsReportBuilder _reports;
+    private readonly PeakHoursAnalytics _peakHours;
 
-    public DashboardModel(ApplicationDbContext db, RestaurantClock clock, AnalyticsReportBuilder reports)
+    public DashboardModel(ApplicationDbContext db, RestaurantClock clock, AnalyticsReportBuilder reports,
+        PeakHoursAnalytics peakHours)
     {
         _db = db;
         _clock = clock;
         _reports = reports;
+        _peakHours = peakHours;
     }
 
     public DateOnly Today => _clock.Today;
@@ -158,6 +161,8 @@ public class DashboardModel : PageModel
                 status = AdminDisplay.OrderStatusLabel(o.Status)
             });
 
+        var peakHours = await _peakHours.BuildAsync(fromDate, toDate);
+
         return new JsonResult(new
         {
             previousFrom = previousFrom.ToString("yyyy-MM-dd"),
@@ -177,7 +182,20 @@ public class DashboardModel : PageModel
             ordersByDay,
             ordersByHour,
             topItems,
-            recentOrders
+            recentOrders,
+            peakHours = new
+            {
+                tableCount = peakHours.TableCount,
+                rows = peakHours.Rows.Select(row => new
+                {
+                    day = (int)row.Day,
+                    hours = row.Hours.Select(cell => new
+                    {
+                        hour = cell.Hour,
+                        tables = cell.AverageTables.HasValue ? Math.Round(cell.AverageTables.Value, 1) : (double?)null
+                    })
+                })
+            }
         });
     }
 

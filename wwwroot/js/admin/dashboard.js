@@ -43,7 +43,12 @@
         foreColor: MUTED
     });
 
-    // comparison = { word: "previous" or "last month", dates: "1 Sept 2026 - 30 Sept 2026" }
+    // { word: "previous" or "last month", dates: "1 Sept 2026 - 30 Sept 2026" }
+    const comparisonFor = (data) => ({
+        word: data.compareWholeMonth ? "last month" : "previous",
+        dates: `${AdminUI.formatDate(`${data.previousFrom}T00:00:00`)} - ${AdminUI.formatDate(`${data.previousTo}T00:00:00`)}`
+    });
+
     const setDelta = (id, current, previous, format, comparison) => {
         const el = document.getElementById(id);
         const diff = current - previous;
@@ -79,10 +84,7 @@
         document.getElementById("kpi-aov").textContent = AdminUI.formatCurrency(data.averageOrderValue);
         document.getElementById("revenue-total").textContent = AdminUI.formatCurrency(data.revenue);
 
-        const comparison = {
-            word: data.compareWholeMonth ? "last month" : "previous",
-            dates: `${AdminUI.formatDate(`${data.previousFrom}T00:00:00`)} - ${AdminUI.formatDate(`${data.previousTo}T00:00:00`)}`
-        };
+        const comparison = comparisonFor(data);
         setDelta("kpi-revenue-delta", data.revenue, data.previousRevenue, AdminUI.formatCurrency, comparison);
         setDelta("kpi-orders-delta", data.orders, data.previousOrders, String, comparison);
         setDelta("kpi-reservations-delta", data.reservations, data.previousReservations, String, comparison);
@@ -173,6 +175,60 @@
         itemsChart.render();
     };
 
+    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // 0.4567 -> 45.7 (a percentage with one decimal)
+    const toPercent = (rate) => Math.round(rate * 1000) / 10;
+
+    // A weekday x hour grid shaded by the average number of tables in use, from dining sessions.
+    // The busiest cell is outlined; hours that haven't happened yet (later today) are left blank.
+    const showPeakHours = (data) => {
+        const peakHours = data.peakHours;
+        const tableEl = document.getElementById("peak-heatmap");
+        const summaryEl = document.getElementById("peak-summary");
+        const caption = tableEl.querySelector("caption").outerHTML;
+        const rows = peakHours.rows;
+
+        if (peakHours.tableCount === 0) {
+            tableEl.innerHTML = caption;
+            summaryEl.className = "small text-body-secondary mb-3";
+            summaryEl.textContent = "Add tables to see peak hours.";
+            return;
+        }
+
+        let peak = null;
+        for (const row of rows) {
+            for (const cell of row.hours) {
+                if (cell.tables > 0 && (!peak || cell.tables > peak.tables)) {
+                    peak = { day: row.day, hour: cell.hour, tables: cell.tables };
+                }
+            }
+        }
+
+        const cellHtml = (day, cell) => {
+            const where = `${DAY_NAMES[day]} ${hourLabel(cell.hour)}`;
+            if (cell.tables === null) {
+                return `<td class="upcoming" title="${where}: not yet"><span class="visually-hidden">${where}: not yet</span></td>`;
+            }
+            const share = Math.min(cell.tables / peakHours.tableCount, 1);
+            const level = cell.tables > 0 ? 0.08 + share * 0.92 : 0;
+            const isPeak = peak && peak.day === day && peak.hour === cell.hour;
+            const text = `${where}: ${cell.tables} of ${peakHours.tableCount} tables in use (${toPercent(share)}%)`;
+            return `<td class="${isPeak ? "peak" : ""}" style="--level: ${level.toFixed(2)}" title="${text}"><span class="visually-hidden">${text}</span></td>`;
+        };
+
+        const hours = rows[0].hours.map(cell => cell.hour);
+        tableEl.innerHTML = caption
+            + `<thead><tr><td></td>${hours.map(hour => `<th scope="col">${hourLabel(hour)}</th>`).join("")}</tr></thead>`
+            + `<tbody>${rows.map(row => `<tr><th scope="row">${DAY_NAMES[row.day].slice(0, 3)}</th>${row.hours.map(cell => cellHtml(row.day, cell)).join("")}</tr>`).join("")}</tbody>`;
+
+        summaryEl.className = "small mb-3";
+        summaryEl.innerHTML = peak
+            ? `Busiest: <span class="fw-semibold">${DAY_NAMES[peak.day]}, ${hourLabel(peak.hour)}</span>`
+                + ` <span class="text-body-secondary">· on average ${peak.tables} of ${peakHours.tableCount} tables in use</span>`
+            : `<span class="text-body-secondary">No tables were in use in this date range.</span>`;
+    };
+
     const showRecentOrders = (data) => {
         recentOrdersEl.innerHTML = data.recentOrders.length
             ? data.recentOrders.map(o => `
@@ -221,6 +277,7 @@
                 showRevenueChart(data);
                 showOrdersChart(data);
                 showTopItemsChart(data);
+                showPeakHours(data);
                 showRecentOrders(data);
             })
             .catch(error => {

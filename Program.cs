@@ -45,6 +45,7 @@ builder.Services.AddScoped<ImageUploadService>();
 builder.Services.AddScoped<AdminPortalService>();
 builder.Services.AddScoped<CustomerNotificationService>();
 builder.Services.AddScoped<AnalyticsReportBuilder>();
+builder.Services.AddScoped<PeakHoursAnalytics>();
 
 // The dashboard's PDF export uses QuestPDF, which is free under its Community licence for a project like this.
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;

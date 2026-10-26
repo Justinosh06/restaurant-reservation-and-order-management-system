@@ -155,6 +155,35 @@
         </div>
     </div>
 
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
+                    <span class="small text-body-secondary fw-medium">Peak hours <span class="fw-normal">(average tables in use)</span></span>
+                    <i class="fa-solid fa-circle-info small text-body-secondary" title="From dining sessions: how many tables were in use, on average, in each hour of each weekday. Hours follow when customers actually dined, so earlier opening hours still show."></i>
+                </div>
+                <div class="card bg-body border-0 rounded-4 m-1 mt-0 flex-grow-1">
+                    <div class="card-body">
+                        <p class="small mb-3" id="peak-summary">&nbsp;</p>
+                        <div class="table-responsive">
+                            <table class="peak-heatmap mb-0" id="peak-heatmap">
+                                <caption class="visually-hidden">Average number of tables in use per hour and weekday</caption>
+                            </table>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-2 small text-body-secondary mt-3" aria-hidden="true">
+                            <span>Fewer tables</span>
+                            <span class="peak-swatch" style="--level: 0.12"></span>
+                            <span class="peak-swatch" style="--level: 0.35"></span>
+                            <span class="peak-swatch" style="--level: 0.6"></span>
+                            <span class="peak-swatch" style="--level: 0.85"></span>
+                            <span>More</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-3">
         <div class="col-xxl-4">
             <div class="card h-100 border-0 bg-body-tertiary rounded-4">
