@@ -326,23 +326,31 @@
 
     <div class="panel-body">
         <form method="post" asp-page-handler="AddTable" class="reservation-form">
-            <fieldset class="seat-options">
-                <legend>Seats</legend>
-                <div class="seat-option-grid">
-                @foreach (var seats in TableManagementModel.SeatOptions)
-                {
-                    <label class="seat-option">
-                        <input type="radio" name="seats" value="@seats" checked="@(seats == 4)" />
-                        <span class="seat-preview" aria-hidden="true">
-                            @{ Chairs((seats + 1) / 2); }
-                            <span class="table-top"></span>
-                            @{ Chairs(seats / 2); }
-                        </span>
-                        <span class="seat-label">@seats seats</span>
-                    </label>
-                }
+            @* A table preview with − / + either side; the buttons step through SeatOptions (2, 4, 6). *@
+            <div class="seat-stepper" data-seat-options="@string.Join(',', TableManagementModel.SeatOptions)">
+                <span class="seat-stepper-label" id="seatStepperLabel">Seats</span>
+                <input type="hidden" name="seats" id="seatCount" value="4" />
+                <div class="seat-stepper-row">
+                    <button type="button" class="seat-step" data-step="-1" aria-label="Fewer seats">
+                        <i class="fa-solid fa-minus" aria-hidden="true"></i>
+                    </button>
+                    <div class="seat-stepper-preview" aria-hidden="true">
+                        <span class="chair-row" data-chairs="top">@for (var i = 0; i < 2; i++) { <span class="chair"></span> }</span>
+                        <span class="table-top"><span class="seat-stepper-number" id="seatStepperNumber">4</span></span>
+                        <span class="chair-row" data-chairs="bottom">@for (var i = 0; i < 2; i++) { <span class="chair"></span> }</span>
+                    </div>
+                    <button type="button" class="seat-step" data-step="1" aria-label="More seats">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    </button>
                 </div>
-            </fieldset>
+                <output class="seat-stepper-value" for="seatCount" aria-live="polite" aria-labelledby="seatStepperLabel">4 seats</output>
+                <span class="seat-stepper-dots" aria-hidden="true">
+                    @foreach (var seats in TableManagementModel.SeatOptions)
+                    {
+                        <span data-seats="@seats" class="@(seats == 4 ? "active" : "")"></span>
+                    }
+                </span>
+            </div>
             <button type="submit" class="submit-reservation-button">Add table</button>
         </form>
     </div>

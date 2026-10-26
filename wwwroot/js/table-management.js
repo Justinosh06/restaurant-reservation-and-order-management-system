@@ -143,10 +143,40 @@ document.addEventListener("DOMContentLoaded", function () {
         addPanel.classList.add("open");
         backdrop.classList.add("open");
         addPanel.setAttribute("aria-hidden", "false");
-        const checked = addPanel.querySelector("input[name=seats]:checked");
-        if (checked) {
-            checked.focus();
-        }
+        addPanel.querySelector(".seat-step:not(:disabled)")?.focus();
+    }
+
+    // Add table: − / + step through the allowed sizes and redraw the table preview.
+    const stepper = addPanel.querySelector(".seat-stepper");
+    if (stepper) {
+        const options = stepper.dataset.seatOptions.split(",").map(Number);
+        const seatInput = document.getElementById("seatCount");
+        const chairRows = stepper.querySelectorAll(".seat-stepper-preview .chair-row");
+        const drawChairs = function (row, count) {
+            row.innerHTML = "<span class=\"chair\"></span>".repeat(count);
+        };
+        const showSeats = function (seats) {
+            seatInput.value = seats;
+            document.getElementById("seatStepperNumber").textContent = seats;
+            stepper.querySelector(".seat-stepper-value").textContent = seats + " seats";
+            drawChairs(chairRows[0], Math.ceil(seats / 2));
+            drawChairs(chairRows[1], Math.floor(seats / 2));
+            stepper.querySelectorAll(".seat-stepper-dots span").forEach(function (dot) {
+                dot.classList.toggle("active", Number(dot.dataset.seats) === seats);
+            });
+            const index = options.indexOf(seats);
+            stepper.querySelector("[data-step='-1']").disabled = index === 0;
+            stepper.querySelector("[data-step='1']").disabled = index === options.length - 1;
+        };
+        stepper.querySelectorAll(".seat-step").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const index = options.indexOf(Number(seatInput.value)) + Number(button.dataset.step);
+                if (index >= 0 && index < options.length) {
+                    showSeats(options[index]);
+                }
+            });
+        });
+        showSeats(Number(seatInput.value));
     }
 
     // Closes whichever side panel is open.

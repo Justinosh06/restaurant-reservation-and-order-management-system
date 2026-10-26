@@ -2515,3 +2515,131 @@ body:has(.service-app) {
     background: #7c4dd6;
     color: #fff;
 }
+
+/* Add table: a table preview with round − / + buttons either side. */
+.seat-stepper {
+    display: flex;
+    margin: 0 0 20px;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 16px 16px;
+    border-radius: 1rem;
+    background: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.seat-stepper-label {
+    align-self: flex-start;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.seat-stepper-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.seat-step {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    place-items: center;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 50%;
+    background: #fff;
+    color: #212529;
+    font-size: 15px;
+    box-shadow: 0 2px 6px rgb(24 30 24 / 8%);
+    transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+
+.seat-step:hover:not(:disabled) {
+    border-color: #212529;
+    background: #212529;
+    color: #fff;
+}
+
+.seat-step:active:not(:disabled) {
+    transform: scale(.94);
+}
+
+.seat-step:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.seat-stepper-preview {
+    display: flex;
+    flex: 1;
+    max-width: 220px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.seat-stepper-preview .chair-row {
+    gap: 8px;
+}
+
+.seat-stepper-preview .chair {
+    flex: 0 0 26px;
+    height: 10px;
+    background: #c8cfc6;
+    animation: chair-in .18s ease;
+}
+
+.seat-stepper-preview .table-top {
+    display: grid;
+    width: 100%;
+    min-height: 64px;
+    place-items: center;
+    border: 1px solid #e3e6e1;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgb(24 30 24 / 8%);
+}
+
+.seat-stepper-number {
+    color: #212529;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.seat-stepper-value {
+    color: #212529;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.seat-stepper-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.seat-stepper-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ced4da;
+    transition: width .15s ease, background .15s ease;
+}
+
+.seat-stepper-dots span.active {
+    width: 18px;
+    border-radius: 3px;
+    background: #212529;
+}
+
+@keyframes chair-in {
+    from {
+        opacity: 0;
+        transform: scale(.6);
+    }
+}
