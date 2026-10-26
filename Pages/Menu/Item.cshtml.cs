@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Reviews;
 using RestaurantReservation.Models.Enums;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Menu;
@@ -20,6 +21,12 @@ public class ItemModel : PageModel
     public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
     public RestaurantReservation.Models.MenuItem Item { get; private set; } = null!;
     public IReadOnlyList<RestaurantReservation.Models.Feedback> Reviews { get; private set; } = [];
+
+    // The options each review's dish was ordered with, by feedback id (see ReviewOptions).
+    public Dictionary<string, IReadOnlyList<IReadOnlyDictionary<string, string>>> ReviewOptionSets { get; private set; } = [];
+
+    public IReadOnlyList<IReadOnlyDictionary<string, string>> OptionsFor(RestaurantReservation.Models.Feedback review) =>
+        ReviewOptionSets.TryGetValue(review.Id, out var sets) ? sets : [];
 
     // Average star rating, rounded to one decimal place; 0 when nobody has rated the dish yet.
     public double AverageRating => Reviews.Count == 0 ? 0 : Math.Round(Reviews.Average(r => r.Rating), 1);
@@ -45,6 +52,7 @@ public class ItemModel : PageModel
             .Where(f => f.MenuItemId == item.Id)
             .OrderByDescending(f => f.Rating)
             .ToListAsync();
+        ReviewOptionSets = await ReviewOptions.LoadAsync(_db, Reviews);
         return Page();
     }
 }

@@ -1,12 +1,17 @@
 @using Microsoft.EntityFrameworkCore
 @using RestaurantReservation.Data
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Models
 @inject ApplicationDbContext Db
+@inject RestaurantCurrency RestaurantCurrency
 @{
     // Promotion posters that pop up one after another, on the landing page and the table ordering page.
     // Only promotions running today are shown. promotionPopup.js skips any the visitor already closed
     // in this browser tab (sessionStorage), so logging in or reloading does not show them again.
     // The poster is for reading only: the close button is the one thing to click.
     var today = DateOnly.FromDateTime(DateTime.Now);
+    ViewData["CurrencySymbol"] = (await RestaurantCurrency.GetAsync()).GetSymbol();
     var promotions = await Db.Promotions
         .AsNoTracking()
         .Where(p => p.StartDate <= today && p.EndDate >= today)
@@ -22,36 +27,7 @@
     <div class="promo-popup" id="promo-popup" hidden>
         @foreach (var promotion in promotions)
         {
-            // The promotion runs to the end of its last day; the countdown counts down to that moment.
-            var endsAt = promotion.EndDate.ToDateTime(new TimeOnly(23, 59, 59));
-
-            <section class="promo-card" data-promo-id="@promotion.Id" role="dialog" aria-modal="true"
-                     aria-labelledby="promo-title-@promotion.Id" hidden>
-                <button type="button" class="promo-close" aria-label="Close promotion">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
-
-                <span class="promo-tag"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Limited-time promotion</span>
-
-                <h2 class="promo-title" id="promo-title-@promotion.Id">@promotion.Title</h2>
-
-                <p class="promo-countdown">
-                    <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                    Ends in: <span class="promo-time-left" data-ends="@endsAt.ToString("yyyy-MM-ddTHH:mm:ss")"></span>
-                </p>
-
-                @if (!string.IsNullOrWhiteSpace(promotion.ImageUrl))
-                {
-                    <img class="promo-image" src="@Url.Content(promotion.ImageUrl)" alt="@promotion.Title" />
-                }
-
-                <p class="promo-description">@promotion.Description</p>
-
-                <p class="promo-dates">
-                    Valid @promotion.StartDate.ToString("d MMM") &ndash; @promotion.EndDate.ToString("d MMM yyyy")
-                    <span class="promo-count"></span>
-                </p>
-            </section>
+            <partial name="_PromotionCard" model="promotion" />
         }
     </div>
 

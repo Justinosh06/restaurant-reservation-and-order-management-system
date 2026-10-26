@@ -1,0 +1,64 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.PromotionsModel
+@{
+    ViewData["Title"] = "Promotions";
+    ViewData["CurrencySymbol"] = Model.CurrencySymbol;
+}
+
+<link rel="stylesheet" href="~/css/promotion_popup.css" asp-append-version="true" />
+
+<section class="profile">
+    <div class="page-head">
+        <div>
+            <h1 class="section-title">Promotions</h1>
+            <p class="hint mb-0">Running now, ending soonest first. Tap a promotion to see the full poster.</p>
+        </div>
+    </div>
+
+    @if (Model.Promotions.Count == 0)
+    {
+        <p class="empty-note">There are no promotions right now. Check back soon.</p>
+    }
+    else
+    {
+        <div class="promo-list">
+            @foreach (var promotion in Model.Promotions)
+            {
+                var daysLeft = promotion.EndDate.DayNumber - Model.Today.DayNumber;
+
+                <button type="button" class="promo-box" data-promo-open="@promotion.Id"
+                        aria-label="Open promotion: @promotion.Title">
+                    <span class="promo-box-image">
+                        @if (!string.IsNullOrWhiteSpace(promotion.ImageUrl))
+                        {
+                            <img src="@Url.Content(promotion.ImageUrl)" alt="" />
+                        }
+                        else
+                        {
+                            <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                        }
+                    </span>
+                    <span class="promo-box-body">
+                        <span class="promo-box-badge @(daysLeft <= 1 ? "soon" : "")">
+                            @(daysLeft == 0 ? "Ends today" : daysLeft == 1 ? "Ends tomorrow" : $"{daysLeft} days left")
+                        </span>
+                        <strong class="promo-box-title">@promotion.Title</strong>
+                        <span class="promo-box-date">Ends @promotion.EndDate.ToString("d MMM yyyy")</span>
+                    </span>
+                </button>
+            }
+        </div>
+
+        @* The posters, opened one at a time by promotionList.js. *@
+        <div class="promo-popup" id="promo-viewer" hidden>
+            @foreach (var promotion in Model.Promotions)
+            {
+                <partial name="_PromotionCard" model="promotion" />
+            }
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/promotionList.js" asp-append-version="true"></script>
+}

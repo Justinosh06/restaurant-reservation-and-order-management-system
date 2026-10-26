@@ -1,0 +1,37 @@
+@page
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Customer.NotificationsModel
+@using RestaurantReservation.Extensions
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<section class="profile">
+    <div class="page-head">
+        <h1 class="section-title">Notifications</h1>
+    </div>
+
+    @if (Model.Announcements.Count == 0)
+    {
+        <p class="empty-note">No announcements right now. News from the restaurant will show up here.</p>
+    }
+    else
+    {
+        <div class="notification-feed">
+            @foreach (var note in Model.Announcements)
+            {
+                <article class="notice-card @(note.IsUnread ? "unread" : "")" id="ann-@note.Id">
+                    <div class="notice-head">
+                        <span class="notice-category">@note.Category</span>
+                        @if (note.IsUnread)
+                        {
+                            <span class="notice-new">New</span>
+                        }
+                        <span class="notice-time">@note.PostedAt.ToDisplayTime()</span>
+                    </div>
+                    <h2 class="notice-title">@note.Title</h2>
+                    <p class="notice-text">@note.Description</p>
+                </article>
+            }
+        </div>
+    }
+</section>

@@ -1,8 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Reservations;
+using RestaurantReservation.Infrastructure.Reviews;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Table.MenuItem;
@@ -11,8 +17,15 @@ public class MenuItemModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly DiningSessionService _diningSessions;
+    private readonly RestaurantCurrency _restaurantCurrency;
+    private readonly RestaurantOrderingHours _orderingHours;
 
-    [BindProperty]
+    // A dish without options posts no "Options[...]" fields. Without an explicit Name, model binding then falls back
+    // to binding the whole form (Quantity, Remarks, the antiforgery token) into this dictionary, so the dish looked
+    // like it had unknown options and could never be added. ValidateNever skips the automatic "required" check;
+    // OnPostAddToCartAsync checks the options against the dish itself.
+    [BindProperty(Name = "Options")]
+    [ValidateNever]
     public Dictionary<string, string> Options { get; set; } = new();
 
     [BindProperty]
@@ -21,18 +34,27 @@ public class MenuItemModel : PageModel
     [BindProperty]
     public int Quantity { get; set; } = 1;
 
-    public MenuItemModel(ApplicationDbContext db, DiningSessionService diningSessions)
+    public MenuItemModel(
+        ApplicationDbContext db,
+        DiningSessionService diningSessions,
+        RestaurantCurrency restaurantCurrency,
+        RestaurantOrderingHours orderingHours)
     {
         _db = db;
         _diningSessions = diningSessions;
+        _restaurantCurrency = restaurantCurrency;
+        _orderingHours = orderingHours;
     }
 
     public string TableId { get; set; } = string.Empty;
     public string MenuItemId { get; set; } = string.Empty;
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
     public string ActiveTab { get; private set; } = "Order";
     public RestaurantReservation.Models.MenuItem? Item { get; private set; }
     public double AverageRating { get; private set; }
     public int RatingCount { get; private set; }
+    public IReadOnlyList<Feedback> Reviews { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(string tableId, string menuItemId, string? tab = "Order")
     {
@@ -48,6 +70,12 @@ public class MenuItemModel : PageModel
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
 
+        if (await _orderingHours.IsOrderingClosedAsync())
+        {
+            return RedirectToPage("/Table/Index", new { tableId = TableId });
+        }
+
+        Currency = await _restaurantCurrency.GetAsync();
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
         MenuItemId = menuItemId.ToUpper();
         ActiveTab = string.Equals(tab, "About", StringComparison.OrdinalIgnoreCase) ? "About" : "Order";
@@ -61,6 +89,13 @@ public class MenuItemModel : PageModel
 
         if (ActiveTab == "About")
         {
+            Reviews = await _db.Feedbacks
+                .AsNoTracking()
+                .Where(feedback => feedback.MenuItemId == Item.Id)
+                .Include(feedback => feedback.Customer)
+                .OrderByDescending(feedback => feedback.CreatedAt)
+                .ToListAsync();
+
             var rating = await _db.Feedbacks
                 .AsNoTracking()
                 .Where(feedback => feedback.MenuItemId == Item.Id)
@@ -98,6 +133,12 @@ public class MenuItemModel : PageModel
             return RedirectToPage("/Table/Index", new { tableId = TableId });
         }
 
+        if (await _orderingHours.IsOrderingClosedAsync())
+        {
+            return RedirectToPage("/Table/Index", new { tableId = TableId });
+        }
+
+        Currency = await _restaurantCurrency.GetAsync();
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(activeSession.Id);
         Item = await _db.MenuItems
             .FirstOrDefaultAsync(item => item.Id == MenuItemId && item.Availability);
@@ -127,7 +168,8 @@ public class MenuItemModel : PageModel
                 !option.Value.Contains(selectedValue, StringComparer.Ordinal)) ||
             Options.Keys.Any(key => !validOptions.ContainsKey(key)))
         {
-            ModelState.AddModelError(nameof(Options), "Select a valid option for each menu item option.");
+            // Added as a page-level error so the form's validation summary shows it.
+            ModelState.AddModelError(string.Empty, "Select a valid option for each menu item option.");
         }
 
         if (!ModelState.IsValid)
@@ -136,6 +178,11 @@ public class MenuItemModel : PageModel
         }
 
         var selectedOptions = new Dictionary<string, string>(Options, StringComparer.Ordinal);
+        if (await _orderingHours.IsOrderingClosedAsync())
+        {
+            return RedirectToPage("/Table/Index", new { tableId = TableId });
+        }
+
         var matchingCartItems = await _db.CartItems
             .Where(cartItem =>
                 cartItem.SessionId == activeSession.Id &&

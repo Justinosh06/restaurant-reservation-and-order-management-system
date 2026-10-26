@@ -63,7 +63,7 @@
                                     </small>
                                 }
 
-                                <span class="price mt-1">RM @item.UnitPrice.ToString("F2")</span>
+                                <span class="price mt-1">@Model.CurrencySymbol @item.UnitPrice.ToString("F2")</span>
                             </div>
 
                             <div class="quantity-wrapper">
@@ -108,7 +108,7 @@
                             <span>
                                 <span class="summary-qty normal">@item.Quantity</span> x @item.Name
                             </span>
-                            <span class="summary-price">RM @((item.UnitPrice * item.Quantity).ToString("F2"))</span>
+                            <span class="summary-price">@Model.CurrencySymbol @((item.UnitPrice * item.Quantity).ToString("F2"))</span>
                         </div>
                     }
                 </div>
@@ -116,7 +116,7 @@
                 <div class="inner-card">
                     <div class="data-row">
                         <span>Subtotal</span>
-                        <span id="grand-total">RM @Model.Subtotal.ToString("F2")</span>
+                        <span id="grand-total">@Model.CurrencySymbol @Model.Subtotal.ToString("F2")</span>
                     </div>
                 </div>
             </div>
@@ -158,7 +158,7 @@
                             <h3 class="item-title">@item.Name</h3>
 
                             <div class="bottom-section">
-                                <span class="price">RM @item.PriceInMainUnit.ToString("F2")</span>
+                                <span class="price">@Model.CurrencySymbol @item.PriceInMainUnit.ToString("F2")</span>
                                 <span class="category">
                                     @if(item.MenuItemType.ToString() == "Beverage")
                                     {

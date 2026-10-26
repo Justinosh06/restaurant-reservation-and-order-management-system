@@ -5,8 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 using Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 using Stripe;
@@ -15,7 +18,11 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 
 // Customers pick a party size, a date and a time, then pay a deposit on Stripe Checkout.
 // Tables are not chosen here: the booking starts as Pending and staff seat it on Table Management.
-public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILogger<ReserveModel> logger) : PageModel
+public class ReserveModel(
+    ApplicationDbContext db,
+    IPaymentService payments,
+    RestaurantCurrency restaurantCurrency,
+    ILogger<ReserveModel> logger) : PageModel
 {
     public const double Deposit = 20.00;
 
@@ -24,7 +31,8 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
     private static readonly TimeSpan UnpaidHold = TimeSpan.FromMinutes(35);
 
     // Opening hours (and their defaults) come from OpeningHours, shared with the staff form.
-    private static readonly TimeSpan SlotStep = TimeSpan.FromHours(1);
+    // Public so the home page's booking card offers the same times.
+    public static readonly TimeSpan SlotStep = TimeSpan.FromHours(1);
 
     public const int MaxPartySize = 20;
 
@@ -43,18 +51,36 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
     [TempData]
     public string? StatusMessage { get; set; }
 
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
+
     public DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
 
     public DateOnly FirstDay => Today.AddDays(MinDaysAhead);
 
     public DateOnly LastDay => Today.AddDays(DaysAhead);
 
-    // Customers can cancel until the day before their booking, not on the day itself.
+    // Customers can cancel online until 24 hours before their booking (ReservationCancellation).
     public bool CanCancel(ReservationSummary booking) =>
-        DateOnly.FromDateTime(booking.ReservationAt) > Today;
+        ReservationCancellation.CanCancel(booking.ReservationAt, DateTime.Now);
 
-    public async Task OnGetAsync()
+    // The home page's booking card sends ?date=yyyy-MM-dd&time=HH:mm&guests=n; whatever is valid is pre-filled
+    // (the calendar and times then check it like any other choice).
+    public async Task OnGetAsync(DateOnly? date = null, TimeOnly? time = null, int? guests = null)
     {
+        if (date is { } day && day >= FirstDay && day <= LastDay)
+        {
+            Input.Date = day;
+            if (time is { } chosen)
+            {
+                Input.Time = chosen;
+            }
+        }
+        if (guests is >= 1 and <= MaxPartySize)
+        {
+            Input.Guests = guests.Value;
+        }
+
         await SettleExpiredUnpaidAsync();
         await LoadPageAsync();
     }
@@ -130,12 +156,14 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
             && (item.DepositStatus != DepositStatus.Unpaid || item.CreatedAt >= holdCutoff));
         if (alreadyBooked)
         {
-            ModelState.AddModelError("Input.Time", "You already have a booking at this time. See it under Upcoming reservations.");
+            ModelState.AddModelError("Input.Time", "You already have a booking at this time. See it under Reservations in your account.");
             await LoadPageAsync();
             return Page();
         }
 
         // Saved first so the seats are held while the customer pays; it only counts once paid.
+        Currency = await restaurantCurrency.GetAsync();
+
         var reservation = new RestaurantReservation.Models.Reservation
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -159,6 +187,7 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
                 User.FindFirstValue(ClaimTypes.Name) ?? "Guest",
                 User.FindFirstValue(ClaimTypes.Email),
                 Deposit,
+                Currency,
                 successUrl: $"{Request.Scheme}://{Request.Host}/Payment/{{CHECKOUT_SESSION_ID}}",
                 cancelUrl: $"{page}?handler=PaymentCancelled&reservationId={reservation.Id}");
             reservation.StripeSessionId = session.Id;
@@ -178,53 +207,15 @@ public class ReserveModel(ApplicationDbContext db, IPaymentService payments, ILo
 
     public async Task<IActionResult> OnPostCancelAsync(string? reservationId)
     {
-        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var reservation = reservationId is null ? null : await db.Reservations
-            .Include(item => item.Customer)
-            .Include(item => item.ReservationTables)
-            .FirstOrDefaultAsync(item => item.Id == reservationId && item.CustomerId == customerId);
-        if (reservation is null || reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed)
-        {
-            StatusMessage = "That booking can no longer be cancelled.";
-            return RedirectToPage();
-        }
-
-        var booking = ReservationSummary.From(reservation);
-        var at = booking.ReservationAt.ToString("dddd d MMMM 'at' h:mm tt", CultureInfo.CurrentCulture);
-        if (!CanCancel(booking))
-        {
-            StatusMessage = $"Your booking on {at} is today, so it can't be cancelled online. Please call the restaurant.";
-            return RedirectToPage();
-        }
-
-        // The deposit is refunded in full; if Stripe refuses, the booking stays so nothing is lost.
-        var refunded = false;
-        if (reservation.DepositStatus == DepositStatus.Paid && reservation.StripeSessionId is not null)
-        {
-            try
-            {
-                await payments.RefundCheckoutSessionAsync(reservation.StripeSessionId);
-                reservation.DepositStatus = DepositStatus.Refunded;
-                refunded = true;
-            }
-            catch (Exception error) when (error is StripeException or InvalidOperationException)
-            {
-                logger.LogError(error, "Could not refund the deposit for reservation {ReservationId}.", reservation.Id);
-                StatusMessage = "We couldn't refund your deposit just now, so your booking is still on. Please try again or call us.";
-                return RedirectToPage();
-            }
-        }
-
-        // Kept as Cancelled (not deleted) so staff can still see it; cancelled bookings don't hold tables.
-        reservation.Status = ReservationStatus.Cancelled;
-        await db.SaveChangesAsync();
-        StatusMessage = $"Your booking on {at} is cancelled."
-            + (refunded ? $" Your RM{Deposit:0} deposit is on its way back to your card (usually 5-10 working days)." : "");
+        StatusMessage = await ReservationCancellation.CancelAsync(
+            db, payments, logger, User.FindFirstValue(ClaimTypes.NameIdentifier), reservationId);
         return RedirectToPage();
     }
 
     private async Task LoadPageAsync()
     {
+        Currency = await restaurantCurrency.GetAsync();
+
         ClosedDays = (await LoadHoursAsync())
             .Where(day => day.IsClosed)
             .Select(day => (int)day.DayOfWeek)

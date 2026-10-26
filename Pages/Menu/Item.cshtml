@@ -19,10 +19,19 @@
 
 <div class="page-container">
     <header class="header">
-        @* Back to where the dish was opened from: the home page's Chef's specials, or the menu. *@
+        @* Back to where the dish was opened from: the home page, the Reviews page (keeping its star filter),
+           or the menu. *@
         @if (Request.Query["from"] == "home")
         {
             <a asp-page="/Index" class="back-btn" aria-label="Back to home">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        }
+        else if (Request.Query["from"] == "reviews")
+        {
+            int? reviewsRating = int.TryParse(Request.Query["rating"], out var stars) && stars is >= 1 and <= 5 ? stars : null;
+
+            <a asp-page="/Reviews" asp-route-rating="@reviewsRating" class="back-btn" aria-label="Back to reviews">
                 <i class="fa-solid fa-arrow-left"></i>
             </a>
         }
@@ -111,6 +120,7 @@
                                         }
                                     </span>
                                 </div>
+                                <partial name="_ItemOptions" model="Model.OptionsFor(review)" />
                                 @if (!string.IsNullOrWhiteSpace(review.Description))
                                 {
                                     <p>@review.Description</p>

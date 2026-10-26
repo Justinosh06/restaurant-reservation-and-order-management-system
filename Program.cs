@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Announcements;
+using RestaurantReservation.Infrastructure.Email;
 using RestaurantReservation.Infrastructure.Navigation;
+using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Infrastructure.Stripe;
 
 using RestaurantReservation.Data;
@@ -36,9 +39,27 @@ builder.Services.AddScoped<SidebarNavService>();
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddSingleton<RestaurantClock>();
 builder.Services.AddScoped<RestaurantCurrency>();
+builder.Services.AddScoped<RestaurantOrderingHours>();
 builder.Services.AddScoped<DiningSessionService>();
+builder.Services.AddScoped<ImageUploadService>();
+builder.Services.AddScoped<AdminPortalService>();
+builder.Services.AddScoped<CustomerNotificationService>();
+builder.Services.AddScoped<AnalyticsReportBuilder>();
+
+// The dashboard's PDF export uses QuestPDF, which is free under its Community licence for a project like this.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+// Announcement emails (sent to Mailpit locally; see the "Email" section of appsettings.json).
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddSingleton<AnnouncementEmailQueue>();
+builder.Services.AddHostedService<AnnouncementEmailWorker>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
+
+// Payment details from Stripe on the customer's dining visits and reservations, cached in memory.
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<RestaurantReservation.Infrastructure.Payments.StripePaymentDetails>();
 
 // Register Controllers (Required for Stripe Webhook Controller)
 builder.Services.AddControllers();
@@ -106,6 +127,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Promotions", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Menu", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Settings", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
 });
@@ -128,6 +150,17 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.Use(async (context, next) =>
+{
+    if (SiteHosts.IsAdminHost(context.Request))
+    {
+        context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+    }
+
+    await next();
+});
 app.UseStatusCodePagesWithReExecute("/NotFound");
 
 app.UseSession();

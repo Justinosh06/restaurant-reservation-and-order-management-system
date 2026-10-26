@@ -14,7 +14,7 @@
     <div class="reserve-heading">
         <div>
             <h1>Book a table</h1>
-            <p>Pick a day and a time, then pay a RM@(ReserveModel.Deposit.ToString("0")) deposit to hold your table.</p>
+            <p>Pick a day and a time, then pay a @Model.CurrencySymbol@(ReserveModel.Deposit.ToString("0")) deposit to hold your table.</p>
         </div>
         <a asp-page="/Customer/Reservations" class="reserve-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to reservations</a>
     </div>
@@ -103,8 +103,8 @@
             </div>
             <div class="reserve-footer">
                 <span id="summary">Choose a date and time.</span>
-                <button type="submit" id="bookButton" disabled><i class="fa-brands fa-cc-stripe" aria-hidden="true"></i> Pay RM@(ReserveModel.Deposit.ToString("0")) deposit</button>
-                <span class="deposit-note">Secure payment by Stripe. Refunded if you cancel by the day before.</span>
+                <button type="submit" id="bookButton" disabled><i class="fa-brands fa-cc-stripe" aria-hidden="true"></i> Pay @Model.CurrencySymbol@(ReserveModel.Deposit.ToString("0")) deposit</button>
+                <span class="deposit-note">Secure payment by Stripe. Refunded if you cancel at least 24 hours before.</span>
             </div>
         </div>
     </form>
@@ -114,7 +114,7 @@
         <section class="board-panel my-bookings" aria-labelledby="myBookingsTitle">
             <div class="panel-head">
                 <h2><span id="myBookingsTitle">Your upcoming bookings</span> <span class="count-badge">@Model.Upcoming.Count</span></h2>
-                <span class="panel-note">You can cancel up to the day before.</span>
+                <span class="panel-note">You can cancel up to 24 hours before.</span>
             </div>
             <div class="booking-list">
                 @foreach (var booking in Model.Upcoming)
@@ -135,7 +135,7 @@
                         }
                         else
                         {
-                            <span class="cancel-closed" title="Bookings can only be cancelled up to the day before.">Today</span>
+                            <span class="cancel-closed" title="Bookings can only be cancelled up to 24 hours before.">Within 24h</span>
                         }
                     </article>
                 }

@@ -8,6 +8,7 @@
     let removeSavedImage = false;
 
     const listEl = document.getElementById("promo-list");
+    const currencySymbol = document.getElementById("promotions-admin").dataset.currencySymbol;
     const statsEl = document.getElementById("promo-stats");
     const searchEl = document.getElementById("promo-search");
     const statusFilterEl = document.getElementById("promo-status-filter");
@@ -18,6 +19,10 @@
     const idInput = document.getElementById("promo-id");
     const titleInput = document.getElementById("promo-title");
     const descInput = document.getElementById("promo-description");
+    const codeInput = document.getElementById("promo-code");
+    const discountTypeInput = document.getElementById("promo-discount-type");
+    const discountValueInput = document.getElementById("promo-discount-value");
+    const minSpendInput = document.getElementById("promo-min-spend");
     const startInput = document.getElementById("promo-start");
     const endInput = document.getElementById("promo-end");
     const fileInput = document.getElementById("promo-image");
@@ -33,6 +38,40 @@
 
     const formatDay = (isoDate) => AdminUI.formatDate(`${isoDate}T00:00:00`);
     const dateRange = (p) => `${formatDay(p.startDate)} - ${formatDay(p.endDate)}`;
+
+    const formatCurrency = (amount) => `${currencySymbol} ${Number(amount).toFixed(2)}`;
+
+    // e.g. "20% off, min. spend $ 100.00"; null for promotions made before discounts existed.
+    const discountText = (p) => {
+        if (!p.discountType) return null;
+        const off = p.discountType === "Percentage" ? `${p.discountValue}% off` : `${formatCurrency(p.discountValue)} off`;
+        return p.minimumSpend > 0 ? `${off}, min. spend ${formatCurrency(p.minimumSpend)}` : off;
+    };
+
+    const discountLine = (p) => {
+        const text = discountText(p);
+        return text
+            ? `<span class="small fw-medium"><i class="fa-solid fa-tag me-1 text-body-secondary" aria-hidden="true"></i>${AdminUI.escapeHtml(text)}</span>`
+            : `<span class="small text-warning-emphasis"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>No discount set: edit to make the code usable</span>`;
+    };
+
+    // Percent takes whole numbers up to 100; a fixed discount uses the restaurant currency.
+    const syncDiscountInputs = () => {
+        const percent = discountTypeInput.value === "Percentage";
+        document.getElementById("promo-discount-value-label").textContent = percent ? "Percent" : "Amount";
+        document.getElementById("promo-discount-prefix").classList.toggle("d-none", percent);
+        document.getElementById("promo-discount-suffix").classList.toggle("d-none", !percent);
+        document.getElementById("promo-discount-error").textContent = percent
+            ? "Enter a whole number from 1 to 100."
+            : `Enter an amount of at least ${currencySymbol} 0.01.`;
+        discountValueInput.min = percent ? "1" : "0.01";
+        discountValueInput.step = percent ? "1" : "0.01";
+        if (percent) discountValueInput.max = "100"; else discountValueInput.removeAttribute("max");
+    };
+
+    const codeBadge = (p) => p.code
+        ? `<span class="badge rounded-pill text-bg-light border font-monospace fw-semibold"><i class="fa-solid fa-ticket me-1" aria-hidden="true"></i>${AdminUI.escapeHtml(p.code)}</span>`
+        : `<span class="badge rounded-pill text-bg-light border text-body-secondary fw-normal">No code yet</span>`;
 
     const statusBadge = (status) => {
         const color = STATUS_COLORS[status];
@@ -54,7 +93,11 @@
                             <h2 class="h6 fw-semibold mb-1">${title}</h2>
                             ${statusBadge(p.status)}
                         </div>
-                        <div class="small text-body-secondary"><i class="fa-regular fa-calendar me-1"></i>${dateRange(p)}</div>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            ${codeBadge(p)}
+                            <span class="small text-body-secondary"><i class="fa-regular fa-calendar me-1"></i>${dateRange(p)}</span>
+                        </div>
+                        <div class="mt-1">${discountLine(p)}</div>
                         <p class="small text-truncate mt-2 mb-0">${AdminUI.escapeHtml(p.description)}</p>
                         <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
                             <button type="button" class="btn btn-sm btn-light border" data-view="${p.id}">View</button>
@@ -106,7 +149,7 @@
 
         const term = searchEl.value.trim().toLowerCase();
         const visible = promotions.filter(p =>
-            (!term || p.title.toLowerCase().includes(term)) &&
+            (!term || p.title.toLowerCase().includes(term) || (p.code ?? "").toLowerCase().includes(term)) &&
             (!statusFilterEl.value || p.status === statusFilterEl.value));
 
         if (visible.length === 0) {
@@ -167,6 +210,11 @@
         idInput.value = p?.id ?? "";
         titleInput.value = p?.title ?? "";
         descInput.value = p?.description ?? "";
+        codeInput.value = p?.code ?? "";
+        discountTypeInput.value = p?.discountType ?? "Percentage";
+        discountValueInput.value = p?.discountType ? p.discountValue : "";
+        minSpendInput.value = p?.minimumSpend > 0 ? p.minimumSpend : "";
+        syncDiscountInputs();
         startInput.value = p?.startDate ?? "";
         endInput.value = p?.endDate ?? "";
         endInput.min = startInput.value;
@@ -182,9 +230,10 @@
         document.getElementById("promo-view-body").innerHTML = `
             ${p.imageUrl ? `<img src="${AdminUI.escapeHtml(p.imageUrl)}" class="img-fluid rounded-3 mb-3 w-100" alt="" />` : ""}
             <div class="d-flex justify-content-between align-items-center mb-3">
-                ${statusBadge(p.status)}
+                <div class="d-flex flex-wrap gap-2">${statusBadge(p.status)} ${codeBadge(p)}</div>
                 <span class="small text-body-secondary"><i class="fa-regular fa-calendar me-1"></i>${dateRange(p)}</span>
             </div>
+            <div class="mb-3">${discountLine(p)}</div>
             <p class="mb-0">${AdminUI.escapeHtml(p.description).replace(/\n/g, "<br>")}</p>`;
         viewModal.show();
     };
@@ -220,6 +269,7 @@
     });
 
     startInput.addEventListener("change", () => { endInput.min = startInput.value; });
+    discountTypeInput.addEventListener("change", syncDiscountInputs);
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -235,6 +285,10 @@
         if (editingId) data.append("id", editingId);
         data.append("title", titleInput.value.trim());
         data.append("description", descInput.value.trim());
+        data.append("code", codeInput.value.trim());
+        data.append("discountType", discountTypeInput.value);
+        data.append("discountValue", discountValueInput.value);
+        data.append("minimumSpend", minSpendInput.value);
         data.append("startDate", startInput.value);
         data.append("endDate", endInput.value);
         data.append("removeImage", String(removeSavedImage));

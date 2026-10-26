@@ -2,7 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Table;
@@ -23,14 +27,24 @@ public class CartModel : PageModel
 {
     private readonly ApplicationDbContext _db;
     private readonly DiningSessionService _diningSessions;
+    private readonly RestaurantCurrency _restaurantCurrency;
+    private readonly RestaurantOrderingHours _orderingHours;
 
-    public CartModel(ApplicationDbContext db, DiningSessionService diningSessions)
+    public CartModel(
+        ApplicationDbContext db,
+        DiningSessionService diningSessions,
+        RestaurantCurrency restaurantCurrency,
+        RestaurantOrderingHours orderingHours)
     {
         _db = db;
         _diningSessions = diningSessions;
+        _restaurantCurrency = restaurantCurrency;
+        _orderingHours = orderingHours;
     }
 
     public string TableId { get; private set; } = string.Empty;
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
     public List<CartItemViewModel> CartItems { get; private set; } = [];
     public List<RestaurantReservation.Models.MenuItem> Recommendations { get; private set; } = [];
     public decimal Subtotal => CartItems.Sum(item => item.UnitPrice * item.Quantity);
@@ -124,6 +138,11 @@ public class CartModel : PageModel
             return Page();
         }
 
+        if (await _orderingHours.IsOrderingClosedAsync())
+        {
+            return RedirectToPage("/Table/Index", new { tableId = TableId });
+        }
+
         var totalAmount = cartItems.Sum(item => (long)item.MenuItem!.Price * item.Quantity);
         if (totalAmount > 10_000_000)
         {
@@ -175,11 +194,17 @@ public class CartModel : PageModel
             return (null, RedirectToPage("/Table/Index", new { tableId = TableId }));
         }
 
+        if (await _orderingHours.IsOrderingClosedAsync())
+        {
+            return (null, RedirectToPage("/Table/Index", new { tableId = TableId }));
+        }
+
         return (session, null);
     }
 
     private async Task LoadCartAsync(Session session)
     {
+        Currency = await _restaurantCurrency.GetAsync();
         var cartItems = await _db.CartItems
             .AsNoTracking()
             .Where(item => item.SessionId == session.Id)

@@ -26,6 +26,12 @@ namespace RestaurantReservation.Models
         [ForeignKey(nameof(CustomerId))]
         public Customer? Customer { get; set; }
 
+        // The promotion whose code the table applied at checkout. It is checked again when they pay.
+        public string? PromotionId { get; set; }
+
+        [ForeignKey(nameof(PromotionId))]
+        public Promotion? Promotion { get; set; }
+
         public ICollection<Order> Orders { get; set; } = new List<Order>();
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

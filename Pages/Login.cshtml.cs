@@ -264,13 +264,29 @@ public class LoginModel : PageModel
             email,
             $"Your login code: {code}",
             $"Your login code is {code}. It works for {minutes} minutes. If you did not try to log in, you can ignore this email.",
+            // Built like an email rather than a web page, so it looks the same in Outlook, Gmail and phone apps:
+            // a table sized with attributes, empty rows for spacing (margin and padding are unreliable in email),
+            // and <strong> instead of font-weight. Spaces between the digits are left out so the code copies cleanly.
             $"""
-            <div style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:24px;color:#111">
-              <h2 style="margin:0 0 12px">Your login code</h2>
-              <p style="margin:0 0 16px">Use this code to log in. It works for {minutes} minutes.</p>
-              <p style="font-size:32px;font-weight:bold;letter-spacing:8px;margin:0 0 16px">{code}</p>
-              <p style="color:#666;font-size:13px;margin:0">If you did not try to log in, you can ignore this email.</p>
-            </div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="24"></td>
+                <td style="font-family:Arial,Helvetica,sans-serif;color:#111111">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr><td height="24"></td></tr>
+                    <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;color:#111111"><strong>Your login code</strong></td></tr>
+                    <tr><td height="12"></td></tr>
+                    <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111111">Use this code to log in. It works for {minutes} minutes.</td></tr>
+                    <tr><td height="16"></td></tr>
+                    <tr><td style="font-family:'Courier New',Courier,monospace;font-size:34px;color:#111111"><strong>{code}</strong></td></tr>
+                    <tr><td height="16"></td></tr>
+                    <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#666666">If you did not try to log in, you can ignore this email.</td></tr>
+                    <tr><td height="24"></td></tr>
+                  </table>
+                </td>
+                <td width="24"></td>
+              </tr>
+            </table>
             """);
 
         if (!sent)

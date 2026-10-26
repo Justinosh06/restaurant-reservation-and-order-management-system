@@ -5,10 +5,10 @@
 @using RestaurantReservation.Pages.Admin.Promotions
 @{
     ViewData["Title"] = "Promotions";
-    var maxImageMb = PromotionModel.MaxImageBytes / (1024 * 1024);
+    var maxImageMb = ImageUploadService.MaxImageBytes / (1024 * 1024);
 }
 
-<div class="admin-page px-3 pt-3 pb-4">
+<div class="admin-page px-3 pt-3 pb-4" id="promotions-admin" data-currency-symbol="@Model.CurrencySymbol">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="h4 fw-semibold mb-1">Promotions</h1>
@@ -22,11 +22,11 @@
                 <div class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3 pb-2">
                     <span class="small text-body-secondary fw-medium">All promotions</span>
                     <div class="d-flex flex-wrap gap-2 ms-lg-auto">
-                        <div class="input-group input-group-sm w-auto">
-                            <span class="input-group-text bg-body"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
-                            <input type="search" id="promo-search" class="form-control" placeholder="Search by title" aria-label="Search promotions by title" />
+                        <div class="input-group input-group-sm w-auto search-pill">
+                            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+                            <input type="search" id="promo-search" class="form-control" placeholder="Search by title or code" aria-label="Search promotions by title or code" />
                         </div>
-                        <select class="form-select form-select-sm w-auto" id="promo-status-filter" aria-label="Filter by status">
+                        <select class="form-select form-select-sm w-auto filter-pill" id="promo-status-filter" aria-label="Filter by status">
                             <option value="">All statuses</option>
                             <option value="Active">Active</option>
                             <option value="Scheduled">Scheduled</option>
@@ -68,8 +68,8 @@
                         </div>
                     </div>
                     <input type="file" id="promo-image" class="d-none"
-                           accept="@string.Join(", ", PromotionModel.AllowedImageTypes.Keys)"
-                           data-max-bytes="@PromotionModel.MaxImageBytes" />
+                           accept="@ImageUploadService.AcceptAttribute"
+                           data-max-bytes="@ImageUploadService.MaxImageBytes" />
                     <div class="d-flex justify-content-between align-items-center mt-1">
                         <small class="form-text">JPG, PNG or WebP, up to @maxImageMb MB</small>
                         <button type="button" class="btn btn-link link-danger btn-sm p-0 d-none" id="remove-image">Remove image</button>
@@ -88,6 +88,46 @@
                     <textarea class="form-control" id="promo-description" rows="3" maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Description)))" required placeholder="Describe the promotion and its terms..."></textarea>
                     <div class="invalid-feedback">Description is required.</div>
                 </div>
+
+                <div class="mb-3">
+                    <label for="promo-code" class="form-label">Promo code</label>
+                    <input type="text" class="form-control promo-code-input" id="promo-code"
+                           maxlength="@(ModelRules.MaxLength<Promotion>(nameof(Promotion.Code)))" pattern="[A-Za-z0-9]{4,}"
+                           autocomplete="off" spellcheck="false" placeholder="Leave blank to generate one" aria-describedby="promo-code-help" />
+                    <div class="form-text" id="promo-code-help">Letters and numbers, 4 to 20 characters. Must be different from other promotions.</div>
+                    <div class="invalid-feedback">Use 4 to 20 letters and numbers, with no spaces or symbols.</div>
+                </div>
+
+                <fieldset class="mb-3">
+                    <legend class="form-label fs-6 mb-2">Discount at checkout</legend>
+                    <div class="row g-2">
+                        <div class="col-sm-5">
+                            <label for="promo-discount-type" class="form-label small text-body-secondary mb-1">Type</label>
+                            <select class="form-select" id="promo-discount-type" required>
+                                <option value="Percentage">Percentage off</option>
+                                <option value="FixedAmount">Amount off (@Model.CurrencySymbol)</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <label for="promo-discount-value" class="form-label small text-body-secondary mb-1" id="promo-discount-value-label">Percent</label>
+                            <div class="input-group has-validation">
+                                <span class="input-group-text d-none" id="promo-discount-prefix">@Model.CurrencySymbol</span>
+                                <input type="number" class="form-control" id="promo-discount-value" min="1" max="100" step="1" required inputmode="decimal" />
+                                <span class="input-group-text" id="promo-discount-suffix">%</span>
+                                <div class="invalid-feedback" id="promo-discount-error">Enter a whole number from 1 to 100.</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4 col-6">
+                            <label for="promo-min-spend" class="form-label small text-body-secondary mb-1">Minimum spend</label>
+                            <div class="input-group has-validation">
+                                <span class="input-group-text">@Model.CurrencySymbol</span>
+                                <input type="number" class="form-control" id="promo-min-spend" min="0" step="0.01" inputmode="decimal" placeholder="None" />
+                                <div class="invalid-feedback">Enter an amount of 0 or more.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-text">Taken off the orders total when a customer enters the promo code at checkout.</div>
+                </fieldset>
 
                 <div class="row g-2">
                     <div class="col-6">

@@ -144,6 +144,24 @@ body.promo-open {
     overflow-wrap: anywhere;
 }
 
+.promo-code {
+    margin: 0;
+    padding: 6px 14px;
+    border: 1.5px dashed #2B2B2E;
+    border-radius: 10px;
+    color: #555555;
+    font-size: 0.85rem;
+    text-align: center;
+
+    strong {
+        margin: 0 2px;
+        color: #2B2B2E;
+        font-size: 1rem;
+        letter-spacing: 1px;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+}
+
 .promo-dates {
     margin: 0;
     color: #888888;

@@ -1,8 +1,22 @@
 @using RestaurantReservation.Models
 @model RestaurantReservation.Models.Reservation
 
-@* One upcoming booking: date, time and status on top, the booking details below.
-   Used by the Upcoming reservations page. *@
+@* One booking: date, time and status on top, the booking details below. Used by the Reservations page. *@
+@{
+    var statusText = Model.Status switch
+    {
+        ReservationStatus.Pending => "Waiting for confirmation",
+        ReservationStatus.CheckedIn => "Checked in",
+        _ => Model.Status.ToString()
+    };
+    var statusClass = Model.Status switch
+    {
+        ReservationStatus.Pending => "muted",
+        ReservationStatus.Cancelled => "cancelled",
+        ReservationStatus.Completed => "muted",
+        _ => ""
+    };
+}
 
 <div class="upcoming-head">
     <div class="upcoming-date">
@@ -13,7 +27,7 @@
         <span class="upcoming-day">@Model.Date.ToString("dddd")</span>
         <span class="upcoming-time">@Model.TimeSlot.ToString("h:mm tt")</span>
     </div>
-    <span class="status-pill @(Model.Status == ReservationStatus.Pending ? "muted" : "")">@Model.Status</span>
+    <span class="status-pill @statusClass">@statusText</span>
 </div>
 
 <dl class="upcoming-details">

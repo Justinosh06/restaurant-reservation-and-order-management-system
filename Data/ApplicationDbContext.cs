@@ -178,6 +178,11 @@ namespace RestaurantReservation.Data
                       .HasForeignKey(s => s.CustomerId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .IsRequired(false);
+                entity.HasOne(s => s.Promotion)
+                      .WithMany()
+                      .HasForeignKey(s => s.PromotionId)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
                 entity.HasIndex(s => s.TableId)
                       .IsUnique()
                       .HasFilter("[TableId] IS NOT NULL AND [EndingTime] IS NULL");
@@ -217,7 +222,8 @@ namespace RestaurantReservation.Data
                 entity.HasOne(oi => oi.MenuItem)
                       .WithMany()
                       .HasForeignKey(oi => oi.MenuItemId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // -------------------------------------------------------------
@@ -306,6 +312,12 @@ namespace RestaurantReservation.Data
             modelBuilder.Entity<Promotion>(entity =>
             {
                 entity.HasKey(p => p.Id);
+                entity.Property(p => p.DiscountType)
+                      .HasConversion<string>()
+                      .HasMaxLength(20);
+                entity.HasIndex(p => p.Code)
+                      .IsUnique()
+                      .HasFilter("[Code] IS NOT NULL");
             });
 
             // -------------------------------------------------------------

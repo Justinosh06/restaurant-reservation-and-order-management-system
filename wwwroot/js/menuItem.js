@@ -11,6 +11,34 @@
             });
         });
 
+        const addToCartForm = document.querySelector("#add-to-cart-form");
+        if (addToCartForm) {
+            const optionAlert = addToCartForm.querySelector("#option-validation-alert");
+            const hasMissingOption = () => {
+                const optionInputs = [...addToCartForm.querySelectorAll('input[type="radio"][required]')];
+                const optionGroups = new Set(optionInputs.map((input) => input.name));
+                return [...optionGroups].some((name) =>
+                    !optionInputs.some((input) => input.name === name && input.checked));
+            };
+
+            addToCartForm.addEventListener("submit", (event) => {
+                if (hasMissingOption()) {
+                    event.preventDefault();
+                    optionAlert?.classList.remove("d-none");
+                    optionAlert?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    return;
+                }
+
+                optionAlert?.classList.add("d-none");
+            });
+
+            addToCartForm.addEventListener("change", (event) => {
+                if (event.target.matches('input[type="radio"]') && !hasMissingOption()) {
+                    optionAlert?.classList.add("d-none");
+                }
+            });
+        }
+
         const quantityInput = document.querySelector("#quantity-input");
         const quantityDisplay = document.querySelector("#quantity-display");
         const quantityButtons = document.querySelectorAll("[data-quantity-change]");
