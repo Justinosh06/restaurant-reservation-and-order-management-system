@@ -60,6 +60,9 @@ builder.Services.AddHostedService<AnnouncementEmailWorker>();
 // Reservation confirmed / changed / cancelled emails, sent in the background like announcements.
 builder.Services.AddSingleton<ReservationEmailQueue>();
 builder.Services.AddHostedService<ReservationEmailWorker>();
+// Promotion emails: every customer is emailed once when a promotion starts.
+builder.Services.AddSingleton<PromotionEmailSignal>();
+builder.Services.AddHostedService<PromotionEmailWorker>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 

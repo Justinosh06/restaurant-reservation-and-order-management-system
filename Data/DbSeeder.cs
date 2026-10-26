@@ -105,6 +105,16 @@ public static class DbSeeder
             END
             """);
 
+        // When customers were emailed about a promotion. Promotions that exist before this column count as
+        // already emailed, so adding it doesn't email customers about old promotions.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Promotions', 'EmailedAt') IS NULL
+            BEGIN
+                ALTER TABLE Promotions ADD EmailedAt datetime2 NULL;
+                EXEC(N'UPDATE Promotions SET EmailedAt = SYSUTCDATETIME();');
+            END
+            """);
+
         // Promo code discounts, and the code a dining session applied at checkout (same key and index as EnsureCreated).
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Promotions', 'DiscountType') IS NULL ALTER TABLE Promotions ADD DiscountType nvarchar(20) NULL");

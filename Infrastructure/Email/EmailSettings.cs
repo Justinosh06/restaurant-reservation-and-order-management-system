@@ -15,6 +15,10 @@ public class EmailSettings
     public string? UserName { get; set; }
     public string? Password { get; set; }
 
+    // The customer site's address, for links in emails sent without a web request to take it from
+    // (e.g. a promotion emailed on its start date). Matches the https profile in launchSettings.json.
+    public string SiteUrl { get; set; } = "https://localhost:7299";
+
     public string FromAddress { get; set; } = "no-reply@resto.local";
     public string FromName { get; set; } = "Resto";
 }

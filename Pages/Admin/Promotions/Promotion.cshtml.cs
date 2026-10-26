@@ -4,9 +4,13 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Extensions;
+using Microsoft.Extensions.Options;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Authentication;
+using RestaurantReservation.Infrastructure.Email;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
+using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Admin.Promotions;
 
@@ -20,18 +24,26 @@ public class PromotionModel : PageModel
     private readonly ImageUploadService _images;
     private readonly RestaurantClock _clock;
     private readonly RestaurantCurrency _restaurantCurrency;
+    private readonly PromotionEmailSignal _emailSignal;
 
     public PromotionModel(
         ApplicationDbContext db,
         ImageUploadService images,
         RestaurantClock clock,
-        RestaurantCurrency restaurantCurrency)
+        RestaurantCurrency restaurantCurrency,
+        PromotionEmailSignal emailSignal,
+        IOptions<EmailSettings> emailSettings)
     {
         _db = db;
         _images = images;
         _clock = clock;
         _restaurantCurrency = restaurantCurrency;
+        _emailSignal = emailSignal;
+        EmailsEnabled = emailSettings.Value.Enabled;
     }
+
+    // Lets the page tell the admin when customers will be emailed about a promotion (PromotionEmailWorker).
+    public bool EmailsEnabled { get; }
 
     // Generated codes leave out 0, O, 1 and I, which are easy to misread.
     private const string CodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -100,6 +112,8 @@ public class PromotionModel : PageModel
             throw;
         }
 
+        // Emails customers now if it has started, or on its start date if it is scheduled.
+        _emailSignal.Wake(SiteHosts.MainSiteUrl(Request, "/Customer/Promotions"));
         return new JsonResult(ToDto(promotion));
     }
 
@@ -166,6 +180,8 @@ public class PromotionModel : PageModel
             _images.Delete(oldImageUrl, UploadFolder);
         }
 
+        // A scheduled promotion moved to start today is emailed now; one already emailed is not sent again.
+        _emailSignal.Wake(SiteHosts.MainSiteUrl(Request, "/Customer/Promotions"));
         return new JsonResult(ToDto(promotion));
     }
 
