@@ -274,6 +274,18 @@
     --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.15);
 }
 
+/* Screen-reader-only text inside a sideways-scrolling table (e.g. the peak hours heatmap) is absolutely
+   positioned; without this it escapes the scroll box and makes the whole page scroll sideways on phones. */
+.admin-page .table-responsive {
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .customer-toolbar .search-pill {
+        width: 16rem;
+    }
+}
+
 /* Dashboard table utilization list (js/admin/dashboard.js): table, seats, a slim bar and the rate. */
 .utilization-row {
     display: grid;

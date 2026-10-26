@@ -33,9 +33,12 @@
 <body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()">
     @Html.AntiForgeryToken()
     <div class="page-content">
-        <div class="sidebar">
+        @* On screens narrower than 992px the sidebar becomes a slide-out menu (Bootstrap offcanvas-lg),
+           opened from the top bar's menu button. *@
+        <div class="sidebar offcanvas-lg offcanvas-start" id="admin-sidebar" tabindex="-1" aria-label="Admin menu">
             <div class="header">
                 <h1 class="logo">Resto</h1>
+                <button type="button" class="btn-close d-lg-none order-last mt-2 me-2" data-bs-dismiss="offcanvas" data-bs-target="#admin-sidebar" aria-label="Close menu"></button>
 
                 <div class="dropdown notification-bell">
                     <button type="button" class="bell-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
@@ -130,6 +133,18 @@
         </div>
 
         <main role="main" class="content-container">
+            <div class="admin-topbar d-lg-none">
+                <button type="button" class="menu-btn" data-bs-toggle="offcanvas" data-bs-target="#admin-sidebar" aria-controls="admin-sidebar"
+                        aria-label="Open menu@(me.UnreadCount > 0 ? $", {me.UnreadCount} unread announcements" : "")">
+                    <i class="fa-solid fa-bars"></i>
+                    @if (me.UnreadCount > 0)
+                    {
+                        <span class="menu-dot"></span>
+                    }
+                </button>
+                <span class="logo">Resto</span>
+                <span class="page-title text-truncate">@ViewData["Title"]</span>
+            </div>
             @RenderBody()
         </main>
     </div>
