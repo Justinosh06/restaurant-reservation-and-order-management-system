@@ -21,7 +21,10 @@ public sealed class RestaurantOrderingHours
         var hours = await _db.BusinessHours.AsNoTracking()
             .FirstOrDefaultAsync(day => day.DayOfWeek == now.DayOfWeek);
 
-        return hours?.IsClosed == true ||
-            (hours?.CloseTime ?? OpeningHours.DefaultClose) <= TimeOnly.FromDateTime(now);
+        var currentTime = TimeOnly.FromDateTime(now);
+        var openTime = hours?.OpenTime ?? OpeningHours.DefaultOpen;
+        var closeTime = hours?.CloseTime ?? OpeningHours.DefaultClose;
+
+        return hours?.IsClosed == true || currentTime < openTime || currentTime >= closeTime;
     }
 }
