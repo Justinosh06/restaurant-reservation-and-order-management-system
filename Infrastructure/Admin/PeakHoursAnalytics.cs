@@ -4,17 +4,17 @@ using RestaurantReservation.Infrastructure.Reservations;
 
 namespace RestaurantReservation.Infrastructure.Admin;
 
-// AverageTables is null for an hour that has not happened yet (later today).
-public sealed record PeakHourCell(int Hour, double? AverageTables);
+// AverageTables is null when there is nothing to average: Closed says the restaurant was closed in that hour on
+// every such day in the range; otherwise the hour has not happened yet (later today).
+public sealed record PeakHourCell(int Hour, double? AverageTables, bool Closed);
 
 public sealed record PeakHourRow(DayOfWeek Day, IReadOnlyList<PeakHourCell> Hours);
 
 public sealed record PeakHoursReport(int TableCount, IReadOnlyList<PeakHourRow> Rows);
 
 // Peak hours from dining sessions: a table is in use from the session's start until it ends (or until now
-// while it is still open). Opening hours are not used to cut sessions off, because they can change over time
-// and only the current ones are stored; a session can only happen while the restaurant is open, so the
-// sessions themselves show the hours it really was open.
+// while it is still open). Only time inside the opening hours in force on that date counts (OpeningHoursSchedule),
+// the same rule as table utilization, so a session left open overnight can't fill the small hours.
 public class PeakHoursAnalytics
 {
     private readonly ApplicationDbContext _db;
@@ -27,18 +27,23 @@ public class PeakHoursAnalytics
     }
 
     // One row per weekday in the range, Monday first. Each cell is the average number of tables in use during
-    // that hour, across every date in the range that falls on that weekday. The hours shown are the current
-    // opening hours plus any other hour that had a session in the range (e.g. under earlier opening hours).
+    // that hour, over the minutes the restaurant was open in that hour on every date in the range that falls on
+    // that weekday. The columns run from the earliest opening to the latest closing hour in the range.
     public async Task<PeakHoursReport> BuildAsync(DateOnly from, DateOnly to)
     {
         var tableIds = (await _db.Tables.AsNoTracking().Select(t => t.Id).ToListAsync()).ToHashSet();
-
+        var schedule = await OpeningHoursSchedule.LoadAsync(_db);
         var now = _clock.Now;
-        var rangeStart = from.ToDateTime(TimeOnly.MinValue);
-        var rangeEnd = to.AddDays(1).ToDateTime(TimeOnly.MinValue);
-        if (rangeEnd > now)
+
+        var dates = Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).Select(i => from.AddDays(i)).ToList();
+        var openWindows = new Dictionary<DateOnly, (DateTime Start, DateTime End)>();
+        foreach (var date in dates)
         {
-            rangeEnd = now;
+            var day = schedule.ForDate(date);
+            if (!day.IsClosed && day.Close > day.Open)
+            {
+                openWindows[date] = (date.ToDateTime(day.Open), date.ToDateTime(day.Close));
+            }
         }
 
         var startUtc = _clock.StartOfDayUtc(from);
@@ -50,26 +55,24 @@ public class PeakHoursAnalytics
                 .ToListAsync())
             .Where(s => tableIds.Contains(s.TableId));
 
-        // Table-minutes in use for each (date, hour) slot.
+        // Table-minutes in use for each (date, hour) slot, counting only time the restaurant was open.
         var usedMinutes = new Dictionary<(DateOnly Date, int Hour), double>();
         foreach (var session in sessions)
         {
-            var start = Later(_clock.ToLocal(session.StartingTime), rangeStart);
-            var end = Earlier(_clock.ToLocal(session.EndingTime ?? nowUtc), rangeEnd);
-            foreach (var slot in SplitByHour(start, end))
+            var sessionStart = _clock.ToLocal(session.StartingTime);
+            var sessionEnd = _clock.ToLocal(session.EndingTime ?? nowUtc);
+            foreach (var window in openWindows.Values)
             {
-                usedMinutes[(slot.Date, slot.Hour)] = usedMinutes.GetValueOrDefault((slot.Date, slot.Hour)) + slot.Minutes;
+                var start = Later(sessionStart, window.Start);
+                var end = Earlier(Earlier(sessionEnd, window.End), now);
+                foreach (var slot in SplitByHour(start, end))
+                {
+                    usedMinutes[(slot.Date, slot.Hour)] = usedMinutes.GetValueOrDefault((slot.Date, slot.Hour)) + slot.Minutes;
+                }
             }
         }
 
-        var hours = (await CurrentOpeningHoursAsync())
-            .Concat(usedMinutes.Keys.Select(k => k.Hour))
-            .Distinct()
-            .Order()
-            .ToList();
-        hours = Enumerable.Range(hours.Min(), hours.Max() - hours.Min() + 1).ToList();
-
-        var dates = Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).Select(i => from.AddDays(i)).ToList();
+        var hours = HoursShown(openWindows.Values);
         var rows = OpeningHoursSchedule.WeekOrder
             .Where(day => dates.Any(d => d.DayOfWeek == day))
             .Select(day =>
@@ -77,11 +80,12 @@ public class PeakHoursAnalytics
                 var dayDates = dates.Where(d => d.DayOfWeek == day).ToList();
                 var cells = hours.Select(hour =>
                 {
-                    // Minutes of this hour that have already happened, over all these dates (less than 60 for
-                    // the current hour today, none for later hours today).
-                    var passedMinutes = dayDates.Sum(d => MinutesPassed(d, hour, now));
+                    // Minutes of this hour the restaurant was open, over all these dates: all of them for
+                    // the closed-or-not test, and only those already passed for the average.
+                    var openMinutes = dayDates.Sum(d => OpenMinutes(openWindows, d, hour, DateTime.MaxValue));
+                    var passedMinutes = dayDates.Sum(d => OpenMinutes(openWindows, d, hour, now));
                     var used = dayDates.Sum(d => usedMinutes.GetValueOrDefault((d, hour)));
-                    return new PeakHourCell(hour, passedMinutes > 0 ? used / passedMinutes : null);
+                    return new PeakHourCell(hour, passedMinutes > 0 ? used / passedMinutes : null, Closed: openMinutes == 0);
                 }).ToList();
                 return new PeakHourRow(day, cells);
             })
@@ -90,35 +94,30 @@ public class PeakHoursAnalytics
         return new PeakHoursReport(tableIds.Count, rows);
     }
 
-    // Each hour the restaurant is open in the current weekly hours, e.g. 12:00-22:00 gives 12 to 21.
-    private async Task<List<int>> CurrentOpeningHoursAsync()
+    // Every hour from the earliest opening to the last hour before the latest closing, e.g. 12:00-22:00
+    // gives 12 to 21. With no open day in the range, the default hours.
+    private static List<int> HoursShown(IEnumerable<(DateTime Start, DateTime End)> windows)
     {
-        var businessHours = await _db.BusinessHours.AsNoTracking().ToListAsync();
-        var hours = new List<int>();
-        foreach (var day in OpeningHoursSchedule.WeekOrder)
-        {
-            var dayHours = businessHours.FirstOrDefault(h => h.DayOfWeek == day);
-            if (dayHours is { IsClosed: true })
-            {
-                continue;
-            }
-
-            var open = dayHours?.OpenTime ?? OpeningHours.DefaultOpen;
-            var close = dayHours?.CloseTime ?? OpeningHours.DefaultClose;
-            var lastHour = close.Minute == 0 ? close.Hour - 1 : close.Hour;
-            for (var hour = open.Hour; hour <= lastHour; hour++)
-            {
-                hours.Add(hour);
-            }
-        }
-
-        return hours.Count > 0 ? hours : [OpeningHours.DefaultOpen.Hour];
+        var list = windows.ToList();
+        var first = list.Count > 0 ? list.Min(w => w.Start.Hour) : OpeningHours.DefaultOpen.Hour;
+        var last = list.Count > 0
+            ? list.Max(w => w.End.Minute == 0 ? w.End.Hour - 1 : w.End.Hour)
+            : OpeningHours.DefaultClose.Hour - 1;
+        return Enumerable.Range(first, Math.Max(last - first + 1, 1)).ToList();
     }
 
-    private static double MinutesPassed(DateOnly date, int hour, DateTime now)
+    // Minutes of the given hour on the given date that the restaurant was open, up to the given time.
+    private static double OpenMinutes(Dictionary<DateOnly, (DateTime Start, DateTime End)> openWindows, DateOnly date, int hour, DateTime until)
     {
+        if (!openWindows.TryGetValue(date, out var window))
+        {
+            return 0;
+        }
+
         var slotStart = date.ToDateTime(new TimeOnly(hour, 0));
-        return Math.Clamp((now - slotStart).TotalMinutes, 0, 60);
+        var start = Later(slotStart, window.Start);
+        var end = Earlier(Earlier(slotStart.AddHours(1), window.End), until);
+        return end > start ? (end - start).TotalMinutes : 0;
     }
 
     private static IEnumerable<(DateOnly Date, int Hour, double Minutes)> SplitByHour(DateTime start, DateTime end)

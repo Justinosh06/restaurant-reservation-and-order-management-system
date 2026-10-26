@@ -361,7 +361,8 @@
         const cellHtml = (day, cell) => {
             const where = `${AdminUI.DAY_NAMES[day]} ${hourLabel(cell.hour)}`;
             if (cell.tables === null) {
-                return `<td class="upcoming" title="${where}: not yet"><span class="visually-hidden">${where}: not yet</span></td>`;
+                const state = cell.closed ? "closed" : "not yet";
+                return `<td class="upcoming" title="${where}: ${state}"><span class="visually-hidden">${where}: ${state}</span></td>`;
             }
             const share = Math.min(cell.tables / peakHours.tableCount, 1);
             const level = cell.tables > 0 ? 0.08 + share * 0.92 : 0;

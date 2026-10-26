@@ -231,7 +231,8 @@ public class DashboardModel : PageModel
                     hours = row.Hours.Select(cell => new
                     {
                         hour = cell.Hour,
-                        tables = cell.AverageTables.HasValue ? Math.Round(cell.AverageTables.Value, 1) : (double?)null
+                        tables = cell.AverageTables.HasValue ? Math.Round(cell.AverageTables.Value, 1) : (double?)null,
+                        closed = cell.Closed
                     })
                 })
             }
