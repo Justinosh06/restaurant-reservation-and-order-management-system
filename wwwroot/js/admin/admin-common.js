@@ -19,6 +19,10 @@ const AdminUI = (() => {
     const currencySymbol = document.body.dataset.currencySymbol || "RM";
     const currencyCode = document.body.dataset.currencyCode || "MYR";
 
+    // The signed-in role (_AdminLayout.cshtml puts it on <body>). Pages hide buttons Staff may not use;
+    // the server refuses those requests too.
+    const isAdministrator = document.body.dataset.role === "Administrator";
+
     // Amounts are stored in cents in the database (e.g. 6800 -> "RM 68.00" or "$68.00").
     const formatCurrency = (amountInCents) => {
         const amount = (amountInCents / 100).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -135,7 +139,7 @@ const AdminUI = (() => {
     };
 
     return {
-        escapeHtml, formatCurrency, formatDate, formatTime, formatDuration, DAY_NAMES, currencyCode, statusBadge, tableMessageRow,
+        escapeHtml, formatCurrency, formatDate, formatTime, formatDuration, DAY_NAMES, currencyCode, isAdministrator, statusBadge, tableMessageRow,
         showToast, showError, get, post, postForm, setBusy
     };
 })();

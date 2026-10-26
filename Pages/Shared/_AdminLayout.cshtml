@@ -4,6 +4,7 @@
 
 @using RestaurantReservation.Extensions
 @using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Infrastructure.Authentication
 @using RestaurantReservation.Infrastructure.Navigation
 @inject SidebarNavService NavService
 @inject RestaurantCurrency Currency
@@ -30,7 +31,7 @@
     <link rel="stylesheet" href="~/css/admin-pages.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/confirm-dialog.css" asp-append-version="true" />
 </head>
-<body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()">
+<body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()" data-role="@(User.IsInRole(AppRoles.Administrator) ? AppRoles.Administrator : AppRoles.Staff)">
     @Html.AntiForgeryToken()
     <div class="page-content">
         @* On screens narrower than 992px the sidebar becomes a slide-out menu (Bootstrap offcanvas-lg),

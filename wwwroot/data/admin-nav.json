@@ -48,7 +48,8 @@
           "Icon": "fa-solid fa-utensils",
           "Page": "/Admin/Menu/Menu",
           "Roles": [
-            "Administrator"
+            "Administrator",
+            "Staff"
           ]
         },
         {          "Title": "Staffs",
@@ -71,7 +72,8 @@
           "Icon": "fa-solid fa-bullhorn",
           "Page": "/Admin/Announcements/Announcement",
           "Roles": [
-            "Administrator"
+            "Administrator",
+            "Staff"
           ]
         },
         {
@@ -79,7 +81,8 @@
           "Icon": "fa-solid fa-tags",
           "Page": "/Admin/Promotions/Promotion",
           "Roles": [
-            "Administrator"
+            "Administrator",
+            "Staff"
           ]
         },
         {

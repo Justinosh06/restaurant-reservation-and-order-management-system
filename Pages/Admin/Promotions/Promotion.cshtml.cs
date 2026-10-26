@@ -11,6 +11,7 @@ using RestaurantReservation.Models.Enums;
 namespace RestaurantReservation.Pages.Admin.Promotions;
 
 [RequestFormLimits(MultipartBodyLengthLimit = ImageUploadService.MaxRequestBytes)]
+[AdministratorChangesOnly]
 public class PromotionModel : PageModel
 {
     private const string UploadFolder = "uploads/promotions";

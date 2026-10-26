@@ -101,8 +101,9 @@
                         <p class="small text-truncate mt-2 mb-0">${AdminUI.escapeHtml(p.description)}</p>
                         <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
                             <button type="button" class="btn btn-sm btn-light border" data-view="${p.id}">View</button>
+                            ${AdminUI.isAdministrator ? `
                             <button type="button" class="btn btn-sm btn-light border" data-edit="${p.id}">Edit</button>
-                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${p.id}" aria-label="Delete ${title}">Delete</button>
+                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${p.id}" aria-label="Delete ${title}">Delete</button>` : ""}
                         </div>
                     </div>
                 </div>
@@ -238,7 +239,8 @@
         viewModal.show();
     };
 
-    document.getElementById("btn-new-promotion").addEventListener("click", () => openForm(null));
+    // Not on the page for Staff, who can only view.
+    document.getElementById("btn-new-promotion")?.addEventListener("click", () => openForm(null));
 
     dropEl.addEventListener("click", () => fileInput.click());
     dropEl.addEventListener("keydown", (e) => {

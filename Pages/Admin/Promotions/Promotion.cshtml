@@ -1,6 +1,7 @@
 @page "/Admin/Promotions"
 @model RestaurantReservation.Pages.Admin.Promotions.PromotionModel
 @using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Infrastructure.Authentication
 @using RestaurantReservation.Models
 @{
     ViewData["Title"] = "Promotions";
@@ -11,8 +12,15 @@
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="h4 fw-semibold mb-1">Promotions</h1>
+            @if (!User.IsInRole(AppRoles.Administrator))
+            {
+                <p class="text-body-secondary mb-0"><i class="fa-solid fa-lock me-1"></i>View only. Ask an Administrator to add or change promotions.</p>
+            }
         </div>
-        <button type="button" class="btn btn-dark" id="btn-new-promotion"><i class="fa-solid fa-plus me-1"></i> New promotion</button>
+        @if (User.IsInRole(AppRoles.Administrator))
+        {
+            <button type="button" class="btn btn-dark" id="btn-new-promotion"><i class="fa-solid fa-plus me-1"></i> New promotion</button>
+        }
     </div>
 
     <div class="row g-3">

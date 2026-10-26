@@ -12,6 +12,7 @@ using RestaurantReservation.Services;
 
 namespace RestaurantReservation.Pages.Admin.Announcements;
 
+[AdministratorChangesOnly]
 public class AnnouncementModel : PageModel
 {
     public static readonly IReadOnlyList<(string Name, string Icon)> Categories =

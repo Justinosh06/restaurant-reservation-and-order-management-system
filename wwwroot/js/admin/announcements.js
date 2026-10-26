@@ -62,9 +62,10 @@
                         <p class="small text-truncate mt-2 mb-0">${AdminUI.escapeHtml(a.description)}</p>
                         <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
                             <button type="button" class="btn btn-sm btn-light border" data-view="${a.id}">View</button>
+                            ${AdminUI.isAdministrator ? `
                             <button type="button" class="btn btn-sm btn-light border" data-edit="${a.id}">Edit</button>
                             <button type="button" class="btn btn-sm btn-light border" data-toggle="${a.id}" aria-label="${a.isActive ? "Hide" : "Show"} ${title}">${a.isActive ? "Hide" : "Show"}</button>
-                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${a.id}" aria-label="Delete ${title}">Delete</button>
+                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${a.id}" aria-label="Delete ${title}">Delete</button>` : ""}
                         </div>
                     </div>
                 </div>
@@ -176,7 +177,8 @@
         if (index >= 0) announcements[index] = updated; else announcements.unshift(updated);
     };
 
-    document.getElementById("btn-new-announcement").addEventListener("click", () => openForm(null));
+    // Not on the page for Staff, who can only view.
+    document.getElementById("btn-new-announcement")?.addEventListener("click", () => openForm(null));
     descInput.addEventListener("input", updateCharCount);
 
     form.addEventListener("submit", async (e) => {

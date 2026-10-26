@@ -12,6 +12,8 @@ using RestaurantReservation.Models.Enums;
 namespace RestaurantReservation.Pages.Admin.Menu;
 
 [RequestFormLimits(MultipartBodyLengthLimit = ImageUploadService.MaxRequestBytes)]
+// Staff can view the menu and switch dishes available or sold out; everything else is for Administrators.
+[AdministratorChangesOnly(StaffHandlers = new[] { "Toggle" })]
 public class MenuModel : PageModel
 {
     public const int MaxOptions = 6;

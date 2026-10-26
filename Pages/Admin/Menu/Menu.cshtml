@@ -2,6 +2,7 @@
 @model RestaurantReservation.Pages.Admin.Menu.MenuModel
 @using RestaurantReservation.Extensions
 @using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Infrastructure.Authentication
 @using RestaurantReservation.Models
 @using RestaurantReservation.Pages.Admin.Menu
 @inject RestaurantCurrency Currency
@@ -16,13 +17,20 @@
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="h4 fw-semibold mb-1">Menu</h1>
+            @if (!User.IsInRole(AppRoles.Administrator))
+            {
+                <p class="text-body-secondary mb-0"><i class="fa-solid fa-lock me-1"></i>You can mark dishes available or sold out. Ask an Administrator to add or change dishes.</p>
+            }
         </div>
         <div class="d-flex flex-wrap gap-2">
             @* Opens the customer menu on the main site, so you can see the dishes as guests do. *@
             <a class="btn btn-light border" href="@Model.PreviewUrl" target="_blank" rel="noopener">
                 <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Preview menu
             </a>
-            <button type="button" class="btn btn-dark" id="btn-new-item"><i class="fa-solid fa-plus me-1"></i> New menu item</button>
+            @if (User.IsInRole(AppRoles.Administrator))
+            {
+                <button type="button" class="btn btn-dark" id="btn-new-item"><i class="fa-solid fa-plus me-1"></i> New menu item</button>
+            }
         </div>
     </div>
 

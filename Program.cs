@@ -129,10 +129,9 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin/Dashboard", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Customers", "AdministratorOnly");
-    options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
-    options.Conventions.AuthorizeFolder("/Admin/Promotions", "AdministratorOnly");
-    options.Conventions.AuthorizeFolder("/Admin/Menu", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Settings", "AdministratorOnly");
+    // Announcements, Promotions and Menu are open to Staff to read; [AdministratorChangesOnly] keeps changes to
+    // Administrators (except a dish's availability, which Staff can switch).
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
 });
 // Custom subdomain route provider. Register once: a second copy maps Admin/Index to "/" twice.
