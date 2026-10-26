@@ -10,6 +10,12 @@ namespace RestaurantReservation.Infrastructure.Admin;
 // The business analytics report the dashboard exports as CSV or PDF. Amounts are in cents.
 // It counts orders the same way as the dashboard: revenue comes from served and completed orders on the day
 // they were served, and "orders placed" are all orders made that day except cancelled ones.
+public static class RevenueRules
+{
+    // The order statuses that count as revenue, on the dashboard and in the export.
+    public static readonly OrderStatus[] Statuses = [OrderStatus.Served, OrderStatus.Completed];
+}
+
 public record AnalyticsReport(
     string RestaurantName,
     string RestaurantAddress,
@@ -29,7 +35,11 @@ public record AnalyticsReport(
     int PromoDiscounts,
     int DepositCredits,
     IReadOnlyList<AnalyticsReservationStatus> ReservationStatuses,
-    IReadOnlyList<AnalyticsOrder> Orders)
+    IReadOnlyList<AnalyticsOrder> Orders,
+    TableUtilizationReport Utilization,
+    TableUtilizationReport PreviousUtilization,
+    IReadOnlyList<ReservationSlot> ReservationSlots,
+    PeakHoursReport PeakHours)
 {
     public int DayCount => To.DayNumber - From.DayNumber + 1;
 
@@ -54,13 +64,21 @@ public record AnalyticsPeriod(
     int ItemsSold,
     int Reservations,
     int Guests,
-    int ReservationsCancelled)
+    int ReservationsCancelled,
+    int NoShows,
+    double? AverageLeadDays,
+    double? TableUtilization)
 {
+    // Table utilization as a percentage with one decimal, or 0 when there were no tables or opening hours.
+    public decimal UtilizationPercent => TableUtilization is null
+        ? 0
+        : Math.Round((decimal)TableUtilization.Value * 100, 1, MidpointRounding.AwayFromZero);
+
     public int AverageOrderValue => OrdersServed == 0
         ? 0
         : (int)Math.Round((decimal)Revenue / OrdersServed, MidpointRounding.AwayFromZero);
 
-    // Cancelled bookings out of all bookings for those dates, as a percentage.
+    // Cancelled bookings (no-shows included) out of all bookings for those dates, as a percentage.
     public decimal CancellationRate => Reservations + ReservationsCancelled == 0
         ? 0
         : Math.Round(100m * ReservationsCancelled / (Reservations + ReservationsCancelled), 1);
@@ -98,15 +116,20 @@ public record AnalyticsOrder(
 
 public class AnalyticsReportBuilder
 {
-    private static readonly OrderStatus[] RevenueStatuses = [OrderStatus.Served, OrderStatus.Completed];
-
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
+    private readonly TableUtilizationAnalytics _utilization;
+    private readonly ReservationAnalytics _reservations;
+    private readonly PeakHoursAnalytics _peakHours;
 
-    public AnalyticsReportBuilder(ApplicationDbContext db, RestaurantClock clock)
+    public AnalyticsReportBuilder(ApplicationDbContext db, RestaurantClock clock, TableUtilizationAnalytics utilization,
+        ReservationAnalytics reservations, PeakHoursAnalytics peakHours)
     {
         _db = db;
         _clock = clock;
+        _utilization = utilization;
+        _reservations = reservations;
+        _peakHours = peakHours;
     }
 
     // Builds the report for from..to (whole days, restaurant time), compared with the same number of days before it.
@@ -149,38 +172,48 @@ public class AnalyticsReportBuilder
                 ServedLocal = o.ServedAt is null ? (DateTime?)null : _clock.ToLocal(o.ServedAt.Value),
                 // Revenue counts on the day the order was served (or placed, for orders saved before ServedAt existed).
                 RevenueLocal = _clock.ToLocal(o.ServedAt ?? o.CreatedAt),
-                IsRevenue = RevenueStatuses.Contains(o.Status)
+                IsRevenue = RevenueRules.Statuses.Contains(o.Status)
             })
             .ToList();
 
-        var reservations = await _db.Reservations.AsNoTracking()
-            .Where(r => r.Date >= previousFrom && r.Date <= to)
-            .Select(r => new { r.Date, r.Status, r.Pax })
-            .ToListAsync();
+        // Bookings are counted the same way as on the dashboard: a no-show counts as cancelled (ReservationAnalytics).
+        var now = _clock.Now;
+        var reservations = (await _db.Reservations.AsNoTracking()
+                .Where(r => r.Date >= previousFrom && r.Date <= to)
+                .Select(r => new { r.Date, r.TimeSlot, r.Status, r.Pax })
+                .ToListAsync())
+            .Select(r => new { r.Date, r.Status, r.Pax, Outcome = ReservationAnalytics.Outcome(r.Status, r.Date, r.TimeSlot, now) })
+            .ToList();
 
-        AnalyticsPeriod Period(DateOnly first, DateOnly last)
+        var bookings = await _reservations.BuildAsync(from, to);
+        var previousBookings = await _reservations.BuildAsync(previousFrom, previousTo);
+        var utilization = await _utilization.BuildAsync(from, to);
+        var previousUtilization = await _utilization.BuildAsync(previousFrom, previousTo);
+
+        AnalyticsPeriod Period(DateOnly first, DateOnly last, ReservationTotals bookingTotals, TableUtilizationReport tables)
         {
             bool In(DateTime local) => DateOnly.FromDateTime(local) is var day && day >= first && day <= last;
             var placed = orders.Where(o => In(o.PlacedLocal)).ToList();
             var served = orders.Where(o => o.IsRevenue && In(o.RevenueLocal)).ToList();
-            var booked = reservations.Where(r => r.Date >= first && r.Date <= last).ToList();
-            var kept = booked.Where(r => r.Status != ReservationStatus.Cancelled).ToList();
             return new AnalyticsPeriod(
                 Revenue: served.Sum(o => o.TotalAmount),
                 OrdersPlaced: placed.Count(o => o.Status != OrderStatus.Cancelled),
                 OrdersServed: served.Count,
                 OrdersCancelled: placed.Count(o => o.Status == OrderStatus.Cancelled),
                 ItemsSold: served.Sum(o => o.Items),
-                Reservations: kept.Count,
-                Guests: kept.Sum(r => r.Pax),
-                ReservationsCancelled: booked.Count - kept.Count);
+                Reservations: bookingTotals.Bookings,
+                Guests: bookingTotals.Guests,
+                ReservationsCancelled: bookingTotals.Cancelled,
+                NoShows: bookingTotals.NoShows,
+                AverageLeadDays: bookingTotals.AverageLeadDays,
+                TableUtilization: tables.Rate);
         }
 
         bool InRange(DateTime local) => DateOnly.FromDateTime(local) is var day && day >= from && day <= to;
         var placedInRange = orders.Where(o => InRange(o.PlacedLocal) && o.Status != OrderStatus.Cancelled).ToList();
         // An order placed late on the last day may be served after it; its revenue belongs to the next period.
         var servedInRange = orders.Where(o => o.IsRevenue && InRange(o.RevenueLocal)).ToList();
-        var reservationsInRange = reservations.Where(r => r.Date >= from && r.Status != ReservationStatus.Cancelled).ToList();
+        var reservationsInRange = reservations.Where(r => r.Date >= from && r.Outcome == ReservationOutcome.Kept).ToList();
 
         var days = Enumerable.Range(0, dayCount).Select(i => from.AddDays(i)).Select(day => new AnalyticsDay(
             day,
@@ -244,12 +277,13 @@ public class AnalyticsReportBuilder
             .OrderByDescending(p => p.Amount)
             .ToList();
 
+        // A booking not shown up for gets its own row, so the cancelled total can be checked against the summary.
         var reservationStatuses = reservations
             .Where(r => r.Date >= from)
-            .GroupBy(r => r.Status)
+            .GroupBy(r => r.Outcome == ReservationOutcome.NoShow ? "No-show (counted as cancelled)"
+                : r.Status == ReservationStatus.CheckedIn ? "Checked in" : r.Status.ToString())
             .OrderBy(g => g.Key)
-            .Select(g => new AnalyticsReservationStatus(
-                g.Key == ReservationStatus.CheckedIn ? "Checked in" : g.Key.ToString(), g.Count(), g.Sum(r => r.Pax)))
+            .Select(g => new AnalyticsReservationStatus(g.Key, g.Count(), g.Sum(r => r.Pax)))
             .ToList();
 
         var orderList = orders
@@ -269,8 +303,8 @@ public class AnalyticsReportBuilder
             PreviousFrom: previousFrom,
             PreviousTo: previousTo,
             GeneratedAt: _clock.Now,
-            Current: Period(from, to),
-            Previous: Period(previousFrom, previousTo),
+            Current: Period(from, to, bookings.Totals, utilization),
+            Previous: Period(previousFrom, previousTo, previousBookings.Totals, previousUtilization),
             Days: days,
             Hours: hours,
             Items: items,
@@ -279,7 +313,11 @@ public class AnalyticsReportBuilder
             PromoDiscounts: transactions.Sum(t => ReadCents(t.MetadataJson, "promoDiscount")),
             DepositCredits: transactions.Sum(t => ReadCents(t.MetadataJson, "reservationDepositCredit")),
             ReservationStatuses: reservationStatuses,
-            Orders: orderList);
+            Orders: orderList,
+            Utilization: utilization,
+            PreviousUtilization: previousUtilization,
+            ReservationSlots: bookings.Slots,
+            PeakHours: await _peakHours.BuildAsync(from, to));
     }
 
     private static string PaymentMethodLabel(PaymentMethod method) => method switch

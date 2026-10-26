@@ -155,11 +155,79 @@
         </div>
     </div>
 
+    <h2 class="h6 fw-semibold mt-4 mb-3">Tables &amp; reservations</h2>
+
+    <div class="row g-3 mb-3">
+        <div class="col-xxl-4">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
+                    <span class="small text-body-secondary fw-medium">Table utilization</span>
+                    <i class="fa-solid fa-circle-info small text-body-secondary" title="Table-hours in use out of the table-hours the restaurant was open, from dining sessions. Each day uses the opening hours that applied that day; today counts up to now."></i>
+                </div>
+                <div class="card bg-body border-0 rounded-4 m-1 mt-0 flex-grow-1">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2">
+                            <div>
+                                <div class="fs-4 fw-semibold text-nowrap" id="kpi-utilization">-</div>
+                                <div class="small text-body-secondary" id="utilization-detail">&nbsp;</div>
+                            </div>
+                            <span class="small" id="kpi-utilization-delta">&nbsp;</span>
+                        </div>
+                        <div class="small text-body-secondary fw-medium mt-4 mb-2">By table <span class="fw-normal">(busiest first)</span></div>
+                        <ul class="list-unstyled small mb-0" id="utilization-tables" aria-label="Utilization of each table, busiest first"></ul>
+                        <button type="button" class="btn btn-sm btn-link px-0 mt-2 d-none" id="utilization-toggle" aria-controls="utilization-tables" aria-expanded="false"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-8">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
+                    <span class="small text-body-secondary fw-medium">Reservation trends</span>
+                    <i class="fa-solid fa-circle-info small text-body-secondary" title="Bookings for dining dates in the range. A booking not checked in by the end of its 2-hour slot counts as a no-show, which is treated as cancelled."></i>
+                </div>
+                <div class="card bg-body border-0 rounded-4 m-1 mt-0 flex-grow-1">
+                    <div class="card-body">
+                        <div class="row g-3 mb-2">
+                            <div class="col-6 col-md-3">
+                                <div class="small text-body-secondary">Bookings</div>
+                                <div class="fs-5 fw-semibold" id="res-bookings">-</div>
+                                <div class="small" id="res-bookings-delta">&nbsp;</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="small text-body-secondary">Guests</div>
+                                <div class="fs-5 fw-semibold" id="res-guests">-</div>
+                                <div class="small" id="res-guests-delta">&nbsp;</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="small text-body-secondary">Cancellation rate</div>
+                                <div class="fs-5 fw-semibold" id="res-cancellation">-</div>
+                                <div class="small" id="res-cancellation-delta">&nbsp;</div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="small text-body-secondary">Avg. booked ahead</div>
+                                <div class="fs-5 fw-semibold" id="res-lead">-</div>
+                                <div class="small" id="res-lead-delta">&nbsp;</div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <div class="d-flex gap-1 bg-body-tertiary rounded-pill p-1" role="group" aria-label="Show bookings by date or by time slot">
+                                <button type="button" class="btn btn-sm rounded-pill btn-dark active" id="bookings-by-date">By date</button>
+                                <button type="button" class="btn btn-sm rounded-pill" id="bookings-by-slot">By time slot</button>
+                            </div>
+                        </div>
+                        <div id="chart-reservations" role="img" aria-label="Bar chart of bookings by date or by time slot in the chosen date range"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-3 mb-3">
         <div class="col-12">
             <div class="card h-100 border-0 bg-body-tertiary rounded-4">
                 <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
-                    <span class="small text-body-secondary fw-medium">Peak hours <span class="fw-normal">(average tables in use)</span></span>
+                    <span class="small text-body-secondary fw-medium">Peak dining hours <span class="fw-normal">(average tables in use)</span></span>
                     <i class="fa-solid fa-circle-info small text-body-secondary" title="From dining sessions: how many tables were in use, on average, in each hour of each weekday. Hours follow when customers actually dined, so earlier opening hours still show."></i>
                 </div>
                 <div class="card bg-body border-0 rounded-4 m-1 mt-0 flex-grow-1">

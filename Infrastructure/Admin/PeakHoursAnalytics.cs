@@ -17,12 +17,6 @@ public sealed record PeakHoursReport(int TableCount, IReadOnlyList<PeakHourRow> 
 // sessions themselves show the hours it really was open.
 public class PeakHoursAnalytics
 {
-    private static readonly DayOfWeek[] WeekOrder =
-    [
-        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
-        DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
-    ];
-
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
 
@@ -76,7 +70,7 @@ public class PeakHoursAnalytics
         hours = Enumerable.Range(hours.Min(), hours.Max() - hours.Min() + 1).ToList();
 
         var dates = Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).Select(i => from.AddDays(i)).ToList();
-        var rows = WeekOrder
+        var rows = OpeningHoursSchedule.WeekOrder
             .Where(day => dates.Any(d => d.DayOfWeek == day))
             .Select(day =>
             {
@@ -101,7 +95,7 @@ public class PeakHoursAnalytics
     {
         var businessHours = await _db.BusinessHours.AsNoTracking().ToListAsync();
         var hours = new List<int>();
-        foreach (var day in WeekOrder)
+        foreach (var day in OpeningHoursSchedule.WeekOrder)
         {
             var dayHours = businessHours.FirstOrDefault(h => h.DayOfWeek == day);
             if (dayHours is { IsClosed: true })

@@ -50,7 +50,14 @@ public static partial class AnalyticsReportCsv
         Metric("Items sold", now.ItemsSold, before.ItemsSold, Number);
         Metric("Reservations", now.Reservations, before.Reservations, Number);
         Metric("Reserved guests", now.Guests, before.Guests, Number);
-        Metric("Reservation cancellation rate (%)", now.CancellationRate, before.CancellationRate, Number, isRate: true);
+        Metric("Reservation cancellation rate, no-shows included (%)", now.CancellationRate, before.CancellationRate, Number, isRate: true);
+        Metric("No-shows (counted as cancelled)", now.NoShows, before.NoShows, Number);
+        Row("Average booking lead time (days)", now.AverageLeadDays?.ToString("0.0", CultureInfo.InvariantCulture) ?? "",
+            before.AverageLeadDays?.ToString("0.0", CultureInfo.InvariantCulture) ?? "",
+            now.AverageLeadDays is { } lead && before.AverageLeadDays is { } leadBefore
+                ? AnalyticsReport.Change((decimal)lead, (decimal)leadBefore)
+                : "");
+        Metric("Table utilization (%)", now.UtilizationPercent, before.UtilizationPercent, Number, isRate: true);
 
         Section("Daily breakdown");
         Row("Date", "Day", "Orders placed", "Orders served", $"Revenue ({code})", $"Average order value ({code})", "Reservations", "Reserved guests");
@@ -100,6 +107,38 @@ public static partial class AnalyticsReportCsv
         foreach (var status in report.ReservationStatuses)
         {
             Row(status.Status, status.Reservations, status.Guests);
+        }
+
+        var utilization = report.Utilization;
+        Section("Table utilization (table-hours in use out of table-hours open)");
+        Row("Table", "Seats", "Visits started", "Hours in use", "Utilization (%)");
+        foreach (var table in utilization.Tables)
+        {
+            Row(table.TableId, table.Capacity, table.Visits, Number(Math.Round((decimal)table.UsedHours, 1)),
+                Number(Math.Round((decimal)table.Rate * 100, 1)));
+        }
+        Row("All tables", utilization.Tables.Sum(t => t.Capacity), utilization.Visits,
+            Number(Math.Round((decimal)utilization.UsedHours, 1)), Number(now.UtilizationPercent));
+        Row("Table-hours open", Number(Math.Round((decimal)utilization.OpenTableHours, 1)));
+        Row("Average visit (minutes)", utilization.AverageVisitMinutes);
+
+        Section("Reservations by time slot (no-shows and cancellations left out)");
+        Row("Time slot", "Bookings", "Guests");
+        foreach (var slot in report.ReservationSlots)
+        {
+            Row(slot.Time.ToString("HH:mm", CultureInfo.InvariantCulture), slot.Bookings, slot.Guests);
+        }
+
+        Section("Peak dining hours (average tables in use, from dining sessions)");
+        var peakRows = report.PeakHours.Rows;
+        if (peakRows.Count > 0)
+        {
+            Row(new object?[] { "Day" }.Concat(peakRows[0].Hours.Select(h => (object?)$"{h.Hour:00}:00")).ToArray());
+            foreach (var peakRow in peakRows)
+            {
+                Row(new object?[] { peakRow.Day }.Concat(peakRow.Hours.Select(h =>
+                    (object?)(h.AverageTables is { } tables ? Number(Math.Round((decimal)tables, 2)) : ""))).ToArray());
+            }
         }
 
         Section("Orders");

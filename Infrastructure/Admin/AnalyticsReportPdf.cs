@@ -35,6 +35,8 @@ public static class AnalyticsReportPdf
                 content.Item().Element(c => HourTable(c, report));
                 content.Item().Element(c => ItemTables(c, report));
                 content.Item().Element(c => PaymentAndReservationTables(c, report));
+                content.Item().Element(c => TablesAndReservations(c, report));
+                content.Item().Element(c => PeakHoursGrid(c, report));
             });
             page.Footer().PaddingTop(8).Row(footer =>
             {
@@ -75,16 +77,24 @@ public static class AnalyticsReportPdf
     private static void Summary(IContainer container, AnalyticsReport report)
     {
         var (now, before) = (report.Current, report.Previous);
-        var cards = new (string Label, string Value, decimal Current, decimal Previous, bool LowerIsBetter, bool IsRate)[]
+        var lead = (decimal)(now.AverageLeadDays ?? 0);
+        var leadBefore = (decimal)(before.AverageLeadDays ?? 0);
+        // Neutral: the change is shown in grey, because neither direction is good or bad (e.g. booking lead time).
+        var cards = new (string Label, string Value, decimal Current, decimal Previous, bool LowerIsBetter, bool IsRate, bool Neutral)[]
         {
-            ("Revenue", report.Money(now.Revenue), now.Revenue, before.Revenue, false, false),
-            ("Orders placed", now.OrdersPlaced.ToString("N0"), now.OrdersPlaced, before.OrdersPlaced, false, false),
-            ("Avg. order value", report.Money(now.AverageOrderValue), now.AverageOrderValue, before.AverageOrderValue, false, false),
-            ("Items sold", now.ItemsSold.ToString("N0"), now.ItemsSold, before.ItemsSold, false, false),
-            ("Reservations", now.Reservations.ToString("N0"), now.Reservations, before.Reservations, false, false),
-            ("Reserved guests", now.Guests.ToString("N0"), now.Guests, before.Guests, false, false),
-            ("Orders cancelled", now.OrdersCancelled.ToString("N0"), now.OrdersCancelled, before.OrdersCancelled, true, false),
-            ("Booking cancellation rate", $"{now.CancellationRate:0.#}%", now.CancellationRate, before.CancellationRate, true, true)
+            ("Revenue", report.Money(now.Revenue), now.Revenue, before.Revenue, false, false, false),
+            ("Orders placed", now.OrdersPlaced.ToString("N0"), now.OrdersPlaced, before.OrdersPlaced, false, false, false),
+            ("Avg. order value", report.Money(now.AverageOrderValue), now.AverageOrderValue, before.AverageOrderValue, false, false, false),
+            ("Items sold", now.ItemsSold.ToString("N0"), now.ItemsSold, before.ItemsSold, false, false, false),
+            ("Reservations", now.Reservations.ToString("N0"), now.Reservations, before.Reservations, false, false, false),
+            ("Reserved guests", now.Guests.ToString("N0"), now.Guests, before.Guests, false, false, false),
+            ("Orders cancelled", now.OrdersCancelled.ToString("N0"), now.OrdersCancelled, before.OrdersCancelled, true, false, false),
+            ("Booking cancellation rate", $"{now.CancellationRate:0.#}%", now.CancellationRate, before.CancellationRate, true, true, false),
+            ("Table utilization", now.TableUtilization is null ? "-" : $"{now.UtilizationPercent:0.#}%",
+                now.UtilizationPercent, before.UtilizationPercent, false, true, false),
+            ("Dining visits", report.Utilization.Visits.ToString("N0"), report.Utilization.Visits, report.PreviousUtilization.Visits, false, false, false),
+            ("Avg. booked ahead", now.AverageLeadDays is null ? "-" : $"{lead:0.#} days", lead, leadBefore, false, false, true),
+            ("No-shows", now.NoShows.ToString("N0"), now.NoShows, before.NoShows, true, false, false)
         };
 
         container.Column(column =>
@@ -104,7 +114,9 @@ public static class AnalyticsReportPdf
                             var change = card.IsRate
                                 ? AnalyticsReport.ChangeInPoints(card.Current, card.Previous)
                                 : AnalyticsReport.Change(card.Current, card.Previous);
-                            var better = card.Current == card.Previous ? (bool?)null : (card.Current > card.Previous) != card.LowerIsBetter;
+                            var better = card.Current == card.Previous || card.Neutral
+                                ? (bool?)null
+                                : (card.Current > card.Previous) != card.LowerIsBetter;
                             cell.Item().Text(text =>
                             {
                                 text.Span(change).FontSize(8).SemiBold()
@@ -352,6 +364,142 @@ public static class AnalyticsReportPdf
                 });
             });
         });
+    }
+
+    // Each table's utilization next to the bookings by time slot.
+    private static void TablesAndReservations(IContainer container, AnalyticsReport report)
+    {
+        var utilization = report.Utilization;
+        container.ShowEntire().Row(row =>
+        {
+            row.Spacing(20);
+            row.RelativeItem(3).Column(column =>
+            {
+                column.Item().Element(c => SectionTitle(c, "Table utilization",
+                    utilization.Rate is null ? null : $"{report.Current.UtilizationPercent:0.#}% of {utilization.OpenTableHours:0.#} table-hours open"));
+                if (utilization.TableCount == 0 || utilization.Rate is null)
+                {
+                    column.Item().Text(utilization.TableCount == 0 ? "No tables have been set up." : "The restaurant wasn't open in this period.")
+                        .FontColor(Muted);
+                    return;
+                }
+
+                column.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(c =>
+                    {
+                        c.RelativeColumn(1.1f);
+                        c.RelativeColumn(0.8f);
+                        c.RelativeColumn(0.8f);
+                        c.RelativeColumn();
+                        c.RelativeColumn(2.4f);
+                    });
+                    HeaderRow(table, "Table", "Seats", "Visits", "Hours used", "Utilization");
+                    foreach (var tableUse in utilization.Tables)
+                    {
+                        table.Cell().Element(BodyCell).Text(tableUse.TableId);
+                        table.Cell().Element(BodyCell).AlignRight().Text(tableUse.Capacity.ToString("N0"));
+                        table.Cell().Element(BodyCell).AlignRight().Text(tableUse.Visits.ToString("N0"));
+                        table.Cell().Element(BodyCell).AlignRight().Text($"{tableUse.UsedHours:0.#}");
+                        table.Cell().Element(BodyCell).PaddingLeft(8).Row(bar =>
+                        {
+                            bar.RelativeItem().AlignMiddle().Element(c => ShareBar(c, (decimal)tableUse.Rate, 1));
+                            bar.ConstantItem(34).AlignRight().Text($"{tableUse.Rate * 100:0.#}%");
+                        });
+                    }
+                });
+                column.Item().PaddingTop(6).Text($"Average visit: {utilization.AverageVisitMinutes} min").FontColor(Muted);
+            });
+
+            row.RelativeItem(2).Column(column =>
+            {
+                column.Item().Element(c => SectionTitle(c, "Bookings by time slot"));
+                if (report.ReservationSlots.Count == 0)
+                {
+                    column.Item().Text("No bookings for these dates.").FontColor(Muted);
+                    return;
+                }
+
+                var busiest = report.ReservationSlots.Max(s => s.Bookings);
+                column.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(c =>
+                    {
+                        c.RelativeColumn();
+                        c.RelativeColumn(1.6f);
+                        c.RelativeColumn(0.8f);
+                        c.RelativeColumn(0.8f);
+                    });
+                    HeaderRow(table, "Time", "", "Bookings", "Guests");
+                    foreach (var slot in report.ReservationSlots)
+                    {
+                        table.Cell().Element(BodyCell).Text(new DateTime(2000, 1, 1).Add(slot.Time.ToTimeSpan()).ToString("h:mm tt"));
+                        table.Cell().Element(BodyCell).AlignMiddle().Element(c => ShareBar(c, slot.Bookings, busiest));
+                        table.Cell().Element(BodyCell).AlignRight().Text(slot.Bookings.ToString("N0"));
+                        table.Cell().Element(BodyCell).AlignRight().Text(slot.Guests.ToString("N0"));
+                    }
+                });
+                column.Item().PaddingTop(6).Text("No-shows (counted as cancelled) are left out.").FontSize(8).FontColor(Muted);
+            });
+        });
+    }
+
+    // Weekday x hour grid of the average number of tables in use, shaded light to dark, with the value printed in
+    // each cell (a printed report has no hover).
+    private static void PeakHoursGrid(IContainer container, AnalyticsReport report)
+    {
+        var rows = report.PeakHours.Rows;
+        var tableCount = report.PeakHours.TableCount;
+        container.ShowEntire().Column(column =>
+        {
+            column.Item().Element(c => SectionTitle(c, "Peak dining hours", "Average tables in use, from dining sessions"));
+            if (rows.Count == 0 || tableCount == 0)
+            {
+                column.Item().Text("No dining sessions to show.").FontColor(Muted);
+                return;
+            }
+
+            var hours = rows[0].Hours.Select(h => h.Hour).ToList();
+            column.Item().Table(table =>
+            {
+                table.ColumnsDefinition(c =>
+                {
+                    c.ConstantColumn(30);
+                    foreach (var _ in hours)
+                    {
+                        c.RelativeColumn();
+                    }
+                });
+                table.Header(header =>
+                {
+                    header.Cell();
+                    foreach (var hour in hours)
+                    {
+                        header.Cell().AlignCenter().PaddingBottom(3)
+                            .Text(new DateTime(2000, 1, 1, hour, 0, 0).ToString("h tt").ToLowerInvariant()).FontSize(6.5f).FontColor(Muted);
+                    }
+                });
+                foreach (var peakRow in rows)
+                {
+                    table.Cell().AlignMiddle().Text(peakRow.Day.ToString()[..3]).FontSize(8).FontColor(Muted);
+                    foreach (var cell in peakRow.Hours)
+                    {
+                        var share = cell.AverageTables is { } tables ? Math.Min(tables / tableCount, 1) : 0;
+                        var shade = HeatShade(cell.AverageTables is > 0 ? 0.08 + share * 0.92 : 0);
+                        table.Cell().Padding(1).Background(shade).Height(16).AlignCenter().AlignMiddle()
+                            .Text(cell.AverageTables is { } value && value > 0 ? value.ToString("0.#") : "")
+                            .FontSize(6.5f).FontColor(share > 0.5 ? Colors.White : Ink);
+                    }
+                }
+            });
+        });
+    }
+
+    // Light grey (level 0) to near-black (level 1), matching the dashboard heatmap.
+    private static string HeatShade(double level)
+    {
+        var value = (int)Math.Round(245 - level * (245 - 33));
+        return $"#{value:X2}{value:X2}{value:X2}";
     }
 
     private static void SectionTitle(IContainer container, string title, string? note = null)
