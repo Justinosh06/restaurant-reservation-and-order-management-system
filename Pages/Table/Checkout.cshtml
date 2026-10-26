@@ -71,7 +71,7 @@
                                     }
                                 </div>
 
-                                <span class="order-item-price">RM @((item.UnitPrice * item.Quantity).ToString("F2"))</span>
+                                <span class="order-item-price">@Model.CurrencySymbol @((item.UnitPrice * item.Quantity).ToString("F2"))</span>
                             </div>
 
                             <span class="order-item-quantity">Quantity: @item.Quantity</span>
@@ -118,8 +118,8 @@
                     @if (Model.PromoDiscount == 0 && Model.AppliedPromotion.MinimumSpend > 0)
                     {
                         <p class="promo-feedback">
-                            Spend RM @((Model.AppliedPromotion.MinimumSpend / 100m - Model.TotalAmount).ToString("F2")) more
-                            to get this discount (minimum spend RM @((Model.AppliedPromotion.MinimumSpend / 100m).ToString("F2"))).
+                            Spend @Model.CurrencySymbol @((Model.AppliedPromotion.MinimumSpend / 100m - Model.TotalAmount).ToString("F2")) more
+                            to get this discount (minimum spend @Model.CurrencySymbol @((Model.AppliedPromotion.MinimumSpend / 100m).ToString("F2"))).
                         </p>
                     }
                 }
@@ -148,16 +148,16 @@
         @if (Model.ReservationDepositCredit > 0 || Model.PromoDiscount > 0)
         {
             <div class="checkout-total-breakdown">
-                <div><span>Orders total</span><span>RM @Model.TotalAmount.ToString("F2")</span></div>
+                <div><span>Orders total</span><span>@Model.CurrencySymbol @Model.TotalAmount.ToString("F2")</span></div>
                 @if (Model.PromoDiscount > 0)
                 {
-                    <div><span>Promo code @Model.AppliedPromotion?.Code</span><span>- RM @Model.PromoDiscount.ToString("F2")</span></div>
+                    <div><span>Promo code @Model.AppliedPromotion?.Code</span><span>- @Model.CurrencySymbol @Model.PromoDiscount.ToString("F2")</span></div>
                 }
                 @if (Model.ReservationDepositCredit > 0)
                 {
-                    <div><span>Reservation deposit</span><span>- RM @Model.ReservationDepositCredit.ToString("F2")</span></div>
+                    <div><span>Reservation deposit</span><span>- @Model.CurrencySymbol @Model.ReservationDepositCredit.ToString("F2")</span></div>
                 }
-                <div class="checkout-amount-due"><strong>Amount due</strong><strong>RM @Model.AmountDue.ToString("F2")</strong></div>
+                <div class="checkout-amount-due"><strong>Amount due</strong><strong>@Model.CurrencySymbol @Model.AmountDue.ToString("F2")</strong></div>
             </div>
         }
 
@@ -165,7 +165,7 @@
         {
             <form method="post" asp-page-handler="PayWithStripe" asp-route-tableId="@Model.TableId">
                 <button type="submit" class="pay-btn w-100" disabled="@(!Model.CanPay)">
-                    <h4 class="total-price">RM @Model.AmountDue.ToString("F2")</h4>
+                    <h4 class="total-price">@Model.CurrencySymbol @Model.AmountDue.ToString("F2")</h4>
                     @if (Model.AmountDue == 0)
                     {
                         <span>@(Model.ReservationDepositCredit > 0 ? "Complete checkout with deposit" : "Complete checkout")</span>

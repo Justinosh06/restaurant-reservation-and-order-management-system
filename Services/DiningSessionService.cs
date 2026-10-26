@@ -27,6 +27,16 @@ public sealed class DiningSessionService
             .SingleOrDefaultAsync(session => session.TableId == tableId && session.EndingTime == null);
     }
 
+    public Task<bool> HasUnpaidOrdersAsync(string sessionId)
+    {
+        return _db.Orders
+            .AsNoTracking()
+            .AnyAsync(order =>
+                order.SessionId == sessionId &&
+                order.Status != OrderStatus.Completed &&
+                order.Status != OrderStatus.Cancelled);
+    }
+
     public async Task<int> GetCartItemCountAsync(string sessionId)
     {
         return await _db.CartItems

@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 
 namespace RestaurantReservation.Pages.Admin.Promotions;
 
@@ -16,12 +18,18 @@ public class PromotionModel : PageModel
     private readonly ApplicationDbContext _db;
     private readonly ImageUploadService _images;
     private readonly RestaurantClock _clock;
+    private readonly RestaurantCurrency _restaurantCurrency;
 
-    public PromotionModel(ApplicationDbContext db, ImageUploadService images, RestaurantClock clock)
+    public PromotionModel(
+        ApplicationDbContext db,
+        ImageUploadService images,
+        RestaurantClock clock,
+        RestaurantCurrency restaurantCurrency)
     {
         _db = db;
         _images = images;
         _clock = clock;
+        _restaurantCurrency = restaurantCurrency;
     }
 
     // Generated codes leave out 0, O, 1 and I, which are easy to misread.
@@ -29,6 +37,14 @@ public class PromotionModel : PageModel
     private const int GeneratedCodeLength = 8;
 
     public record PromotionIdRequest(string Id);
+
+    public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
+    public string CurrencySymbol => Currency.GetSymbol();
+
+    public async Task OnGetAsync()
+    {
+        Currency = await _restaurantCurrency.GetAsync();
+    }
 
     public async Task<IActionResult> OnGetListAsync()
     {
@@ -53,7 +69,9 @@ public class PromotionModel : PageModel
     {
         var promotion = new Promotion();
         var error = Apply(promotion, title, description, startDate, endDate)
-            ?? ApplyDiscount(promotion, discountType, discountValue, minimumSpend)
+            ?? ApplyDiscount(
+                promotion, discountType, discountValue, minimumSpend,
+                (await _restaurantCurrency.GetAsync()).GetSymbol())
             ?? await ApplyCodeAsync(promotion, code);
         if (error is not null)
         {
@@ -105,7 +123,9 @@ public class PromotionModel : PageModel
         }
 
         var error = Apply(promotion, title, description, startDate, endDate)
-            ?? ApplyDiscount(promotion, discountType, discountValue, minimumSpend)
+            ?? ApplyDiscount(
+                promotion, discountType, discountValue, minimumSpend,
+                (await _restaurantCurrency.GetAsync()).GetSymbol())
             ?? await ApplyCodeAsync(promotion, code);
         if (error is not null)
         {
@@ -177,9 +197,13 @@ public class PromotionModel : PageModel
         return null;
     }
 
-    // Sets the discount the promo code gives: a percentage (1 to 100) or an amount in RM, and an optional
-    // minimum spend in RM. Returns an error message, or null when everything is valid.
-    private static string? ApplyDiscount(Promotion promotion, string? discountType, string? discountValue, string? minimumSpend)
+    // Sets a percentage or a fixed discount and an optional minimum spend, all monetary values in the restaurant currency.
+    private static string? ApplyDiscount(
+        Promotion promotion,
+        string? discountType,
+        string? discountValue,
+        string? minimumSpend,
+        string currencySymbol)
     {
         if (!Enum.TryParse<PromotionDiscountType>(discountType, out var type) || !Enum.IsDefined(type))
         {
@@ -203,7 +227,7 @@ public class PromotionModel : PageModel
         {
             if (decimal.Round(value, 2) != value || value > 100000)
             {
-                return "Please enter the discount in RM with at most 2 decimal places.";
+                return $"Please enter the discount in {currencySymbol} with at most 2 decimal places.";
             }
             amount = (int)(value * 100);
         }
@@ -213,7 +237,7 @@ public class PromotionModel : PageModel
             (!decimal.TryParse(minimumSpend, NumberStyles.Number, CultureInfo.InvariantCulture, out minimum) ||
              minimum < 0 || decimal.Round(minimum, 2) != minimum || minimum > 100000))
         {
-            return "Please enter the minimum spend in RM with at most 2 decimal places, or leave it empty.";
+            return $"Please enter the minimum spend in {currencySymbol} with at most 2 decimal places, or leave it empty.";
         }
 
         promotion.DiscountType = type;
@@ -281,7 +305,7 @@ public class PromotionModel : PageModel
         startDate = p.StartDate.ToString("yyyy-MM-dd"),
         endDate = p.EndDate.ToString("yyyy-MM-dd"),
         discountType = p.DiscountType?.ToString(),
-        // Percent for Percentage; RM for FixedAmount and the minimum spend.
+        // Percent for Percentage; the restaurant currency for FixedAmount and the minimum spend.
         discountValue = p.DiscountType == PromotionDiscountType.FixedAmount ? p.DiscountValue / 100m : p.DiscountValue,
         minimumSpend = p.MinimumSpend / 100m
     };

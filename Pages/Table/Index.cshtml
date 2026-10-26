@@ -14,10 +14,17 @@
 {
     <main class="dining-session-start">
         <h1 class="title">Welcome to Table @Model.TableId</h1>
-        <p>Start a dining session to browse the menu and place an order.</p>
-        <form method="post" asp-page-handler="StartSession" asp-route-tableId="@Model.TableId">
-            <button type="submit" class="start-session-button">Start dining session</button>
-        </form>
+        @if (Model.IsRestaurantClosed)
+        {
+            <p>Ordering is closed for today. Please visit us during our opening hours.</p>
+        }
+        else
+        {
+            <p>Start a dining session to browse the menu and place an order.</p>
+            <form method="post" asp-page-handler="StartSession" asp-route-tableId="@Model.TableId">
+                <button type="submit" class="start-session-button">Start dining session</button>
+            </form>
+        }
     </main>
 }
 else
@@ -122,7 +129,7 @@ else
                         </div>
 
                         <div class="right-section">
-                            <span class="price">RM @item.PriceInMainUnit.ToString("F2")</span>
+                            <span class="price">@Model.CurrencySymbol @item.PriceInMainUnit.ToString("F2")</span>
                         </div>
                     </div>
 

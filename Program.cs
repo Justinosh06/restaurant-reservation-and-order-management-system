@@ -10,6 +10,7 @@ using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Infrastructure.Announcements;
 using RestaurantReservation.Infrastructure.Email;
 using RestaurantReservation.Infrastructure.Navigation;
+using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Infrastructure.Stripe;
 
 using RestaurantReservation.Data;
@@ -38,6 +39,7 @@ builder.Services.AddScoped<SidebarNavService>();
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddSingleton<RestaurantClock>();
 builder.Services.AddScoped<RestaurantCurrency>();
+builder.Services.AddScoped<RestaurantOrderingHours>();
 builder.Services.AddScoped<DiningSessionService>();
 builder.Services.AddScoped<ImageUploadService>();
 builder.Services.AddScoped<AdminPortalService>();

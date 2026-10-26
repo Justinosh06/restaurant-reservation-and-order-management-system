@@ -8,6 +8,7 @@
     let removeSavedImage = false;
 
     const listEl = document.getElementById("promo-list");
+    const currencySymbol = document.getElementById("promotions-admin").dataset.currencySymbol;
     const statsEl = document.getElementById("promo-stats");
     const searchEl = document.getElementById("promo-search");
     const statusFilterEl = document.getElementById("promo-status-filter");
@@ -38,13 +39,13 @@
     const formatDay = (isoDate) => AdminUI.formatDate(`${isoDate}T00:00:00`);
     const dateRange = (p) => `${formatDay(p.startDate)} - ${formatDay(p.endDate)}`;
 
-    const formatRm = (amount) => `RM ${Number(amount).toFixed(2)}`;
+    const formatCurrency = (amount) => `${currencySymbol} ${Number(amount).toFixed(2)}`;
 
-    // e.g. "20% off, min. spend RM 100.00"; null for promotions made before discounts existed.
+    // e.g. "20% off, min. spend $ 100.00"; null for promotions made before discounts existed.
     const discountText = (p) => {
         if (!p.discountType) return null;
-        const off = p.discountType === "Percentage" ? `${p.discountValue}% off` : `${formatRm(p.discountValue)} off`;
-        return p.minimumSpend > 0 ? `${off}, min. spend ${formatRm(p.minimumSpend)}` : off;
+        const off = p.discountType === "Percentage" ? `${p.discountValue}% off` : `${formatCurrency(p.discountValue)} off`;
+        return p.minimumSpend > 0 ? `${off}, min. spend ${formatCurrency(p.minimumSpend)}` : off;
     };
 
     const discountLine = (p) => {
@@ -54,7 +55,7 @@
             : `<span class="small text-warning-emphasis"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>No discount set: edit to make the code usable</span>`;
     };
 
-    // Percent takes whole numbers up to 100; an RM amount takes cents.
+    // Percent takes whole numbers up to 100; a fixed discount uses the restaurant currency.
     const syncDiscountInputs = () => {
         const percent = discountTypeInput.value === "Percentage";
         document.getElementById("promo-discount-value-label").textContent = percent ? "Percent" : "Amount";
@@ -62,7 +63,7 @@
         document.getElementById("promo-discount-suffix").classList.toggle("d-none", !percent);
         document.getElementById("promo-discount-error").textContent = percent
             ? "Enter a whole number from 1 to 100."
-            : "Enter an amount of at least RM 0.01.";
+            : `Enter an amount of at least ${currencySymbol} 0.01.`;
         discountValueInput.min = percent ? "1" : "0.01";
         discountValueInput.step = percent ? "1" : "0.01";
         if (percent) discountValueInput.max = "100"; else discountValueInput.removeAttribute("max");
