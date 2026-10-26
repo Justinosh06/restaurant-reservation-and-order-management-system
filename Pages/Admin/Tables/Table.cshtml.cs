@@ -90,8 +90,11 @@ public class TableManagementModel(
             .Concat(ActiveSessions.Keys)
             .ToHashSet();
 
+        // Only today's bookings (plus anyone still seated from before, e.g. past midnight);
+        // later days are on Reservation Management.
         Queue = Reservations
-            .Where(reservation => reservation.HasTable && reservation.IsActive(now))
+            .Where(reservation => reservation.HasTable && reservation.IsActive(now)
+                && (reservation.ReservationAt.Date == now.Date || reservation.IsSeated))
             .OrderBy(reservation => reservation.ReservationAt)
             .ToList();
 

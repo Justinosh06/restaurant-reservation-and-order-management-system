@@ -2485,3 +2485,33 @@ body:has(.service-app) {
         flex-basis: auto;
     }
 }
+
+/* Starting soon (within the hour before a booking): purple, so it stands apart from the
+   orange "reserved later today" and the blue "checked in". */
+.floor-table.soon .table-top {
+    border-color: #c9b5ef;
+    background: #f3eefd;
+    color: #4b2f86;
+}
+
+.floor-table.soon .chair {
+    background: #c9b5ef;
+}
+
+.soon .table-status-mark,
+.legend-dot.soon {
+    background: #7c4dd6;
+}
+
+.soon .table-booking {
+    color: #5a3a9e;
+}
+
+.soon .table-icon,
+.legend-icon.soon,
+.service-app .legend .legend-icon.soon,
+.legend .legend-icon.soon,
+.legend-inline .legend-icon.soon {
+    background: #7c4dd6;
+    color: #fff;
+}

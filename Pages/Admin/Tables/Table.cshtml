@@ -8,8 +8,11 @@
     ViewData["Title"] = "Table Management";
     var now = DateTime.Now;
     // A booking holds its table from its start time until its slot ends.
+    // The floor plan only colours tables for today's bookings (and guests still seated from before);
+    // later days stay white here and are on Reservation Management.
     var upcomingReservations = Model.Reservations
-        .Where(reservation => reservation.IsActive(now))
+        .Where(reservation => reservation.IsActive(now)
+            && (reservation.ReservationAt.Date == now.Date || reservation.IsSeated))
         .OrderBy(reservation => reservation.ReservationAt)
         .ToList();
 
@@ -157,29 +160,26 @@
 
         <aside class="reservation-queue" aria-labelledby="queueTitle">
             <div class="queue-heading">
-                <h2 id="queueTitle">Upcoming</h2>
+                <h2 id="queueTitle">Today</h2>
                 <span>@Model.Queue.Count booked</span>
             </div>
             @if (Model.Queue.Count == 0)
             {
                 <div class="queue-empty">
-                    <strong>No upcoming bookings with a table</strong>
-                    <p>Seat bookings on the Pending tab of <a asp-page="/Admin/Reservations/Reservation" asp-route-tab="pending">Reservation Management</a>.</p>
+                    <strong>No more bookings with a table today</strong>
+                    <p>Later days and bookings waiting for a table are on <a asp-page="/Admin/Reservations/Reservation">Reservation Management</a>.</p>
                 </div>
             }
             else
             {
                 <p class="queue-hint">Check guests in when they arrive. Check-in opens 1 hour before the booking.</p>
                 <div class="queue-list">
-                    @foreach (var group in Model.Queue.GroupBy(reservation => reservation.ReservationAt.Date == now.Date ? "Today" : "Later"))
+                    @foreach (var reservation in Model.Queue)
                     {
-                        <h3 class="queue-group">@group.Key</h3>
-                        @foreach (var reservation in group)
-                        {
                             var checkedIn = reservation.Status == RestaurantReservation.Models.ReservationStatus.CheckedIn;
                             var canCheckIn = TableManagementModel.CanCheckIn(reservation, now);
                             <div class="queue-item checkin-item @(checkedIn ? "checked-in" : "")" data-tables="@string.Join(' ', reservation.TableIds)">
-                                <span class="queue-time">@reservation.ReservationAt.ToString(group.Key == "Today" ? "h:mm tt" : "ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</span>
+                                <span class="queue-time">@reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
                                 <strong class="queue-name">@reservation.CustomerName</strong>
                                 <span class="queue-meta">
                                     @reservation.PartySize guests
@@ -210,11 +210,10 @@
                                     }
                                     else
                                     {
-                                        <span class="checkin-later">Check-in from @((reservation.ReservationAt - TableManagementModel.CheckInOpensBefore).ToString(group.Key == "Today" ? "h:mm tt" : "ddd h:mm tt", CultureInfo.CurrentCulture))</span>
+                                        <span class="checkin-later">Check-in from @((reservation.ReservationAt - TableManagementModel.CheckInOpensBefore).ToString("h:mm tt", CultureInfo.CurrentCulture))</span>
                                     }
                                 </div>
                             </div>
-                        }
                     }
                 </div>
             }
