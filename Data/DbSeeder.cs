@@ -221,6 +221,16 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'StripeSessionId') IS NULL ALTER TABLE Reservations ADD StripeSessionId nvarchar(255) NULL");
 
+        // Each deposit keeps the currency it was charged in. Deposits taken before this column
+        // existed were all charged in ringgit.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Reservations', 'DepositCurrency') IS NULL
+            BEGIN
+                ALTER TABLE Reservations ADD DepositCurrency nvarchar(10) NULL;
+                EXEC(N'UPDATE Reservations SET DepositCurrency = ''MYR'' WHERE DepositAmount IS NOT NULL;');
+            END
+            """);
+
         // Older databases kept one table per booking in Reservations.TableId (required there).
         // Each booking keeps its table as a ReservationTables row; the old column then becomes
         // optional and empty, so new bookings can be saved and its foreign key can't block removing

@@ -434,7 +434,9 @@ public class CheckoutModel : PageModel
                 item.ReservationTables.Any(link => link.TableId == session.TableId))
             .OrderBy(item => item.CreatedAt)
             .FirstOrDefaultAsync();
-        if (reservation is null)
+        // A deposit paid in another currency (the restaurant changed it since) can't be taken off
+        // this bill as the same number; staff refund it instead.
+        if (reservation is null || (reservation.DepositCurrency ?? CurrencyType.MYR) != Currency)
         {
             return;
         }

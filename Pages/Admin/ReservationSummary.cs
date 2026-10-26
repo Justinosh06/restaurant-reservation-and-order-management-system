@@ -1,4 +1,7 @@
+using System.Globalization;
+using RestaurantReservation.Extensions;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 
@@ -15,15 +18,23 @@ public sealed record ReservationSummary(
     ReservationStatus Status,
     DepositStatus Deposit = DepositStatus.None,
     int? DepositAmount = null,
-    DateTime? CheckedInAt = null)
+    DateTime? CheckedInAt = null,
+    CurrencyType? DepositCurrency = null)
 {
-    // "RM20 deposit paid", or null when the booking has no deposit.
+    // "RM20 deposit paid" in the currency it was paid in, or null when the booking has no deposit.
     public string? DepositLabel => Deposit switch
     {
-        DepositStatus.Paid => $"RM{DepositAmount / 100m:0.##} deposit paid",
-        DepositStatus.Refunded => $"RM{DepositAmount / 100m:0.##} deposit refunded",
+        DepositStatus.Paid => $"{DepositText(DepositAmount, DepositCurrency)} deposit paid",
+        DepositStatus.Refunded => $"{DepositText(DepositAmount, DepositCurrency)} deposit refunded",
         _ => null
     };
+
+    // "RM20" or "$20.50". Deposits saved before their currency was kept were all in ringgit.
+    public static string DepositText(int? amountCents, CurrencyType? currency)
+    {
+        var amount = (amountCents ?? 0) / 100m;
+        return $"{(currency ?? CurrencyType.MYR).GetSymbol()}{amount.ToString(amount % 1 == 0 ? "0" : "0.00", CultureInfo.InvariantCulture)}";
+    }
 
     // How long a table is held for one booking.
     public static readonly TimeSpan SlotLength = TimeSpan.FromHours(2);
@@ -66,7 +77,8 @@ public sealed record ReservationSummary(
             reservation.Status,
             reservation.DepositStatus,
             reservation.DepositAmount,
-            reservation.CheckedInAt);
+            reservation.CheckedInAt,
+            reservation.DepositCurrency);
 
     private static string? FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
