@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 
@@ -14,17 +15,13 @@ public class SettingModel : PageModel
     private static readonly TimeOnly DefaultOpenTime = new(11, 0);
     private static readonly TimeOnly DefaultCloseTime = new(22, 0);
 
-    private static readonly DayOfWeek[] WeekOrder =
-    [
-        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
-        DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
-    ];
-
     private readonly ApplicationDbContext _db;
+    private readonly RestaurantClock _clock;
 
-    public SettingModel(ApplicationDbContext db)
+    public SettingModel(ApplicationDbContext db, RestaurantClock clock)
     {
         _db = db;
+        _clock = clock;
     }
 
     public IEnumerable<(string Value, string Label)> CurrencyOptions =>
@@ -102,6 +99,14 @@ public class SettingModel : PageModel
         settings.DefaultCurrency = currency;
         settings.UpdatedAt = DateTime.UtcNow;
 
+        var previousHours = OpeningHoursSchedule.WeekOrder.Select(day =>
+        {
+            var saved = settings.BusinessHours.FirstOrDefault(h => h.DayOfWeek == day);
+            return saved is null
+                ? new OpeningHoursSchedule.WeekdayHours(day, false, DefaultOpenTime, DefaultCloseTime)
+                : new OpeningHoursSchedule.WeekdayHours(day, saved.IsClosed, saved.OpenTime, saved.CloseTime);
+        }).ToList();
+
         foreach (var day in hours)
         {
             var dayOfWeek = (DayOfWeek)day.DayOfWeek;
@@ -122,6 +127,11 @@ public class SettingModel : PageModel
             saved.CloseTime = day.IsClosed ? null : TimeOnly.Parse(day.CloseTime!);
         }
 
+        var newHours = settings.BusinessHours
+            .Select(h => new OpeningHoursSchedule.WeekdayHours(h.DayOfWeek, h.IsClosed, h.OpenTime, h.CloseTime))
+            .ToList();
+        await OpeningHoursSchedule.RecordAsync(_db, previousHours, newHours, _clock.Today);
+
         await _db.SaveChangesAsync();
 
         return new JsonResult(ToDto(settings));
@@ -138,7 +148,7 @@ public class SettingModel : PageModel
         phoneNumber = settings?.PhoneNumber,
         defaultCurrency = (settings?.DefaultCurrency ?? CurrencyType.MYR).ToString(),
         updatedAt = settings?.UpdatedAt,
-        businessHours = WeekOrder.Select(day =>
+        businessHours = OpeningHoursSchedule.WeekOrder.Select(day =>
         {
             var saved = settings?.BusinessHours.FirstOrDefault(h => h.DayOfWeek == day);
             return new

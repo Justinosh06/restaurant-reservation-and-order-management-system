@@ -148,6 +148,23 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('OrderItems', 'Options') IS NULL ALTER TABLE OrderItems ADD Options nvarchar(max) NOT NULL DEFAULT '{{}}'");
 
+        // Same table, keys and indexes as EnsureCreated would make for OpeningHoursHistory.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID('OpeningHoursHistory') IS NULL
+            BEGIN
+                CREATE TABLE OpeningHoursHistory (
+                    Id nvarchar(450) NOT NULL,
+                    EffectiveFrom date NOT NULL,
+                    DayOfWeek nvarchar(15) NOT NULL,
+                    OpenTime time NULL,
+                    CloseTime time NULL,
+                    IsClosed bit NOT NULL,
+                    CONSTRAINT PK_OpeningHoursHistory PRIMARY KEY (Id)
+                );
+                CREATE INDEX IX_OpeningHoursHistory_EffectiveFrom ON OpeningHoursHistory (EffectiveFrom);
+            END
+            """);
+
         // Same table, keys and indexes as EnsureCreated would make for CartItem.
         await db.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID('CartItems') IS NULL
