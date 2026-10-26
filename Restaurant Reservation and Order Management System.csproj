@@ -20,4 +20,11 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Images uploaded through the site (menu photos, ...) are data, not code: dotnet watch must not
+       react to them, or it restarts the app (and can crash) every time someone uploads a file. -->
+  <ItemGroup>
+    <Content Update="wwwroot\uploads\**" Watch="false" />
+    <Watch Remove="wwwroot\uploads\**" />
+  </ItemGroup>
+
 </Project>
