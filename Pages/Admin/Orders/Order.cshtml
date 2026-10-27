@@ -132,7 +132,7 @@
         <div class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab">
             <section class="card border-0 bg-body-tertiary rounded-4">
                 <div class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3 pb-2">
-                    <span class="small text-body-secondary fw-medium">Served and paid orders <span class="fw-normal" id="history-count"></span></span>
+                    <span class="small text-body-secondary fw-medium">Completed dining sessions <span class="fw-normal" id="history-count"></span></span>
 
                     <form id="history-form" class="d-flex flex-wrap align-items-center gap-2 ms-lg-auto">
                         <div class="dropdown" data-date-range>
@@ -170,6 +170,18 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="order-modal-body"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="payment-modal" tabindex="-1" aria-labelledby="payment-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="payment-modal-title">Dining session payment details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="payment-modal-body"></div>
         </div>
     </div>
 </div>
