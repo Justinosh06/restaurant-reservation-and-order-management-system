@@ -1,8 +1,11 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Payments;
 using RestaurantReservation.Models;
 
 namespace RestaurantReservation.Pages.Admin.Orders;
@@ -13,11 +16,13 @@ public class OrderModel : PageModel
 
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
+    private readonly StripePaymentDetails _stripe;
 
-    public OrderModel(ApplicationDbContext db, RestaurantClock clock)
+    public OrderModel(ApplicationDbContext db, RestaurantClock clock, StripePaymentDetails stripe)
     {
         _db = db;
         _clock = clock;
+        _stripe = stripe;
     }
 
     public DateOnly Today => _clock.Today;
@@ -72,7 +77,23 @@ public class OrderModel : PageModel
         List<OrderItemRow> Items,
         DateTime StartedAt,
         DateTime LastOrderAt,
-        int Total);
+        int Total,
+        int PromoDiscount,
+        string? PromotionCode,
+        int ReservationDepositCredit);
+
+    public record PaymentDetailsRow(
+        int AmountCents,
+        string CurrencySymbol,
+        string State,
+        string? CheckoutSessionId,
+        string? PaymentIntentId,
+        string MethodLabel,
+        string CustomerName,
+        string? CustomerEmail,
+        DateTime? PaidAtUtc,
+        DateTime? RefundedAtUtc,
+        string? ReceiptUrl);
 
     // History only lists finished orders: served to the table and paid for (status Completed).
     // Orders are grouped by dining session, so a table that ordered twice in one visit shows as one bill.
@@ -114,6 +135,13 @@ public class OrderModel : PageModel
             .ToListAsync();
         var itemsByOrder = orderItems.ToLookup(oi => oi.OrderId);
 
+        var transactions = await _db.Transactions.AsNoTracking()
+            .Where(t => orderIds.Contains(t.OrderId)
+                && (t.Status == TransactionStatus.Succeeded || t.Status == TransactionStatus.Refunded))
+            .Select(t => new { t.OrderId, t.MetadataJson })
+            .ToListAsync();
+        var transactionsByOrder = transactions.ToLookup(t => t.OrderId);
+
         var visits = orders
             .GroupBy(o => o.SessionId)
             .Select(visit =>
@@ -138,6 +166,13 @@ public class OrderModel : PageModel
                     .Distinct()
                     .ToList();
 
+                var visitTransactions = visitOrders.SelectMany(o => transactionsByOrder[o.Id]).ToList();
+                var promoDiscount = visitTransactions.Sum(t => ReadCents(t.MetadataJson, "promoDiscount"));
+                var depositCredit = visitTransactions.Sum(t => ReadCents(t.MetadataJson, "reservationDepositCredit"));
+                var promotionCode = visitTransactions
+                    .Select(t => ReadText(t.MetadataJson, "promotionCode"))
+                    .FirstOrDefault(code => !string.IsNullOrWhiteSpace(code));
+
                 return new VisitRow(
                     visit.Key,
                     visitOrders[0].TableId,
@@ -146,12 +181,96 @@ public class OrderModel : PageModel
                     items,
                     visitOrders[0].CreatedAt,
                     visitOrders[^1].CreatedAt,
-                    visitOrders.Sum(o => o.TotalAmount));
+                    visitOrders.Sum(o => o.TotalAmount),
+                    promoDiscount,
+                    promotionCode,
+                    depositCredit);
             })
             .OrderByDescending(v => v.LastOrderAt)
             .ToList();
 
         return new JsonResult(visits);
+    }
+
+    private static int ReadCents(string? metadataJson, string name) =>
+        ReadMetadata(metadataJson, name) is { ValueKind: JsonValueKind.Number } value && value.TryGetInt32(out var cents)
+            ? cents
+            : 0;
+
+    private static string? ReadText(string? metadataJson, string name) =>
+        ReadMetadata(metadataJson, name) is { ValueKind: JsonValueKind.String } value
+            ? value.GetString()
+            : null;
+
+    private static JsonElement? ReadMetadata(string? metadataJson, string name)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var json = JsonDocument.Parse(metadataJson);
+            return json.RootElement.TryGetProperty(name, out var value) ? value.Clone() : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<IActionResult> OnGetPaymentDetailsAsync(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return BadRequest(new { error = "A dining session is required." });
+        }
+
+        var orderIds = await _db.Orders.AsNoTracking()
+            .Where(o => o.SessionId == id && o.Status == OrderStatus.Completed)
+            .Select(o => o.Id)
+            .ToListAsync();
+        if (orderIds.Count == 0)
+        {
+            return NotFound();
+        }
+
+        var transactions = await _db.Transactions.AsNoTracking()
+            .Include(t => t.Order!.Customer)
+            .Where(t => orderIds.Contains(t.OrderId)
+                && (t.Status == TransactionStatus.Succeeded || t.Status == TransactionStatus.Refunded))
+            .ToListAsync();
+
+        var groups = transactions
+            .GroupBy(t => t.StripeCheckoutSessionId ?? t.Id)
+            .OrderBy(g => g.Min(t => t.CreatedAt))
+            .ToList();
+        var stripePayments = await Task.WhenAll(groups.Select(group => _stripe.GetAsync(
+            group.First().StripeCheckoutSessionId,
+            expectRefunded: group.Any(t => t.Status == TransactionStatus.Refunded))));
+
+        var payments = groups.Select((group, index) =>
+        {
+            var first = group.First();
+            var stripe = stripePayments[index];
+            var refunded = stripe?.Refunded == true || group.Any(t => t.Status == TransactionStatus.Refunded);
+
+            return new PaymentDetailsRow(
+                group.Sum(t => t.Amount),
+                first.Currency.GetSymbol(),
+                refunded ? "Refunded" : "Paid",
+                first.StripeCheckoutSessionId,
+                stripe?.PaymentIntentId,
+                stripe?.MethodLabel ?? first.PaymentMethod.ToString(),
+                stripe?.CustomerName ?? first.Order?.Customer?.FullName ?? "Guest",
+                stripe?.CustomerEmail ?? first.Order?.Customer?.Email,
+                stripe?.PaidAt ?? first.CreatedAt,
+                stripe?.RefundedAt,
+                stripe?.ReceiptUrl);
+        }).ToList();
+
+        return new JsonResult(payments);
     }
 
     private static string? JoinRemarks(IEnumerable<string?> remarks)
