@@ -1,19 +1,26 @@
 @page "/Admin/Promotions"
 @model RestaurantReservation.Pages.Admin.Promotions.PromotionModel
 @using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Infrastructure.Authentication
 @using RestaurantReservation.Models
-@using RestaurantReservation.Pages.Admin.Promotions
 @{
     ViewData["Title"] = "Promotions";
     var maxImageMb = ImageUploadService.MaxImageBytes / (1024 * 1024);
 }
 
-<div class="admin-page px-3 pt-3 pb-4" id="promotions-admin" data-currency-symbol="@Model.CurrencySymbol">
+<div class="admin-page px-3 pt-3 pb-4" id="promotions-admin" data-currency-symbol="@Model.CurrencySymbol" data-emails-enabled="@(Model.EmailsEnabled ? "true" : "false")">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="h4 fw-semibold mb-1">Promotions</h1>
+            @if (!User.IsInRole(AppRoles.Administrator))
+            {
+                <p class="text-body-secondary mb-0"><i class="fa-solid fa-lock me-1"></i>View only. Ask an Administrator to add or change promotions.</p>
+            }
         </div>
-        <button type="button" class="btn btn-dark" id="btn-new-promotion"><i class="fa-solid fa-plus me-1"></i> New promotion</button>
+        @if (User.IsInRole(AppRoles.Administrator))
+        {
+            <button type="button" class="btn btn-dark" id="btn-new-promotion"><i class="fa-solid fa-plus me-1"></i> New promotion</button>
+        }
     </div>
 
     <div class="row g-3">

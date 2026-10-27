@@ -68,8 +68,9 @@
                                 <input class="form-check-input" type="checkbox" role="switch" id="avail-${m.id}" data-toggle="${m.id}" ${m.available ? "checked" : ""} />
                                 <label class="form-check-label small" for="avail-${m.id}">Available</label>
                             </div>
+                            ${AdminUI.isAdministrator ? `
                             <button type="button" class="btn btn-sm btn-light border" data-edit="${m.id}">Edit</button>
-                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${m.id}" aria-label="Delete ${name}"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${m.id}" aria-label="Delete ${name}"><i class="fa-solid fa-trash"></i></button>` : ""}
                         </div>
                     </div>
                 </div>
@@ -255,7 +256,8 @@
         formModal.show();
     };
 
-    document.getElementById("btn-new-item").addEventListener("click", () => openForm(null));
+    // Not on the page for Staff, who can only switch availability.
+    document.getElementById("btn-new-item")?.addEventListener("click", () => openForm(null));
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();

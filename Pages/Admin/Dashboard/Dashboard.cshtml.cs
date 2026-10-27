@@ -13,17 +13,22 @@ public class DashboardModel : PageModel
     private const int DefaultLastHour = 22;
     private const int MaxExportDays = 366;
 
-    private static readonly OrderStatus[] RevenueStatuses = [OrderStatus.Served, OrderStatus.Completed];
-
     private readonly ApplicationDbContext _db;
     private readonly RestaurantClock _clock;
     private readonly AnalyticsReportBuilder _reports;
+    private readonly PeakHoursAnalytics _peakHours;
+    private readonly TableUtilizationAnalytics _utilization;
+    private readonly ReservationAnalytics _reservations;
 
-    public DashboardModel(ApplicationDbContext db, RestaurantClock clock, AnalyticsReportBuilder reports)
+    public DashboardModel(ApplicationDbContext db, RestaurantClock clock, AnalyticsReportBuilder reports,
+        PeakHoursAnalytics peakHours, TableUtilizationAnalytics utilization, ReservationAnalytics reservations)
     {
         _db = db;
         _clock = clock;
         _reports = reports;
+        _peakHours = peakHours;
+        _utilization = utilization;
+        _reservations = reservations;
     }
 
     public DateOnly Today => _clock.Today;
@@ -63,7 +68,7 @@ public class DashboardModel : PageModel
             .ToList();
 
         var servedOrders = (await _db.Orders.AsNoTracking()
-                .Where(o => RevenueStatuses.Contains(o.Status))
+                .Where(o => RevenueRules.Statuses.Contains(o.Status))
                 .Where(o => (o.ServedAt ?? o.CreatedAt) >= startUtc && (o.ServedAt ?? o.CreatedAt) < endUtc)
                 .Select(o => new { o.TotalAmount, ServedAt = o.ServedAt ?? o.CreatedAt })
                 .ToListAsync())
@@ -79,10 +84,11 @@ public class DashboardModel : PageModel
         var revenue = served.Sum(o => o.TotalAmount);
         var previousRevenue = previousServed.Sum(o => o.TotalAmount);
 
-        var reservations = await _db.Reservations.CountAsync(r =>
-            r.Date >= fromDate && r.Date <= toDate && r.Status != ReservationStatus.Cancelled);
-        var previousReservations = await _db.Reservations.CountAsync(r =>
-            r.Date >= previousFrom && r.Date < fromDate && r.Status != ReservationStatus.Cancelled);
+        // Bookings that were cancelled, or not shown up for, are left out (see ReservationAnalytics).
+        var bookings = await _reservations.BuildAsync(fromDate, toDate);
+        var previousBookings = await _reservations.BuildAsync(previousFrom, previousTo);
+        var reservations = bookings.Totals.Bookings;
+        var previousReservations = previousBookings.Totals.Bookings;
 
         var revenueByDay = days.Select(day => new
         {
@@ -91,14 +97,11 @@ public class DashboardModel : PageModel
             orders = served.Count(o => o.Day == day)
         });
 
-        var reservationDays = await _db.Reservations.AsNoTracking()
-            .Where(r => r.Date >= fromDate && r.Date <= toDate && r.Status != ReservationStatus.Cancelled)
-            .Select(r => r.Date)
-            .ToListAsync();
-        var reservationsByDay = days.Select(day => new
+        var reservationsByDay = bookings.Days.Select(day => new
         {
-            date = day.ToString("yyyy-MM-dd"),
-            count = reservationDays.Count(d => d == day)
+            date = day.Date.ToString("yyyy-MM-dd"),
+            count = day.Bookings,
+            guests = day.Guests
         });
 
         var ordersByDay = days.Select(day => new
@@ -125,7 +128,7 @@ public class DashboardModel : PageModel
 
         var rangeStartUtc = _clock.StartOfDayUtc(fromDate);
         var topItems = await _db.OrderItems.AsNoTracking()
-            .Where(oi => RevenueStatuses.Contains(oi.Order!.Status))
+            .Where(oi => RevenueRules.Statuses.Contains(oi.Order!.Status))
             .Where(oi => (oi.Order!.ServedAt ?? oi.Order.CreatedAt) >= rangeStartUtc && (oi.Order.ServedAt ?? oi.Order.CreatedAt) < endUtc)
             .GroupBy(oi => oi.ItemName)
             .Select(g => new { name = g.Key, units = g.Sum(oi => oi.Quantity) })
@@ -158,6 +161,10 @@ public class DashboardModel : PageModel
                 status = AdminDisplay.OrderStatusLabel(o.Status)
             });
 
+        var peakHours = await _peakHours.BuildAsync(fromDate, toDate);
+        var utilization = await _utilization.BuildAsync(fromDate, toDate);
+        var previousUtilization = await _utilization.BuildAsync(previousFrom, previousTo);
+
         return new JsonResult(new
         {
             previousFrom = previousFrom.ToString("yyyy-MM-dd"),
@@ -177,7 +184,58 @@ public class DashboardModel : PageModel
             ordersByDay,
             ordersByHour,
             topItems,
-            recentOrders
+            recentOrders,
+            utilization = new
+            {
+                tableCount = utilization.TableCount,
+                rate = utilization.Rate,
+                previousRate = previousUtilization.Rate,
+                usedHours = Math.Round(utilization.UsedHours, 1),
+                openTableHours = Math.Round(utilization.OpenTableHours, 1),
+                visits = utilization.Visits,
+                averageVisitMinutes = utilization.AverageVisitMinutes,
+                tables = utilization.Tables.Select(t => new
+                {
+                    id = t.TableId,
+                    capacity = t.Capacity,
+                    rate = t.Rate,
+                    usedHours = Math.Round(t.UsedHours, 1),
+                    visits = t.Visits
+                })
+            },
+            reservationTrends = new
+            {
+                bookings = bookings.Totals.Bookings,
+                previousBookings = previousBookings.Totals.Bookings,
+                guests = bookings.Totals.Guests,
+                previousGuests = previousBookings.Totals.Guests,
+                cancelled = bookings.Totals.Cancelled,
+                noShows = bookings.Totals.NoShows,
+                cancellationRate = bookings.Totals.CancellationRate,
+                previousCancellationRate = previousBookings.Totals.CancellationRate,
+                averageLeadDays = bookings.Totals.AverageLeadDays,
+                previousAverageLeadDays = previousBookings.Totals.AverageLeadDays,
+                slots = bookings.Slots.Select(s => new
+                {
+                    time = s.Time.ToString("HH:mm"),
+                    bookings = s.Bookings,
+                    guests = s.Guests
+                })
+            },
+            peakHours = new
+            {
+                tableCount = peakHours.TableCount,
+                rows = peakHours.Rows.Select(row => new
+                {
+                    day = (int)row.Day,
+                    hours = row.Hours.Select(cell => new
+                    {
+                        hour = cell.Hour,
+                        tables = cell.AverageTables.HasValue ? Math.Round(cell.AverageTables.Value, 1) : (double?)null,
+                        closed = cell.Closed
+                    })
+                })
+            }
         });
     }
 

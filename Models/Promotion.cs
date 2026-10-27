@@ -43,6 +43,10 @@ namespace RestaurantReservation.Models
         [Range(0, 10000000)]
         public int MinimumSpend { get; set; }
 
+        // When customers were emailed about this promotion (UTC); null until it has started and been sent.
+        // Set before sending, so a promotion is only ever emailed once, even if it is edited later.
+        public DateTime? EmailedAt { get; set; }
+
         public bool IsRunningOn(DateOnly day) => StartDate <= day && day <= EndDate;
 
         // The amount (in cents) taken off a bill of subtotal cents, or 0 when the bill doesn't qualify.

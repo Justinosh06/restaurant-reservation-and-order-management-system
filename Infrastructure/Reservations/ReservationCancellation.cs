@@ -22,7 +22,8 @@ public static class ReservationCancellation
 
     // Refunds a paid deposit and marks the booking Cancelled. Returns the message to show the customer.
     public static async Task<string> CancelAsync(
-        ApplicationDbContext db, IPaymentService payments, ILogger logger, string? customerId, string? reservationId)
+        ApplicationDbContext db, IPaymentService payments, ReservationEmailQueue emails, ILogger logger,
+        string? customerId, string? reservationId)
     {
         var reservation = reservationId is null ? null : await db.Reservations
             .FirstOrDefaultAsync(item => item.Id == reservationId && item.CustomerId == customerId);
@@ -59,6 +60,7 @@ public static class ReservationCancellation
         // Kept as Cancelled (not deleted) so staff can still see it; cancelled bookings don't hold tables.
         reservation.Status = ReservationStatus.Cancelled;
         await db.SaveChangesAsync();
+        emails.Cancelled(reservation, refunded);
         return $"Your booking on {at} is cancelled."
             + (refunded
                 ? $" Your RM{reservation.DepositAmount / 100m:0.##} deposit is on its way back to your card (usually 5-10 working days)."

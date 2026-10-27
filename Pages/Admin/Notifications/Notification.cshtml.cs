@@ -8,7 +8,7 @@ using RestaurantReservation.Infrastructure.Announcements;
 namespace RestaurantReservation.Pages.Admin.Notifications;
 
 // Every announcement customers can see right now, for Administrators and Staff alike
-// (the Announcements page that edits them is for Administrators only).
+// (on the Announcements page Staff can read them, but only Administrators can change them).
 public class NotificationModel : PageModel
 {
     private readonly ApplicationDbContext _db;

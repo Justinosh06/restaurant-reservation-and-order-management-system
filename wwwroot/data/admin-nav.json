@@ -48,7 +48,8 @@
           "Icon": "fa-solid fa-utensils",
           "Page": "/Admin/Menu/Menu",
           "Roles": [
-            "Administrator"
+            "Administrator",
+            "Staff"
           ]
         },
         {          "Title": "Staffs",
@@ -59,11 +60,20 @@
           ]
         },
         {
+          "Title": "Customers",
+          "Icon": "fa-solid fa-users",
+          "Page": "/Admin/Customers/Customer",
+          "Roles": [
+            "Administrator"
+          ]
+        },
+        {
           "Title": "Announcement",
           "Icon": "fa-solid fa-bullhorn",
           "Page": "/Admin/Announcements/Announcement",
           "Roles": [
-            "Administrator"
+            "Administrator",
+            "Staff"
           ]
         },
         {
@@ -71,7 +81,8 @@
           "Icon": "fa-solid fa-tags",
           "Page": "/Admin/Promotions/Promotion",
           "Roles": [
-            "Administrator"
+            "Administrator",
+            "Staff"
           ]
         },
         {

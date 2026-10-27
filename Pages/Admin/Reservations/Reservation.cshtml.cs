@@ -17,6 +17,7 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 public class ReservationManagementModel(
     ApplicationDbContext db,
     IPaymentService payments,
+    ReservationEmailQueue reservationEmails,
     ILogger<ReservationManagementModel> logger) : PageModel
 {
     // The list tabs: upcoming bookings already seated at a table, upcoming ones still
@@ -159,8 +160,21 @@ public class ReservationManagementModel(
             return Page();
         }
 
+        var before = ReservationEmailDetails.From(reservation);
+        var wasPending = reservation.Status == ReservationStatus.Pending;
         ApplyInput(reservation);
         await db.SaveChangesAsync();
+
+        // Seating a waiting booking confirms it; otherwise the customer hears about a new date, time or party size.
+        if (wasPending && reservation.Status == ReservationStatus.Confirmed)
+        {
+            reservationEmails.Confirmed(reservation);
+        }
+        else if (ReservationEmailDetails.From(reservation) != before
+            && reservation.Status is ReservationStatus.Pending or ReservationStatus.Confirmed)
+        {
+            reservationEmails.Modified(reservation, before);
+        }
 
         StatusMessage = "Reservation updated.";
         return RedirectToPage(new { tableId = FilterTableId, tab = TabOf(ReservationSummary.From(reservation), DateTime.Now) });
@@ -178,6 +192,11 @@ public class ReservationManagementModel(
         {
             db.Reservations.Remove(reservation);
             await db.SaveChangesAsync();
+            // To the customer a deleted upcoming booking is a cancelled one (the queue skips past bookings).
+            if (reservation.Status is ReservationStatus.Pending or ReservationStatus.Confirmed)
+            {
+                reservationEmails.Cancelled(reservation);
+            }
             StatusMessage = "Reservation deleted.";
         }
         else
@@ -249,8 +268,9 @@ public class ReservationManagementModel(
         }
 
         var wasPending = !summary.HasTable;
+        var confirming = reservation.Status == ReservationStatus.Pending;
         // Seating a booking confirms it, so the customer sees "Confirmed" instead of waiting.
-        if (reservation.Status == ReservationStatus.Pending)
+        if (confirming)
         {
             reservation.Status = ReservationStatus.Confirmed;
         }
@@ -261,6 +281,10 @@ public class ReservationManagementModel(
             reservation.ReservationTables.Add(new ReservationTable { Id = Guid.NewGuid().ToString("N"), TableId = tableId });
         }
         await db.SaveChangesAsync();
+        if (confirming)
+        {
+            reservationEmails.Confirmed(reservation);
+        }
         StatusMessage = $"{label} is now at {TablesLabel(wanted)}" + (wasPending ? ", confirmed, and has moved to Upcoming." : ".");
         return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
     }
@@ -301,8 +325,14 @@ public class ReservationManagementModel(
             }
         }
 
+        // Only a booking that was still to happen is news to the customer, not one already seated or completed.
+        var wasActive = reservation.Status is ReservationStatus.Pending or ReservationStatus.Confirmed;
         reservation.Status = ReservationStatus.Cancelled;
         await db.SaveChangesAsync();
+        if (wasActive)
+        {
+            reservationEmails.Cancelled(reservation, refunded);
+        }
         StatusMessage = $"{label} is cancelled." + (refunded ? " The deposit was refunded." : "");
         return RedirectToPage(new { tableId = FilterTableId, tab = Tab });
     }

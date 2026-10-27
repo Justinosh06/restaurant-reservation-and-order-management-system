@@ -59,11 +59,9 @@
                         </div>
 
                         <div class="text-center my-3">
-                            ${s.imageUrl
-                                ? `<img class="rounded-circle object-fit-cover" width="82" height="82" src="${AdminUI.escapeHtml(s.imageUrl)}" alt="" />`
-                                : `<span class="d-inline-block rounded-circle bg-${avatar.color}-subtle text-${avatar.color}-emphasis fs-4 p-3">
-                                    <img class="avatar-img" style="width: 50px;" src="/images/avatar-${avatarImage}.png" alt="" />
-                                </span>`}
+                            <span class="d-inline-block rounded-circle bg-${avatar.color}-subtle text-${avatar.color}-emphasis fs-4 p-3">
+                                <img class="avatar-img" style="width: 50px;" src="/images/avatar-${avatarImage}.png" alt="" />
+                            </span>
                             ${s.name ? `<div class="fw-semibold mt-2 text-truncate">${AdminUI.escapeHtml(s.name)}</div>` : ""}
                             <div class="${s.name ? "small" : "fw-semibold mt-2"} text-truncate" title="${email}">${email}</div>
                             <div class="small text-body-secondary">${AdminUI.escapeHtml(s.role)}</div>

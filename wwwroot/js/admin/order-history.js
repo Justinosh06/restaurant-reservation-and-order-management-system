@@ -89,7 +89,7 @@
                         <div class="d-flex align-items-start gap-3">
                             <div class="bg-success-subtle text-success-emphasis rounded-3 fw-semibold small text-center px-2 py-3">${AdminUI.escapeHtml(o.table ?? "-")}</div>
                             <div class="flex-grow-1 overflow-hidden">
-                                <div class="fw-semibold text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</div>
+                                <div class="fw-semibold text-truncate" title="${AdminUI.escapeHtml(o.customer ?? "Walk-in")}">${AdminUI.escapeHtml(o.customer ?? "Walk-in")}</div>
                                 <div class="small text-body-secondary">${orderLabel(o)} &middot; Table ${AdminUI.escapeHtml(o.table ?? "-")}</div>
                             </div>
                             ${paidBadge}
@@ -133,7 +133,7 @@
                 <span class="small text-body-secondary">${AdminUI.formatDate(o.startedAt)}, ${timeRange(o)}</span>
             </div>
             <dl class="row small mb-3">
-                <dt class="col-4 fw-normal text-body-secondary">Customer</dt><dd class="col-8 text-break">${AdminUI.escapeHtml(o.customer)}</dd>
+                <dt class="col-4 fw-normal text-body-secondary">Customer</dt><dd class="col-8 text-break">${AdminUI.escapeHtml(o.customer ?? "Walk-in")}</dd>
                 <dt class="col-4 fw-normal text-body-secondary">Table</dt><dd class="col-8">${AdminUI.escapeHtml(o.table ?? "-")}</dd>
                 <dt class="col-4 fw-normal text-body-secondary">${o.orderIds.length === 1 ? "Order" : "Orders"}</dt><dd class="col-8">${o.orderIds.map(id => `#${AdminUI.escapeHtml(id)}`).join(", ")}</dd>
             </dl>

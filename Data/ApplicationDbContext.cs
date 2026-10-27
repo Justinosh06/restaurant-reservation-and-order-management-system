@@ -29,6 +29,7 @@ namespace RestaurantReservation.Data
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
         public DbSet<RestaurantSettings> RestaurantSettings => Set<RestaurantSettings>();
         public DbSet<BusinessHours> BusinessHours => Set<BusinessHours>();
+        public DbSet<OpeningHoursHistory> OpeningHoursHistory => Set<OpeningHoursHistory>();
         public DbSet<Announcement> Announcements => Set<Announcement>();
         public DbSet<Promotion> Promotions => Set<Promotion>();
 
@@ -296,6 +297,15 @@ namespace RestaurantReservation.Data
                       .WithMany(s => s.BusinessHours)
                       .HasForeignKey(b => b.RestaurantSettingsId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<OpeningHoursHistory>(entity =>
+            {
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.DayOfWeek)
+                      .HasConversion<string>()
+                      .HasMaxLength(15);
+                entity.HasIndex(h => h.EffectiveFrom);
             });
 
             // -------------------------------------------------------------

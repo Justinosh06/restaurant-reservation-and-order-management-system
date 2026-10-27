@@ -1,7 +1,9 @@
 using Stripe;
 using Stripe.Checkout;
 
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +47,9 @@ builder.Services.AddScoped<ImageUploadService>();
 builder.Services.AddScoped<AdminPortalService>();
 builder.Services.AddScoped<CustomerNotificationService>();
 builder.Services.AddScoped<AnalyticsReportBuilder>();
+builder.Services.AddScoped<PeakHoursAnalytics>();
+builder.Services.AddScoped<TableUtilizationAnalytics>();
+builder.Services.AddScoped<ReservationAnalytics>();
 
 // The dashboard's PDF export uses QuestPDF, which is free under its Community licence for a project like this.
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
@@ -54,6 +59,12 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<AnnouncementEmailQueue>();
 builder.Services.AddHostedService<AnnouncementEmailWorker>();
+// Reservation confirmed / changed / cancelled emails, sent in the background like announcements.
+builder.Services.AddSingleton<ReservationEmailQueue>();
+builder.Services.AddHostedService<ReservationEmailWorker>();
+// Promotion emails: every customer is emailed once when a promotion starts.
+builder.Services.AddSingleton<PromotionEmailSignal>();
+builder.Services.AddHostedService<PromotionEmailWorker>();
 
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 
@@ -107,6 +118,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 : context.RedirectUri);
             return Task.CompletedTask;
         };
+        // A customer whose account an admin deleted is signed out on their next request, instead of
+        // carrying on with a login cookie for an account that no longer exists.
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            if (context.Principal?.IsInRole(AppRoles.Customer) != true)
+            {
+                return;
+            }
+
+            var customerId = context.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+            if (customerId is null || !await db.Customers.AnyAsync(c => c.Id == customerId))
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -125,10 +153,10 @@ builder.Services.AddRazorPages(options =>
 
     options.Conventions.AuthorizeFolder("/Admin/Dashboard", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Staffs", "AdministratorOnly");
-    options.Conventions.AuthorizeFolder("/Admin/Announcements", "AdministratorOnly");
-    options.Conventions.AuthorizeFolder("/Admin/Promotions", "AdministratorOnly");
-    options.Conventions.AuthorizeFolder("/Admin/Menu", "AdministratorOnly");
+    options.Conventions.AuthorizeFolder("/Admin/Customers", "AdministratorOnly");
     options.Conventions.AuthorizeFolder("/Admin/Settings", "AdministratorOnly");
+    // Announcements, Promotions and Menu are open to Staff to read; [AdministratorChangesOnly] keeps changes to
+    // Administrators (except a dish's availability, which Staff can switch).
     options.Conventions.AuthorizeFolder("/Customer", "CustomerOnly");
 });
 // Custom subdomain route provider. Register once: a second copy maps Admin/Index to "/" twice.

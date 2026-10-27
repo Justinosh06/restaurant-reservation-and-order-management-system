@@ -1,5 +1,4 @@
 (() => {
-    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const DEFAULT_OPEN = "11:00";
     const DEFAULT_CLOSE = "22:00";
 
@@ -23,12 +22,12 @@
     const renderHours = () => {
         hoursList.innerHTML = hours.map((h, i) => `
             <div class="row g-2 align-items-center py-2 border-bottom">
-                <div class="col-12 col-sm-3 fw-medium">${DAY_NAMES[h.dayOfWeek]}</div>
+                <div class="col-12 col-sm-3 fw-medium">${AdminUI.DAY_NAMES[h.dayOfWeek]}</div>
                 <div class="col-5 col-sm-3">
-                    <input type="time" class="form-control form-control-sm" data-index="${i}" data-field="openTime" value="${h.openTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${DAY_NAMES[h.dayOfWeek]} opening time" />
+                    <input type="time" class="form-control form-control-sm" data-index="${i}" data-field="openTime" value="${h.openTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${AdminUI.DAY_NAMES[h.dayOfWeek]} opening time" />
                 </div>
                 <div class="col-5 col-sm-3">
-                    <input type="time" class="form-control form-control-sm" data-index="${i}" data-field="closeTime" value="${h.closeTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${DAY_NAMES[h.dayOfWeek]} closing time" />
+                    <input type="time" class="form-control form-control-sm" data-index="${i}" data-field="closeTime" value="${h.closeTime ?? ""}" ${h.isClosed ? "disabled" : ""} aria-label="${AdminUI.DAY_NAMES[h.dayOfWeek]} closing time" />
                 </div>
                 <div class="col-2 col-sm-3">
                     <div class="form-check form-switch mb-0">
@@ -106,7 +105,7 @@
 
         const invalidDays = hours.filter(h => !h.isClosed && (!h.openTime || !h.closeTime || h.closeTime <= h.openTime));
         hoursError.textContent = invalidDays.length
-            ? `Closing time must be after opening time for: ${invalidDays.map(h => DAY_NAMES[h.dayOfWeek]).join(", ")}.`
+            ? `Closing time must be after opening time for: ${invalidDays.map(h => AdminUI.DAY_NAMES[h.dayOfWeek]).join(", ")}.`
             : "";
 
         if (!form.checkValidity() || invalidDays.length) return;

@@ -105,6 +105,16 @@ public static class DbSeeder
             END
             """);
 
+        // When customers were emailed about a promotion. Promotions that exist before this column count as
+        // already emailed, so adding it doesn't email customers about old promotions.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Promotions', 'EmailedAt') IS NULL
+            BEGIN
+                ALTER TABLE Promotions ADD EmailedAt datetime2 NULL;
+                EXEC(N'UPDATE Promotions SET EmailedAt = SYSUTCDATETIME();');
+            END
+            """);
+
         // Promo code discounts, and the code a dining session applied at checkout (same key and index as EnsureCreated).
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Promotions', 'DiscountType') IS NULL ALTER TABLE Promotions ADD DiscountType nvarchar(20) NULL");
@@ -122,11 +132,9 @@ public static class DbSeeder
             END
             """);
 
-        // Admin portal profile (name and picture) and announcement notifications.
+        // Admin portal profile name and announcement notifications.
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Admins', 'Name') IS NULL ALTER TABLE Admins ADD Name nvarchar(100) NULL");
-        await db.Database.ExecuteSqlRawAsync(
-            "IF COL_LENGTH('Admins', 'ImageUrl') IS NULL ALTER TABLE Admins ADD ImageUrl nvarchar(max) NULL");
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Admins', 'AnnouncementsSeenAt') IS NULL ALTER TABLE Admins ADD AnnouncementsSeenAt datetime2 NULL");
 
@@ -149,6 +157,23 @@ public static class DbSeeder
             "IF COL_LENGTH('MenuItems', 'Options') IS NULL ALTER TABLE MenuItems ADD Options nvarchar(max) NOT NULL DEFAULT '{{}}'");
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('OrderItems', 'Options') IS NULL ALTER TABLE OrderItems ADD Options nvarchar(max) NOT NULL DEFAULT '{{}}'");
+
+        // Same table, keys and indexes as EnsureCreated would make for OpeningHoursHistory.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID('OpeningHoursHistory') IS NULL
+            BEGIN
+                CREATE TABLE OpeningHoursHistory (
+                    Id nvarchar(450) NOT NULL,
+                    EffectiveFrom date NOT NULL,
+                    DayOfWeek nvarchar(15) NOT NULL,
+                    OpenTime time NULL,
+                    CloseTime time NULL,
+                    IsClosed bit NOT NULL,
+                    CONSTRAINT PK_OpeningHoursHistory PRIMARY KEY (Id)
+                );
+                CREATE INDEX IX_OpeningHoursHistory_EffectiveFrom ON OpeningHoursHistory (EffectiveFrom);
+            END
+            """);
 
         // Same table, keys and indexes as EnsureCreated would make for CartItem.
         await db.Database.ExecuteSqlRawAsync("""

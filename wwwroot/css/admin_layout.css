@@ -137,7 +137,88 @@ body {
 
 .content-container {
     width: 100%;
+    min-width: 0;
     overflow-y: scroll;
+}
+
+/* Responsive: the sidebar is a Bootstrap offcanvas-lg, which makes its own background transparent on
+   large screens, so the grey is set again here. */
+.sidebar {
+    --bs-offcanvas-width: 300px;
+    background-color: #f2f2f3 !important;
+    flex-shrink: 0;
+
+    .header .notification-bell {
+        margin-left: auto;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .sidebar {
+        width: 270px;
+    }
+}
+
+/* Below 992px the sidebar slides in from the left; a top bar with a menu button takes its place. */
+@media (max-width: 991.98px) {
+    body {
+        padding: 0;
+    }
+
+    .sidebar {
+        max-width: 85vw;
+        border-radius: 0 20px 20px 0;
+    }
+
+    .content-container {
+        overflow-y: auto;
+    }
+}
+
+.admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--bs-body-bg);
+    border-bottom: 1px solid #f2f2f3;
+    font-family: "Bricolage Grotesque", sans-serif;
+
+    .menu-btn {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 14px;
+        background: #f2f2f3;
+        color: black;
+        font-size: 1.1rem;
+    }
+
+    .menu-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--bs-danger);
+    }
+
+    .logo {
+        font-size: 1.4rem;
+        letter-spacing: -1.5px;
+        font-weight: 700;
+    }
+
+    .page-title {
+        margin-left: auto;
+        color: #888888;
+        font-weight: 500;
+    }
 }
 
 /* Announcement bell next to the logo (Pages/Shared/_AdminLayout.cshtml, js/admin/notifications.js). */

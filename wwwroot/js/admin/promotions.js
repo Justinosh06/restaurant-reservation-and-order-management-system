@@ -9,6 +9,15 @@
 
     const listEl = document.getElementById("promo-list");
     const currencySymbol = document.getElementById("promotions-admin").dataset.currencySymbol;
+    const emailsEnabled = document.getElementById("promotions-admin").dataset.emailsEnabled === "true";
+
+    // Customers are emailed once, when a promotion starts (PromotionEmailWorker on the server).
+    const emailNote = (p) => {
+        if (!emailsEnabled) return "";
+        if (p.status === "Active") return " and emailed to customers";
+        if (p.status === "Scheduled") return `. Customers will be emailed on ${AdminUI.formatDate(p.startDate)}`;
+        return "";
+    };
     const statsEl = document.getElementById("promo-stats");
     const searchEl = document.getElementById("promo-search");
     const statusFilterEl = document.getElementById("promo-status-filter");
@@ -101,8 +110,9 @@
                         <p class="small text-truncate mt-2 mb-0">${AdminUI.escapeHtml(p.description)}</p>
                         <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
                             <button type="button" class="btn btn-sm btn-light border" data-view="${p.id}">View</button>
+                            ${AdminUI.isAdministrator ? `
                             <button type="button" class="btn btn-sm btn-light border" data-edit="${p.id}">Edit</button>
-                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${p.id}" aria-label="Delete ${title}">Delete</button>
+                            <button type="button" class="btn btn-sm btn-light border text-danger" data-delete="${p.id}" aria-label="Delete ${title}">Delete</button>` : ""}
                         </div>
                     </div>
                 </div>
@@ -238,7 +248,8 @@
         viewModal.show();
     };
 
-    document.getElementById("btn-new-promotion").addEventListener("click", () => openForm(null));
+    // Not on the page for Staff, who can only view.
+    document.getElementById("btn-new-promotion")?.addEventListener("click", () => openForm(null));
 
     dropEl.addEventListener("click", () => fileInput.click());
     dropEl.addEventListener("keydown", (e) => {
@@ -300,7 +311,7 @@
             const index = promotions.findIndex(p => p.id === saved.id);
             if (index >= 0) promotions[index] = saved; else promotions.unshift(saved);
             formModal.hide();
-            AdminUI.showToast(editingId ? "Promotion updated" : "Promotion created");
+            AdminUI.showToast(editingId ? "Promotion updated" : `Promotion created${emailNote(saved)}`);
             render();
         } catch (error) {
             formError.textContent = error.message;

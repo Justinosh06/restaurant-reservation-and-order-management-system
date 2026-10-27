@@ -4,6 +4,8 @@
     const toInput = document.getElementById("range-to");
     const byDayButton = document.getElementById("orders-by-day");
     const byHourButton = document.getElementById("orders-by-hour");
+    const bookingsByDateButton = document.getElementById("bookings-by-date");
+    const bookingsBySlotButton = document.getElementById("bookings-by-slot");
     const recentOrdersEl = document.getElementById("recent-orders");
     const exportButton = document.getElementById("export-button");
 
@@ -15,6 +17,12 @@
     let revenueChart = null;
     let ordersChart = null;
     let itemsChart = null;
+    const TABLES_SHOWN = 6;
+    let utilizationTables = [];
+    let showAllTables = false;
+    let reservationsChart = null;
+    let reservationsByDate = { labels: [], bookings: [], guests: [] };
+    let reservationsBySlot = { labels: [], bookings: [], guests: [] };
     let sparklines = [];
     let ordersByDay = { labels: [], counts: [] };
     let ordersByHour = { labels: [], counts: [] };
@@ -43,17 +51,25 @@
         foreColor: MUTED
     });
 
-    // comparison = { word: "previous" or "last month", dates: "1 Sept 2026 - 30 Sept 2026" }
-    const setDelta = (id, current, previous, format, comparison) => {
+    // { word: "previous" or "last month", dates: "1 Sept 2026 - 30 Sept 2026" }
+    const comparisonFor = (data) => ({
+        word: data.compareWholeMonth ? "last month" : "previous",
+        dates: `${AdminUI.formatDate(`${data.previousFrom}T00:00:00`)} - ${AdminUI.formatDate(`${data.previousTo}T00:00:00`)}`
+    });
+
+    // lowerIsBetter: a fall shows in green (e.g. cancellation rate). neutral: no green/red (e.g. booking lead time).
+    const setDelta = (id, current, previous, format, comparison, { lowerIsBetter = false, neutral = false } = {}) => {
         const el = document.getElementById(id);
-        const diff = current - previous;
+        const diff = Math.round((current - previous) * 10) / 10;
         el.title = `Compared with ${comparison.dates}`;
         if (diff === 0) {
             el.className = "text-body-secondary";
             el.textContent = `Same as ${comparison.word}`;
             return;
         }
-        el.className = diff > 0 ? "text-success fw-semibold" : "text-danger fw-semibold";
+        el.className = neutral
+            ? "text-body-secondary fw-semibold"
+            : (diff > 0) !== lowerIsBetter ? "text-success fw-semibold" : "text-danger fw-semibold";
         el.innerHTML = `<i class="fa-solid ${diff > 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down"} me-1"></i>`
             + `${diff > 0 ? "+" : "-"}${AdminUI.escapeHtml(format(Math.abs(diff)))} <span class="fw-normal text-body-secondary">vs ${comparison.word}</span>`;
     };
@@ -79,10 +95,7 @@
         document.getElementById("kpi-aov").textContent = AdminUI.formatCurrency(data.averageOrderValue);
         document.getElementById("revenue-total").textContent = AdminUI.formatCurrency(data.revenue);
 
-        const comparison = {
-            word: data.compareWholeMonth ? "last month" : "previous",
-            dates: `${AdminUI.formatDate(`${data.previousFrom}T00:00:00`)} - ${AdminUI.formatDate(`${data.previousTo}T00:00:00`)}`
-        };
+        const comparison = comparisonFor(data);
         setDelta("kpi-revenue-delta", data.revenue, data.previousRevenue, AdminUI.formatCurrency, comparison);
         setDelta("kpi-orders-delta", data.orders, data.previousOrders, String, comparison);
         setDelta("kpi-reservations-delta", data.reservations, data.previousReservations, String, comparison);
@@ -109,7 +122,7 @@
             series: [{ name: "Revenue", data: amounts.map(amount => amount / 100) }],
             colors: [INK],
             xaxis: { categories: labels },
-            yaxis: { min: 0 },
+            yaxis: { min: 0, labels: { formatter: (value) => Math.round(value).toLocaleString("en-MY") } },
             stroke: { curve: "smooth", width: 2 },
             fill: { type: "gradient", gradient: { opacityFrom: 0.25, opacityTo: 0 } },
             dataLabels: { enabled: false },
@@ -173,12 +186,209 @@
         itemsChart.render();
     };
 
+    // 0.4567 -> 45.7 (a percentage with one decimal)
+    const toPercent = (rate) => Math.round(rate * 1000) / 10;
+
+    const plural = (count, word) => `${count} ${count === 1 ? word : `${word}s`}`;
+
+    const showUtilization = (data) => {
+        const utilization = data.utilization;
+        const valueEl = document.getElementById("kpi-utilization");
+        const detailEl = document.getElementById("utilization-detail");
+        const deltaEl = document.getElementById("kpi-utilization-delta");
+
+        if (utilization.tableCount === 0 || utilization.rate === null) {
+            valueEl.textContent = "-";
+            deltaEl.innerHTML = "&nbsp;";
+            detailEl.textContent = utilization.tableCount === 0
+                ? "No tables have been set up yet."
+                : "The restaurant wasn't open in this date range.";
+            utilizationTables = [];
+            showUtilizationTables();
+            return;
+        }
+
+        valueEl.textContent = `${toPercent(utilization.rate)}%`;
+        detailEl.textContent = `${utilization.usedHours} of ${utilization.openTableHours} table-hours in use · ${plural(utilization.visits, "visit")}`
+            + (utilization.visits ? ` · avg. ${AdminUI.formatDuration(utilization.averageVisitMinutes)}` : "");
+
+        if (utilization.previousRate === null) {
+            deltaEl.className = "text-body-secondary";
+            deltaEl.textContent = "No earlier data";
+        } else {
+            setDelta("kpi-utilization-delta", toPercent(utilization.rate), toPercent(utilization.previousRate),
+                (points) => `${points.toFixed(1)} pts`, comparisonFor(data));
+        }
+
+        utilizationTables = [...utilization.tables].sort((a, b) =>
+            b.rate - a.rate || a.id.localeCompare(b.id, undefined, { numeric: true }));
+        showUtilizationTables();
+    };
+
+    // Busiest tables first, each with its rate written out. Only the first few until "Show all" is pressed,
+    // so the card stays about as tall as Reservation trends.
+    const showUtilizationTables = () => {
+        const listEl = document.getElementById("utilization-tables");
+        const toggle = document.getElementById("utilization-toggle");
+        const shown = showAllTables ? utilizationTables : utilizationTables.slice(0, TABLES_SHOWN);
+
+        listEl.innerHTML = shown.map(t => {
+            const percent = toPercent(t.rate).toFixed(1);
+            const details = `${t.usedHours} h in use · ${plural(t.visits, "visit")}`;
+            return `
+                <li class="utilization-row" title="${AdminUI.escapeHtml(`Table ${t.id}: ${percent}% · ${details}`)}">
+                    <span class="fw-medium text-truncate">${AdminUI.escapeHtml(t.id)}</span>
+                    <span class="text-body-secondary">${plural(t.capacity, "seat")}</span>
+                    <span class="utilization-track" aria-hidden="true"><span class="utilization-fill" style="width: ${Math.min(percent, 100)}%"></span></span>
+                    <span class="fw-semibold text-end">${percent}%</span>
+                    <span class="visually-hidden">, ${details}</span>
+                </li>`;
+        }).join("");
+
+        const hidden = utilizationTables.length - TABLES_SHOWN;
+        toggle.classList.toggle("d-none", hidden <= 0);
+        toggle.textContent = showAllTables ? "Show fewer" : `Show all ${utilizationTables.length} tables`;
+        toggle.setAttribute("aria-expanded", String(showAllTables));
+    };
+
+    // Long ranges are grouped by week (starting Monday), so the chart stays readable.
+    const groupByWeek = (days) => {
+        const weeks = new Map();
+        for (const day of days) {
+            const date = new Date(`${day.date}T00:00:00`);
+            const monday = addDays(day.date, -((date.getDay() + 6) % 7));
+            const week = weeks.get(monday) ?? { date: monday, count: 0, guests: 0 };
+            week.count += day.count;
+            week.guests += day.guests;
+            weeks.set(monday, week);
+        }
+        return [...weeks.values()];
+    };
+
+    const showReservationsView = (view) => {
+        const series = view === "slot" ? reservationsBySlot : reservationsByDate;
+        reservationsChart.updateOptions({
+            series: [{ name: "Bookings", data: series.bookings }],
+            xaxis: { categories: series.labels },
+            tooltip: { y: { formatter: (value, { dataPointIndex }) => `${plural(value, "booking")} · ${plural(series.guests[dataPointIndex], "guest")}` } }
+        });
+
+        for (const [button, active] of [[bookingsByDateButton, view === "date"], [bookingsBySlotButton, view === "slot"]]) {
+            button.classList.toggle("active", active);
+            button.classList.toggle("btn-dark", active);
+        }
+    };
+
+    const showReservationTrends = (data) => {
+        const trends = data.reservationTrends;
+        const comparison = comparisonFor(data);
+
+        document.getElementById("res-bookings").textContent = trends.bookings;
+        document.getElementById("res-guests").textContent = trends.guests;
+        document.getElementById("res-cancellation").textContent = `${trends.cancellationRate}%`;
+        document.getElementById("res-cancellation").title = trends.cancelled
+            ? `${plural(trends.cancelled, "booking")} cancelled, including ${plural(trends.noShows, "no-show")}`
+            : "";
+        document.getElementById("res-lead").textContent = trends.averageLeadDays === null ? "-" : `${trends.averageLeadDays} days`;
+
+        setDelta("res-bookings-delta", trends.bookings, trends.previousBookings, String, comparison);
+        setDelta("res-guests-delta", trends.guests, trends.previousGuests, String, comparison);
+        setDelta("res-cancellation-delta", trends.cancellationRate, trends.previousCancellationRate,
+            (points) => `${points.toFixed(1)} pts`, comparison, { lowerIsBetter: true });
+        if (trends.averageLeadDays === null || trends.previousAverageLeadDays === null) {
+            const leadDelta = document.getElementById("res-lead-delta");
+            leadDelta.className = "text-body-secondary";
+            leadDelta.innerHTML = "&nbsp;";
+        } else {
+            setDelta("res-lead-delta", trends.averageLeadDays, trends.previousAverageLeadDays,
+                (days) => `${days.toFixed(1)} days`, comparison, { neutral: true });
+        }
+
+        const byWeek = data.reservationsByDay.length > 62;
+        const dateRows = byWeek ? groupByWeek(data.reservationsByDay) : data.reservationsByDay;
+        reservationsByDate = {
+            labels: dateRows.map(d => byWeek ? `Wk of ${dayLabel(d.date)}` : dayLabel(d.date)),
+            bookings: dateRows.map(d => d.count),
+            guests: dateRows.map(d => d.guests)
+        };
+        reservationsBySlot = {
+            labels: trends.slots.map(s => new Date(`2000-01-01T${s.time}:00`).toLocaleTimeString("en-MY", { hour: "numeric", minute: "2-digit" })),
+            bookings: trends.slots.map(s => s.bookings),
+            guests: trends.slots.map(s => s.guests)
+        };
+
+        if (reservationsChart) reservationsChart.destroy();
+        reservationsChart = new ApexCharts(document.querySelector("#chart-reservations"), {
+            chart: baseChart("bar"),
+            series: [{ name: "Bookings", data: reservationsByDate.bookings }],
+            colors: [INK],
+            xaxis: { categories: reservationsByDate.labels },
+            yaxis: { forceNiceScale: true, labels: { formatter: (value) => Math.round(value) } },
+            plotOptions: { bar: { borderRadius: 3, columnWidth: "55%" } },
+            grid: { borderColor: "rgba(127, 127, 127, 0.2)", strokeDashArray: 4 },
+            dataLabels: { enabled: false },
+            noData: { text: "No bookings in this date range." }
+        });
+        reservationsChart.render();
+        showReservationsView(bookingsBySlotButton.classList.contains("active") ? "slot" : "date");
+    };
+
+    // A weekday x hour grid shaded by the average number of tables in use, from dining sessions.
+    // The busiest cell is outlined; hours that haven't happened yet (later today) are left blank.
+    const showPeakHours = (data) => {
+        const peakHours = data.peakHours;
+        const tableEl = document.getElementById("peak-heatmap");
+        const summaryEl = document.getElementById("peak-summary");
+        const caption = tableEl.querySelector("caption").outerHTML;
+        const rows = peakHours.rows;
+
+        if (peakHours.tableCount === 0) {
+            tableEl.innerHTML = caption;
+            summaryEl.className = "small text-body-secondary mb-3";
+            summaryEl.textContent = "Add tables to see peak hours.";
+            return;
+        }
+
+        let peak = null;
+        for (const row of rows) {
+            for (const cell of row.hours) {
+                if (cell.tables > 0 && (!peak || cell.tables > peak.tables)) {
+                    peak = { day: row.day, hour: cell.hour, tables: cell.tables };
+                }
+            }
+        }
+
+        const cellHtml = (day, cell) => {
+            const where = `${AdminUI.DAY_NAMES[day]} ${hourLabel(cell.hour)}`;
+            if (cell.tables === null) {
+                const state = cell.closed ? "closed" : "not yet";
+                return `<td class="upcoming" title="${where}: ${state}"><span class="visually-hidden">${where}: ${state}</span></td>`;
+            }
+            const share = Math.min(cell.tables / peakHours.tableCount, 1);
+            const level = cell.tables > 0 ? 0.08 + share * 0.92 : 0;
+            const isPeak = peak && peak.day === day && peak.hour === cell.hour;
+            const text = `${where}: ${cell.tables} of ${peakHours.tableCount} tables in use (${toPercent(share)}%)`;
+            return `<td class="${isPeak ? "peak" : ""}" style="--level: ${level.toFixed(2)}" title="${text}"><span class="visually-hidden">${text}</span></td>`;
+        };
+
+        const hours = rows[0].hours.map(cell => cell.hour);
+        tableEl.innerHTML = caption
+            + `<thead><tr><th scope="col"><span class="visually-hidden">Day</span></th>${hours.map(hour => `<th scope="col">${hourLabel(hour)}</th>`).join("")}</tr></thead>`
+            + `<tbody>${rows.map(row => `<tr><th scope="row">${AdminUI.DAY_NAMES[row.day].slice(0, 3)}</th>${row.hours.map(cell => cellHtml(row.day, cell)).join("")}</tr>`).join("")}</tbody>`;
+
+        summaryEl.className = "small mb-3";
+        summaryEl.innerHTML = peak
+            ? `Busiest: <span class="fw-semibold">${AdminUI.DAY_NAMES[peak.day]}, ${hourLabel(peak.hour)}</span>`
+                + ` <span class="text-body-secondary">· on average ${peak.tables} of ${peakHours.tableCount} tables in use</span>`
+            : `<span class="text-body-secondary">No tables were in use in this date range.</span>`;
+    };
+
     const showRecentOrders = (data) => {
         recentOrdersEl.innerHTML = data.recentOrders.length
             ? data.recentOrders.map(o => `
                 <tr>
                     <td class="fw-semibold ps-3">#${AdminUI.escapeHtml(o.id)}</td>
-                    <td class="text-truncate" title="${AdminUI.escapeHtml(o.customer)}">${AdminUI.escapeHtml(o.customer)}</td>
+                    <td class="text-truncate" title="${AdminUI.escapeHtml(o.customer ?? "Walk-in")}">${AdminUI.escapeHtml(o.customer ?? "Walk-in")}</td>
                     <td>${AdminUI.escapeHtml(o.table ?? "-")}</td>
                     <td>${o.itemCount}</td>
                     <td class="text-nowrap">${AdminUI.formatTime(o.createdAt)}</td>
@@ -221,6 +431,9 @@
                 showRevenueChart(data);
                 showOrdersChart(data);
                 showTopItemsChart(data);
+                showUtilization(data);
+                showReservationTrends(data);
+                showPeakHours(data);
                 showRecentOrders(data);
             })
             .catch(error => {
@@ -278,6 +491,19 @@
 
     byDayButton.addEventListener("click", () => {
         if (ordersChart) showOrdersView("day");
+    });
+
+    document.getElementById("utilization-toggle").addEventListener("click", () => {
+        showAllTables = !showAllTables;
+        showUtilizationTables();
+    });
+
+    bookingsByDateButton.addEventListener("click", () => {
+        if (reservationsChart) showReservationsView("date");
+    });
+
+    bookingsBySlotButton.addEventListener("click", () => {
+        if (reservationsChart) showReservationsView("slot");
     });
 
     byHourButton.addEventListener("click", () => {
