@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
 
 namespace RestaurantReservation.Models
 {
@@ -65,8 +66,12 @@ namespace RestaurantReservation.Models
         [StringLength(500)]
         public string? Notes { get; set; }
 
-        // Online bookings pay a deposit through Stripe Checkout. Amount is in sen (2000 = RM20).
+        // Online bookings pay a deposit through Stripe Checkout. Amount is in cents (2000 = RM20).
         public int? DepositAmount { get; set; }
+
+        // The currency the deposit was charged in, kept with the booking so a later change of the
+        // restaurant's currency doesn't change how a past deposit reads, or what it takes off a bill.
+        public CurrencyType? DepositCurrency { get; set; }
 
         public DepositStatus DepositStatus { get; set; } = DepositStatus.None;
 

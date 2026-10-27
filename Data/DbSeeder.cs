@@ -48,6 +48,10 @@ public static class DbSeeder
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'CheckedInAt') IS NULL ALTER TABLE Reservations ADD CheckedInAt datetime2 NULL");
 
+        // Tables can be drawn round; existing ones stay rectangular.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Tables', 'Shape') IS NULL ALTER TABLE Tables ADD Shape nvarchar(20) NOT NULL DEFAULT 'Rectangle'");
+
         // Customers used to have one FullName; it is now FirstName and LastName. Older databases get the two
         // columns, filled by splitting FullName at the first space, and FullName is dropped (it is required
         // there and no longer saved, so new customers couldn't register). Dynamic SQL because new databases
@@ -245,6 +249,16 @@ public static class DbSeeder
             "IF COL_LENGTH('Reservations', 'DepositStatus') IS NULL ALTER TABLE Reservations ADD DepositStatus nvarchar(20) NOT NULL DEFAULT 'None'");
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Reservations', 'StripeSessionId') IS NULL ALTER TABLE Reservations ADD StripeSessionId nvarchar(255) NULL");
+
+        // Each deposit keeps the currency it was charged in. Deposits taken before this column
+        // existed were all charged in ringgit.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('Reservations', 'DepositCurrency') IS NULL
+            BEGIN
+                ALTER TABLE Reservations ADD DepositCurrency nvarchar(10) NULL;
+                EXEC(N'UPDATE Reservations SET DepositCurrency = ''MYR'' WHERE DepositAmount IS NOT NULL;');
+            END
+            """);
 
         // Older databases kept one table per booking in Reservations.TableId (required there).
         // Each booking keeps its table as a ReservationTables row; the old column then becomes

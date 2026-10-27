@@ -88,16 +88,13 @@ public class ReservationsModel(
             ? Task.FromResult<StripePaymentInfo?>(null)
             : stripe.GetAsync(r.StripeSessionId, expectRefunded: r.DepositStatus == DepositStatus.Refunded)));
 
-        var currency = await db.RestaurantSettings.AsNoTracking()
-            .Select(settings => (CurrencyType?)settings.DefaultCurrency)
-            .FirstOrDefaultAsync() ?? CurrencyType.MYR;
-
         Deposits = paid.Select((reservation, index) => (reservation, info: details[index])).ToDictionary(
             pair => pair.reservation.Id,
             pair => new PaymentPanel
             {
                 AmountCents = pair.reservation.DepositAmount ?? 0,
-                CurrencySymbol = currency.GetSymbol(),
+                // The currency it was paid in, not today's setting.
+                CurrencySymbol = (pair.reservation.DepositCurrency ?? CurrencyType.MYR).GetSymbol(),
                 State = pair.reservation.DepositStatus switch
                 {
                     DepositStatus.Refunded => PaymentState.Refunded,

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 using RestaurantReservation.Data;
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
@@ -63,7 +64,7 @@ public static class ReservationCancellation
         emails.Cancelled(reservation, refunded);
         return $"Your booking on {at} is cancelled."
             + (refunded
-                ? $" Your RM{reservation.DepositAmount / 100m:0.##} deposit is on its way back to your card (usually 5-10 working days)."
+                ? $" Your {ReservationSummary.DepositText(reservation.DepositAmount, reservation.DepositCurrency)} deposit is on its way back to your card (usually 5-10 working days)."
                 : "");
     }
 }

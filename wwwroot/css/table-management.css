@@ -577,7 +577,8 @@ body:has(.service-app) {
 }
 
 .reservation-panel.open {
-    transform: translateX(0);
+    /* none, not translateX(0): a transform would trap the date picker's pop-up inside the panel. */
+    transform: none;
 }
 
 .panel-heading {
@@ -1023,8 +1024,38 @@ body:has(.service-app) {
     cursor: pointer;
 }
 
-.remove-table-button:hover {
+.remove-table-button:hover:not(:disabled) {
     background: var(--red-soft);
+}
+
+.remove-table-button:disabled {
+    border-color: #e1e5df;
+    color: #a0a49d;
+    cursor: not-allowed;
+}
+
+/* Why the dining session can't be ended yet: the table's unfinished orders. */
+.end-session-blocked {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid #f3d9a4;
+    border-radius: 9px;
+    background: #fff8e8;
+    color: #6b4e12;
+    font-size: 12px;
+}
+
+.end-session-blocked[hidden] {
+    display: none;
+}
+
+.end-session-blocked ul {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding-left: 18px;
 }
 
 @media (max-width: 760px) {
@@ -2403,4 +2434,414 @@ body:has(.service-app) {
 
 .service-app .legend .legend-icon {
     font-size: 9px;
+}
+
+/* Booking date and time: the dashboard's calendar pop-up (js/admin/date-time-picker.js),
+   opened from a button that sits in the form like the other fields. */
+.date-time-toggle {
+    display: flex;
+    width: 100%;
+    min-height: 40px;
+    align-items: center;
+    gap: .5rem;
+    border-radius: 8px;
+    font-size: 12px;
+    text-align: left;
+}
+
+/* The booking picker shows the times in a scrolling column beside the calendar. */
+.reservation-form .date-range-calendar {
+    width: auto;
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+}
+
+.date-time-columns {
+    display: flex;
+    gap: .75rem;
+}
+
+.date-time-days {
+    width: 17.5rem;
+}
+
+.date-time-times {
+    display: flex;
+    width: 6.5rem;
+    flex-direction: column;
+    border-left: 1px solid var(--bs-border-color, #dee2e6);
+    padding-left: .75rem;
+}
+
+.calendar-times {
+    display: grid;
+    flex: 1 1 0;
+    min-height: 0;
+    align-content: start;
+    gap: .125rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.calendar-times .btn {
+    white-space: nowrap;
+}
+
+.calendar-times .btn:not(.btn-dark):hover {
+    background: var(--bs-secondary-bg, #e9ecef);
+}
+
+@media (max-width: 520px) {
+    .reservation-form .date-range-calendar {
+        width: min(19rem, calc(100vw - 16px));
+    }
+
+    .date-time-columns {
+        flex-direction: column;
+    }
+
+    .date-time-days,
+    .date-time-times {
+        width: auto;
+    }
+
+    .date-time-times {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .calendar-times {
+        max-height: 9rem;
+        flex-basis: auto;
+    }
+}
+
+/* Starting soon (within the hour before a booking): purple, so it stands apart from the
+   orange "reserved later today" and the blue "checked in". */
+.floor-table.soon .table-top {
+    border-color: #c9b5ef;
+    background: #f3eefd;
+    color: #4b2f86;
+}
+
+.floor-table.soon .chair {
+    background: #c9b5ef;
+}
+
+.soon .table-status-mark,
+.legend-dot.soon {
+    background: #7c4dd6;
+}
+
+.soon .table-booking {
+    color: #5a3a9e;
+}
+
+.soon .table-icon,
+.legend-icon.soon,
+.service-app .legend .legend-icon.soon,
+.legend .legend-icon.soon,
+.legend-inline .legend-icon.soon {
+    background: #7c4dd6;
+    color: #fff;
+}
+
+/* Add table: a table preview with round − / + buttons either side. */
+.seat-stepper {
+    display: flex;
+    margin: 0 0 20px;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 16px 16px;
+    border-radius: 1rem;
+    background: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.seat-stepper-label {
+    align-self: flex-start;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.seat-stepper-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.seat-step {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    place-items: center;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 50%;
+    background: #fff;
+    color: #212529;
+    font-size: 15px;
+    box-shadow: 0 2px 6px rgb(24 30 24 / 8%);
+    transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+
+.seat-step:hover:not(:disabled) {
+    border-color: #212529;
+    background: #212529;
+    color: #fff;
+}
+
+.seat-step:active:not(:disabled) {
+    transform: scale(.94);
+}
+
+.seat-step:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.seat-stepper-preview {
+    display: flex;
+    flex: 1;
+    max-width: 220px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.seat-stepper-preview .chair-row {
+    gap: 8px;
+}
+
+.seat-stepper-preview .chair {
+    flex: 0 0 26px;
+    height: 10px;
+    background: #c8cfc6;
+    animation: chair-in .18s ease;
+}
+
+.seat-stepper-preview .table-top {
+    display: grid;
+    width: 100%;
+    min-height: 64px;
+    place-items: center;
+    border: 1px solid #e3e6e1;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgb(24 30 24 / 8%);
+}
+
+.seat-stepper-number {
+    color: #212529;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.seat-stepper-value {
+    color: #212529;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.seat-stepper-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.seat-stepper-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ced4da;
+    transition: width .15s ease, background .15s ease;
+}
+
+.seat-stepper-dots span.active {
+    width: 18px;
+    border-radius: 3px;
+    background: #212529;
+}
+
+@keyframes chair-in {
+    from {
+        opacity: 0;
+        transform: scale(.6);
+    }
+}
+
+/* Add table: Rectangle / Round switch above the preview. */
+.seat-stepper-head {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.shape-toggle {
+    display: flex;
+    margin: 0;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 50rem;
+    background: #fff;
+}
+
+.shape-toggle label {
+    margin: 0;
+    cursor: pointer;
+}
+
+.shape-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.shape-toggle span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 50rem;
+    color: #212529;
+    font-size: .8125rem;
+    transition: background .15s ease, color .15s ease;
+}
+
+.shape-toggle label:hover span {
+    background: #f1f3f5;
+}
+
+.shape-toggle input:checked + span {
+    background: #212529;
+    color: #fff;
+}
+
+.shape-toggle input:focus-visible + span {
+    outline: 2px solid #212529;
+    outline-offset: 2px;
+}
+
+.shape-swatch {
+    display: inline-block;
+    width: 13px;
+    height: 9px;
+    border: 1.5px solid currentColor;
+    border-radius: 3px;
+}
+
+.shape-swatch.round {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+/* The preview turns into a round table. */
+.seat-stepper-preview .table-top {
+    transition: width .2s ease, border-radius .2s ease, min-height .2s ease;
+}
+
+.seat-stepper.round .seat-stepper-preview .table-top {
+    width: 92px;
+    min-height: 92px;
+    border-radius: 50%;
+}
+
+/* Round tables on the floor plans: a circle with the chairs above and below. */
+.floor-table.round .table-top {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    min-height: 0;
+    min-width: 112px;
+    padding: 12px;
+    border-radius: 50%;
+}
+
+.floor-table.round .table-name {
+    position: static;
+    margin-bottom: -2px;
+}
+
+.floor-table.round .chair-row {
+    width: 70%;
+}
+
+/* Round tables: the chairs sit around the circle instead of in rows above and below.
+   Each chair is turned to --angle and pushed out from the centre by --ring-radius. */
+.chair-ring {
+    display: none;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.floor-table.round .chair-ring,
+.seat-stepper.round .chair-ring {
+    display: block;
+}
+
+.floor-table.round > .chair-row,
+.seat-stepper.round .seat-stepper-preview > .chair-row {
+    visibility: hidden;
+}
+
+.chair-ring .chair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 9px;
+    margin: -4.5px 0 0 -11px;
+    transform: rotate(var(--angle)) translateY(calc(-1 * var(--ring-radius)));
+}
+
+.floor-table.round .table-top {
+    --ring-radius: 64px;
+    width: 104px;
+    min-width: 0;
+    height: 104px;
+    aspect-ratio: auto;
+    overflow: visible;
+}
+
+/* The chair rows stay (hidden) so round and rectangle tables line up; the ring needs a bit more room. */
+.floor-table.round {
+    padding: 6px 14px;
+}
+
+.seat-stepper.round .seat-stepper-preview .table-top {
+    --ring-radius: 58px;
+    position: relative;
+    overflow: visible;
+}
+
+.seat-stepper.round .seat-stepper-preview .chair-ring .chair {
+    width: 24px;
+    margin-left: -12px;
+}
+
+/* Inside a round table there's less height, so the name, icon and booking sit closer together. */
+.floor-table.round .table-top {
+    gap: 3px;
+    padding: 8px;
+}
+
+.floor-table.round .table-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.floor-table.round .table-booking {
+    gap: 1px;
 }

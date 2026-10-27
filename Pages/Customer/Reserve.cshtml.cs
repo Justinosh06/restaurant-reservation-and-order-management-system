@@ -175,6 +175,7 @@ public class ReserveModel(
             CustomerId = User.FindFirstValue(ClaimTypes.NameIdentifier),
             Notes = string.IsNullOrWhiteSpace(Input.Notes) ? null : Input.Notes.Trim(),
             DepositAmount = (int)(Deposit * 100),
+            DepositCurrency = Currency,
             DepositStatus = DepositStatus.Unpaid
         };
         db.Reservations.Add(reservation);

@@ -8,8 +8,11 @@
     ViewData["Title"] = "Table Management";
     var now = DateTime.Now;
     // A booking holds its table from its start time until its slot ends.
+    // The floor plan only colours tables for today's bookings (and guests still seated from before);
+    // later days stay white here and are on Reservation Management.
     var upcomingReservations = Model.Reservations
-        .Where(reservation => reservation.IsActive(now))
+        .Where(reservation => reservation.IsActive(now)
+            && (reservation.ReservationAt.Date == now.Date || reservation.IsSeated))
         .OrderBy(reservation => reservation.ReservationAt)
         .ToList();
 
@@ -20,6 +23,17 @@
             @for (var i = 0; i < count; i++)
             {
                 <span class="chair"></span>
+            }
+        </span>
+    }
+
+    // A round table's chairs, spaced evenly around it (placed by .chair-ring in table-management.css).
+    void ChairRing(int count)
+    {
+        <span class="chair-ring" aria-hidden="true">
+            @for (var i = 0; i < count; i++)
+            {
+                <span class="chair" style="--angle: @((360.0 * i / count).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))deg"></span>
             }
         </span>
     }
@@ -53,6 +67,13 @@
         @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
         {
             <div class="status-message" role="status">@Model.StatusMessage</div>
+        }
+        @if (Model.EndSessionBlockedTable is not null)
+        {
+            @* Shown as a pop-up by table-management.js: why the session couldn't be ended. *@
+            <div id="endSessionRefused" hidden
+                 data-table="@Model.EndSessionBlockedTable"
+                 data-orders="@Model.EndSessionBlockedOrders"></div>
         }
 
         <div class="table-workspace">
@@ -88,17 +109,19 @@
                         : "fa-calendar-check";
 
                     <button type="button"
-                            class="floor-table @(hasActiveSession ? "occupied" : nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "")"
+                            class="floor-table @(hasActiveSession ? "occupied" : nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "") @(table.Shape == RestaurantReservation.Models.TableShape.Round ? "round" : "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
                             data-menu-url="@Model.MenuUrl(table.Id)"
                             data-active-session="@(hasActiveSession ? "true" : "false")"
+                            data-open-orders="@System.Text.Json.JsonSerializer.Serialize(Model.OpenOrderLines.GetValueOrDefault(table.Id) ?? [])"
                             data-unseat-count="@Model.UnseatCounts.GetValueOrDefault(table.Id)"
                             data-shared-count="@Model.SharedCounts.GetValueOrDefault(table.Id)"
                             data-seated-now="@(Model.SeatedNowTableIds.Contains(table.Id) ? "true" : "false")"
                             aria-label="Table @table.Id, @table.Capacity seats, @(hasActiveSession ? "dining session active" : nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">
+                            @if (table.Shape == RestaurantReservation.Models.TableShape.Round) { ChairRing(table.Capacity); }
                             <span class="table-name">@table.Id</span>
                             @if (statusIcon is not null)
                             {
@@ -157,29 +180,26 @@
 
         <aside class="reservation-queue" aria-labelledby="queueTitle">
             <div class="queue-heading">
-                <h2 id="queueTitle">Upcoming</h2>
+                <h2 id="queueTitle">Today</h2>
                 <span>@Model.Queue.Count booked</span>
             </div>
             @if (Model.Queue.Count == 0)
             {
                 <div class="queue-empty">
-                    <strong>No upcoming bookings with a table</strong>
-                    <p>Seat bookings on the Pending tab of <a asp-page="/Admin/Reservations/Reservation" asp-route-tab="pending">Reservation Management</a>.</p>
+                    <strong>No more bookings with a table today</strong>
+                    <p>Later days and bookings waiting for a table are on <a asp-page="/Admin/Reservations/Reservation">Reservation Management</a>.</p>
                 </div>
             }
             else
             {
                 <p class="queue-hint">Check guests in when they arrive. Check-in opens 1 hour before the booking.</p>
                 <div class="queue-list">
-                    @foreach (var group in Model.Queue.GroupBy(reservation => reservation.ReservationAt.Date == now.Date ? "Today" : "Later"))
+                    @foreach (var reservation in Model.Queue)
                     {
-                        <h3 class="queue-group">@group.Key</h3>
-                        @foreach (var reservation in group)
-                        {
                             var checkedIn = reservation.Status == RestaurantReservation.Models.ReservationStatus.CheckedIn;
                             var canCheckIn = TableManagementModel.CanCheckIn(reservation, now);
                             <div class="queue-item checkin-item @(checkedIn ? "checked-in" : "")" data-tables="@string.Join(' ', reservation.TableIds)">
-                                <span class="queue-time">@reservation.ReservationAt.ToString(group.Key == "Today" ? "h:mm tt" : "ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)</span>
+                                <span class="queue-time">@reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
                                 <strong class="queue-name">@reservation.CustomerName</strong>
                                 <span class="queue-meta">
                                     @reservation.PartySize guests
@@ -210,11 +230,10 @@
                                     }
                                     else
                                     {
-                                        <span class="checkin-later">Check-in from @((reservation.ReservationAt - TableManagementModel.CheckInOpensBefore).ToString(group.Key == "Today" ? "h:mm tt" : "ddd h:mm tt", CultureInfo.CurrentCulture))</span>
+                                        <span class="checkin-later">Check-in from @((reservation.ReservationAt - TableManagementModel.CheckInOpensBefore).ToString("h:mm tt", CultureInfo.CurrentCulture))</span>
                                     }
                                 </div>
                             </div>
-                        }
                     }
                 </div>
             }
@@ -268,10 +287,15 @@
                 <h3>Dining session</h3>
                 <span>Active</span>
             </div>
-            <p>End this session if it was started by mistake. Sessions with orders still in progress cannot be ended.</p>
+            <p>End this session when the guests have left. Every order has to be paid for (or cancelled) first.</p>
+            <div class="end-session-blocked" id="endSessionBlocked" hidden>
+                <strong><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> <span id="endSessionBlockedTitle"></span></strong>
+                <ul id="endSessionBlockedList"></ul>
+                <span>Serve each order and take payment at the table's checkout, then end the session.</span>
+            </div>
             <form method="post" asp-page-handler="EndSession" class="end-session-form" id="endSessionForm">
                 <input type="hidden" name="tableId" id="endSessionTableId" />
-                <button type="submit" class="remove-table-button">End dining session</button>
+                <button type="submit" class="remove-table-button" id="endSessionButton">End dining session</button>
             </form>
         </section>
 
@@ -320,30 +344,51 @@
         <div>
             <p class="eyebrow">NEW TABLE</p>
             <h2 id="addTableTitle">Add a table</h2>
-            <span class="panel-capacity">Choose how many people it seats.</span>
+            <span class="panel-capacity">Pick a shape and how many people it seats.</span>
         </div>
         <button type="button" class="panel-close" id="closeAddTableButton" aria-label="Close panel">×</button>
     </div>
 
     <div class="panel-body">
         <form method="post" asp-page-handler="AddTable" class="reservation-form">
-            <fieldset class="seat-options">
-                <legend>Seats</legend>
-                <div class="seat-option-grid">
-                @foreach (var seats in TableManagementModel.SeatOptions)
-                {
-                    <label class="seat-option">
-                        <input type="radio" name="seats" value="@seats" checked="@(seats == 4)" />
-                        <span class="seat-preview" aria-hidden="true">
-                            @{ Chairs((seats + 1) / 2); }
-                            <span class="table-top"></span>
-                            @{ Chairs(seats / 2); }
-                        </span>
-                        <span class="seat-label">@seats seats</span>
-                    </label>
-                }
+            @* A table preview with − / + either side; the buttons step through SeatOptions (2, 4, 6). *@
+            <div class="seat-stepper" data-seat-options="@string.Join(',', TableManagementModel.SeatOptions)">
+                <div class="seat-stepper-head">
+                    <span class="seat-stepper-label" id="seatStepperLabel">Seats</span>
+                    <fieldset class="shape-toggle">
+                        <legend class="visually-hidden">Table shape</legend>
+                        <label>
+                            <input type="radio" name="shape" value="Rectangle" checked />
+                            <span><i class="shape-swatch rectangle" aria-hidden="true"></i>Rectangle</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="shape" value="Round" />
+                            <span><i class="shape-swatch round" aria-hidden="true"></i>Round</span>
+                        </label>
+                    </fieldset>
                 </div>
-            </fieldset>
+                <input type="hidden" name="seats" id="seatCount" value="4" />
+                <div class="seat-stepper-row">
+                    <button type="button" class="seat-step" data-step="-1" aria-label="Fewer seats">
+                        <i class="fa-solid fa-minus" aria-hidden="true"></i>
+                    </button>
+                    <div class="seat-stepper-preview" aria-hidden="true">
+                        <span class="chair-row" data-chairs="top">@for (var i = 0; i < 2; i++) { <span class="chair"></span> }</span>
+                        <span class="table-top"><span class="chair-ring" data-chairs="ring"></span><span class="seat-stepper-number" id="seatStepperNumber">4</span></span>
+                        <span class="chair-row" data-chairs="bottom">@for (var i = 0; i < 2; i++) { <span class="chair"></span> }</span>
+                    </div>
+                    <button type="button" class="seat-step" data-step="1" aria-label="More seats">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <output class="seat-stepper-value" for="seatCount" aria-live="polite" aria-labelledby="seatStepperLabel">4 seats</output>
+                <span class="seat-stepper-dots" aria-hidden="true">
+                    @foreach (var seats in TableManagementModel.SeatOptions)
+                    {
+                        <span data-seats="@seats" class="@(seats == 4 ? "active" : "")"></span>
+                    }
+                </span>
+            </div>
             <button type="submit" class="submit-reservation-button">Add table</button>
         </form>
     </div>

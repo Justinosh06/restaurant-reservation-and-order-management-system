@@ -3,8 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
 using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
+using RestaurantReservation.Services;
 // The Razor pages in Pages/Table compile into a namespace called Table, which hides the model's short name here.
 using DiningTable = RestaurantReservation.Models.Table;
 
@@ -13,7 +17,8 @@ namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
 public class TableManagementModel(
     ApplicationDbContext db,
     IConfiguration configuration,
-    RestaurantReservation.Services.DiningSessionService diningSessions) : PageModel
+    DiningSessionService diningSessions,
+    RestaurantCurrency restaurantCurrency) : PageModel
 {
     // Table sizes staff can add. Chairs are drawn half above and half below the table.
     public static readonly int[] SeatOptions = [2, 4, 6];
@@ -39,6 +44,18 @@ public class TableManagementModel(
 
     public Dictionary<string, RestaurantReservation.Models.Session> ActiveSessions { get; private set; } = [];
 
+    // For each table with a session, the orders that stop it being ended, one line each
+    // (see DescribeOpenOrdersAsync). Shown in the table's panel next to End dining session.
+    public Dictionary<string, List<string>> OpenOrderLines { get; private set; } = [];
+
+    // Set when End dining session was refused because of open orders: the table and one line per
+    // order, shown in a pop-up so staff know what to finish first.
+    [TempData]
+    public string? EndSessionBlockedTable { get; set; }
+
+    [TempData]
+    public string? EndSessionBlockedOrders { get; set; }
+
     // Upcoming bookings that already have a table, soonest first, for the check-in sidebar.
     // Assigning tables happens on Reservation Management's Pending tab.
     public List<ReservationSummary> Queue { get; private set; } = [];
@@ -61,9 +78,19 @@ public class TableManagementModel(
 
         var activeSessions = await db.Sessions.AsNoTracking()
             .Include(session => session.Customer)
+            .Include(session => session.Orders)
+            .ThenInclude(order => order.OrderItems)
             .Where(session => session.EndingTime == null)
             .ToListAsync();
         ActiveSessions = activeSessions.ToDictionary(session => session.TableId, StringComparer.Ordinal);
+        foreach (var session in activeSessions)
+        {
+            var lines = await DescribeOpenOrdersAsync(session.Orders.Where(DiningSessionService.IsOpen).ToList());
+            if (lines.Count > 0)
+            {
+                OpenOrderLines[session.TableId] = lines;
+            }
+        }
 
         var reservations = await db.Reservations.AsNoTracking()
             .Include(reservation => reservation.Customer)
@@ -90,15 +117,18 @@ public class TableManagementModel(
             .Concat(ActiveSessions.Keys)
             .ToHashSet();
 
+        // Only today's bookings (plus anyone still seated from before, e.g. past midnight);
+        // later days are on Reservation Management.
         Queue = Reservations
-            .Where(reservation => reservation.HasTable && reservation.IsActive(now))
+            .Where(reservation => reservation.HasTable && reservation.IsActive(now)
+                && (reservation.ReservationAt.Date == now.Date || reservation.IsSeated))
             .OrderBy(reservation => reservation.ReservationAt)
             .ToList();
 
         SelectedTableId = Tables.FirstOrDefault(table => table.Id == tableId)?.Id;
     }
 
-    public async Task<IActionResult> OnPostAddTableAsync(int seats)
+    public async Task<IActionResult> OnPostAddTableAsync(int seats, TableShape shape = TableShape.Rectangle)
     {
         if (!SeatOptions.Contains(seats))
         {
@@ -116,13 +146,14 @@ public class TableManagementModel(
         {
             Id = NextTableId(tables),
             Capacity = seats,
+            Shape = Enum.IsDefined(shape) ? shape : TableShape.Rectangle,
             CoordinateX = column,
             CoordinateY = row
         };
         db.Tables.Add(table);
         await db.SaveChangesAsync();
 
-        StatusMessage = $"Table {table.Id} added with {seats} seats.";
+        StatusMessage = $"{(table.Shape == TableShape.Round ? "Round table" : "Table")} {table.Id} added with {seats} seats.";
         return RedirectToPage();
     }
 
@@ -193,11 +224,56 @@ public class TableManagementModel(
             return RedirectToPage();
         }
 
-        var ended = await diningSessions.EndSessionAsync(table.Id);
-        StatusMessage = ended
-            ? $"The dining session at table {table.Id} has ended."
-            : $"The dining session at table {table.Id} could not be ended. It may already be closed or still have orders in progress.";
+        var result = await diningSessions.EndSessionAsync(table.Id);
+        switch (result.Outcome)
+        {
+            case EndSessionOutcome.Ended:
+                StatusMessage = $"The dining session at table {table.Id} has ended.";
+                break;
+            case EndSessionOutcome.NoActiveSession:
+                StatusMessage = $"Table {table.Id} has no dining session open. It may have been ended already.";
+                break;
+            default:
+                EndSessionBlockedTable = table.Id;
+                EndSessionBlockedOrders = string.Join("\n", await DescribeOpenOrdersAsync(result.OpenOrders));
+                break;
+        }
         return RedirectToPage();
+    }
+
+    // One line per unfinished order, saying what it is and what it is waiting for, e.g.
+    // "GR Yaris ×1 · Pending, in the kitchen · RM9,000.00 · not paid".
+    private async Task<List<string>> DescribeOpenOrdersAsync(IReadOnlyList<Order> orders)
+    {
+        if (orders.Count == 0)
+        {
+            return [];
+        }
+
+        var orderIds = orders.Select(order => order.Id).ToArray();
+        var paidOrderIds = (await db.Transactions.AsNoTracking()
+                .Where(transaction => orderIds.Contains(transaction.OrderId)
+                    && transaction.Status == TransactionStatus.Succeeded)
+                .Select(transaction => transaction.OrderId)
+                .ToListAsync())
+            .ToHashSet(StringComparer.Ordinal);
+        var currency = await restaurantCurrency.GetAsync();
+
+        return orders.Select(order =>
+        {
+            var items = order.OrderItems.Count == 0
+                ? "Order"
+                : string.Join(", ", order.OrderItems.Select(item => $"{item.ItemName} ×{item.Quantity}"));
+            var paid = paidOrderIds.Contains(order.Id);
+            var state = order.Status switch
+            {
+                OrderStatus.InQueue => "Pending, in the kitchen",
+                OrderStatus.Preparing => "Preparing, in the kitchen",
+                _ when paid => "Served and paid, not marked complete",
+                _ => "Served, waiting for payment"
+            };
+            return $"{items} · {state} · {currency.FormatCents(order.TotalAmount)} · {(paid ? "paid" : "not paid")}";
+        }).ToList();
     }
 
     // Marks the guests as arrived. Their tables show as Checked in until the booking's slot ends.

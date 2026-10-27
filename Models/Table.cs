@@ -9,6 +9,13 @@ namespace RestaurantReservation.Models
         Occupied    
     }
 
+    // How the table is drawn on the floor plans.
+    public enum TableShape
+    {
+        Rectangle,
+        Round
+    }
+
     public class Table
     {
         [Key]
@@ -25,5 +32,7 @@ namespace RestaurantReservation.Models
         [Required]
         [StringLength(20)]
         public TableStatus Status { get; set; } = TableStatus.Empty;
+
+        public TableShape Shape { get; set; } = TableShape.Rectangle;
     }
 }

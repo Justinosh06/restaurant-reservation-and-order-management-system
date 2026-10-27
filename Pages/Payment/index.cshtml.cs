@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
@@ -270,7 +271,7 @@ public class IndexModel : PageModel
         };
 
         var amount = (reservation.DepositAmount ?? 0) / 100m;
-        CurrencySymbol = "RM";
+        CurrencySymbol = (reservation.DepositCurrency ?? CurrencyType.MYR).GetSymbol();
         AmountWhole = decimal.Truncate(amount).ToString("N0");
         AmountFraction = ((amount - decimal.Truncate(amount)) * 100).ToString("00");
         PaymentMethodLabel = await TryGetPaymentMethodLabelAsync(session?.PaymentIntentId) ?? "Stripe Checkout";

@@ -113,6 +113,9 @@ namespace RestaurantReservation.Data
             modelBuilder.Entity<Table>(entity =>
             {
                 entity.HasKey(t => t.Id);
+                entity.Property(t => t.Shape)
+                      .HasConversion<string>()
+                      .HasMaxLength(20);
             });
 
             // -------------------------------------------------------------
@@ -127,6 +130,9 @@ namespace RestaurantReservation.Data
                 entity.Property(r => r.DepositStatus)
                       .HasConversion<string>()
                       .HasMaxLength(20);
+                entity.Property(r => r.DepositCurrency)
+                      .HasConversion<string>()
+                      .HasMaxLength(10);
 
                 // A booking whose deposit is still unpaid is not a real booking yet, so every query
                 // skips it. The customer booking page reads them with IgnoreQueryFilters().
