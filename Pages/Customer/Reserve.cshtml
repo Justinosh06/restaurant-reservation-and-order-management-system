@@ -104,7 +104,10 @@
             <div class="reserve-footer">
                 <span id="summary">Choose a date and time.</span>
                 <button type="submit" id="bookButton" disabled><i class="fa-brands fa-cc-stripe" aria-hidden="true"></i> Pay @Model.CurrencySymbol@(ReserveModel.Deposit.ToString("0")) deposit</button>
-                <span class="deposit-note">Secure payment by Stripe. Refunded if you cancel at least 24 hours before.</span>
+                <span class="deposit-note">
+                    Secure payment by Stripe. Refunded if you cancel at least @RestaurantReservation.Infrastructure.Reservations.ReservationCancellation.Notice.TotalHours.ToString("0") hours before.
+                    By paying you agree to our <a href="/Policies/reservations" target="_blank">Reservation policy</a>.
+                </span>
             </div>
         </div>
     </form>

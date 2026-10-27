@@ -1,0 +1,28 @@
+@page "/Policies/{name}"
+@model PolicyModel
+@{
+    ViewData["Title"] = $"{Model.Title} - {Model.RestaurantName}";
+}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
+<link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/policies.css" asp-append-version="true" />
+
+<div class="landing">
+    <partial name="_LandingNav" model="Model.RestaurantName" />
+
+    <section class="policy-page">
+        @* The three policies as tabs, so customers can move between them. *@
+        <nav class="policy-tabs" aria-label="Policies">
+            @foreach (var (name, title) in PolicyModel.Policies)
+            {
+                <a href="/Policies/@name" class="@(name == Model.Name ? "active" : "")"
+                   aria-current="@(name == Model.Name ? "page" : null)">@title</a>
+            }
+        </nav>
+
+        <article class="policy-content">
+            @Model.Body
+        </article>
+    </section>
+</div>

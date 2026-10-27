@@ -2748,3 +2748,31 @@ body:has(.landing) {
         white-space: pre-line;
     }
 }
+
+/* Bottom of the home, login/register and account pages: the policy links (Pages/Shared/_PolicyLinks.cshtml). */
+.landing-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding: 20px 0 0;
+    border-top: 1px solid #e9ecef;
+    color: #6c757d;
+    font-size: .875rem;
+}
+
+.landing-footer:has(> .policy-links:only-child) {
+    justify-content: center;
+}
+
+.auth-legal {
+    margin: 4px 0 12px;
+    color: #6c757d;
+    font-size: .8125rem;
+    text-align: center;
+}
+
+.auth-legal a {
+    color: inherit;
+}

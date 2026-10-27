@@ -67,3 +67,21 @@ button {
   line-height: 1.5;
   white-space: nowrap;
 }
+
+/* The footer links (Pages/Shared/_PolicyLinks.cshtml). */
+.policy-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: .875rem;
+}
+
+.policy-links a {
+  color: #6c757d;
+  text-decoration: none;
+}
+
+.policy-links a:hover {
+  color: #212529;
+  text-decoration: underline;
+}
