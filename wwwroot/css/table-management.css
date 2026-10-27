@@ -2698,8 +2698,14 @@ body:has(.service-app) {
     cursor: pointer;
 }
 
+/* Hidden: the pill is what shows. Sized to nothing, or the form's "inputs fill the width" rule
+   makes them as wide as the pop-up, and it scrolls sideways. */
 .shape-toggle input {
     position: absolute;
+    width: 1px;
+    min-height: 0;
+    height: 1px;
+    padding: 0;
     opacity: 0;
     pointer-events: none;
 }
