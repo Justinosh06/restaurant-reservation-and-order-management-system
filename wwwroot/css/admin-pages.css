@@ -213,8 +213,26 @@
     background-color: rgba(var(--bs-emphasis-color-rgb), var(--level, 0));
 }
 
+/* Each cell shows its whole number of tables; on darker cells (over half the tables) the text flips to the
+   page background colour so it stays readable, in light and dark mode. */
 .peak-heatmap td {
     box-shadow: inset 0 0 0 1px var(--bs-border-color-translucent);
+    color: var(--bs-body-color);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+}
+
+.peak-heatmap td.dark {
+    color: var(--bs-body-bg);
+}
+
+/* Only scrolls sideways (on narrow screens). The screen-reader caption sits 1px below the table, which
+   otherwise adds a needless vertical scrollbar. */
+.peak-heatmap-scroll {
+    overflow-y: hidden;
 }
 
 .peak-swatch {

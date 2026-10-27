@@ -1,3 +1,4 @@
+using System.Globalization;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -487,13 +488,22 @@ public static class AnalyticsReportPdf
                         var share = cell.AverageTables is { } tables ? Math.Min(tables / tableCount, 1) : 0;
                         var shade = HeatShade(cell.AverageTables is > 0 ? 0.08 + share * 0.92 : 0);
                         table.Cell().Padding(1).Background(shade).Height(16).AlignCenter().AlignMiddle()
-                            .Text(cell.AverageTables is { } value && value > 0 ? value.ToString("0.#") : "")
+                            .Text(TablesText(cell.AverageTables))
                             .FontSize(6.5f).FontColor(share > 0.5 ? Colors.White : Ink);
                     }
                 }
             });
         });
     }
+
+    // A heatmap cell's average as whole tables, like the dashboard: "8" rather than "8.3", "<1" for a quiet hour
+    // that would round to 0, and blank when no tables were in use.
+    private static string TablesText(double? averageTables) => averageTables switch
+    {
+        null or <= 0 => "",
+        < 0.5 => "<1",
+        var tables => Math.Round(tables.Value, MidpointRounding.AwayFromZero).ToString("0", CultureInfo.InvariantCulture)
+    };
 
     // Light grey (level 0) to near-black (level 1), matching the dashboard heatmap.
     private static string HeatShade(double level)
