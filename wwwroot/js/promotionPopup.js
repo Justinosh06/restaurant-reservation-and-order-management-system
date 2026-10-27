@@ -1,8 +1,8 @@
 // Promotion pop-up (see Pages/Shared/_PromotionPopup.cshtml).
 // Shows the promotions one at a time; the arrows (or the Left/Right keys, or a swipe) move between them, and the
-// close button (or Esc) closes the whole pop-up. The promotions it showed are remembered in sessionStorage, so they
-// do not pop up again in this tab (for example after logging in). A promotion added later still pops up, because
-// only the ids that were shown are remembered.
+// close button (or Esc) closes the whole pop-up. Closing it dismisses every promotion in it, including ones the
+// visitor didn't move to, and their ids are remembered in sessionStorage so they do not pop up again in this tab
+// (for example after logging in). A promotion added later still pops up, because only those ids are remembered.
 (() => {
     const storageKey = "restaurant-promotions-seen";
     const popup = document.getElementById("promo-popup");

@@ -359,8 +359,11 @@
         }
 
         // Shown as whole tables (an average like 8.3 tables reads oddly); a quiet hour that would round to 0
-        // still had tables in use, so it says "less than 1". The shading keeps the exact average.
-        const tablesText = tables => tables > 0 && tables < 0.5 ? "less than 1" : String(Math.round(tables));
+        // still had tables in use, so it says "less than 1" ("<1" in the small cells). The shading keeps the exact
+        // average. Same rule as TablesText in Infrastructure/Admin/AnalyticsReportPdf.cs.
+        const tablesText = (tables, short = false) => tables > 0 && tables < 0.5
+            ? (short ? "&lt;1" : "less than 1")
+            : String(Math.round(tables));
 
         const cellHtml = (day, cell) => {
             const where = `${AdminUI.DAY_NAMES[day]} ${hourLabel(cell.hour)}`;
@@ -374,7 +377,7 @@
             const text = `${where}: ${tablesText(cell.tables)} of ${peakHours.tableCount} tables in use (${toPercent(share)}%)`;
             // The number is printed in the cell so it can be read without hovering (phones and tablets can't);
             // empty hours stay blank. Light text on the darker cells keeps it readable.
-            const label = cell.tables > 0 ? (cell.tables < 0.5 ? "&lt;1" : String(Math.round(cell.tables))) : "";
+            const label = cell.tables > 0 ? tablesText(cell.tables, true) : "";
             const classes = [isPeak ? "peak" : "", share > 0.5 ? "dark" : ""].filter(Boolean).join(" ");
             return `<td class="${classes}" style="--level: ${level.toFixed(2)}" title="${text}">`
                 + `<span aria-hidden="true">${label}</span><span class="visually-hidden">${text}</span></td>`;
