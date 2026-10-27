@@ -369,7 +369,8 @@ namespace RestaurantReservation.Data
                 options => DeserializeOptions(SerializeOptions(options))));
         }
 
-        private static string SerializeOptions(Dictionary<string, string> options) =>
+        // Nullable because EF's value comparer may pass null; it serializes as "null".
+        private static string SerializeOptions(Dictionary<string, string>? options) =>
             JsonSerializer.Serialize(options);
 
         private static Dictionary<string, string> DeserializeOptions(string json) =>
