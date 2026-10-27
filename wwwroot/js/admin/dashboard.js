@@ -358,6 +358,13 @@
             }
         }
 
+        // Shown as whole tables (an average like 8.3 tables reads oddly); a quiet hour that would round to 0
+        // still had tables in use, so it says "less than 1" ("<1" in the small cells). The shading keeps the exact
+        // average. Same rule as TablesText in Infrastructure/Admin/AnalyticsReportPdf.cs.
+        const tablesText = (tables, short = false) => tables > 0 && tables < 0.5
+            ? (short ? "&lt;1" : "less than 1")
+            : String(Math.round(tables));
+
         const cellHtml = (day, cell) => {
             const where = `${AdminUI.DAY_NAMES[day]} ${hourLabel(cell.hour)}`;
             if (cell.tables === null) {
@@ -367,8 +374,13 @@
             const share = Math.min(cell.tables / peakHours.tableCount, 1);
             const level = cell.tables > 0 ? 0.08 + share * 0.92 : 0;
             const isPeak = peak && peak.day === day && peak.hour === cell.hour;
-            const text = `${where}: ${cell.tables} of ${peakHours.tableCount} tables in use (${toPercent(share)}%)`;
-            return `<td class="${isPeak ? "peak" : ""}" style="--level: ${level.toFixed(2)}" title="${text}"><span class="visually-hidden">${text}</span></td>`;
+            const text = `${where}: ${tablesText(cell.tables)} of ${peakHours.tableCount} tables in use (${toPercent(share)}%)`;
+            // The number is printed in the cell so it can be read without hovering (phones and tablets can't);
+            // empty hours stay blank. Light text on the darker cells keeps it readable.
+            const label = cell.tables > 0 ? tablesText(cell.tables, true) : "";
+            const classes = [isPeak ? "peak" : "", share > 0.5 ? "dark" : ""].filter(Boolean).join(" ");
+            return `<td class="${classes}" style="--level: ${level.toFixed(2)}" title="${text}">`
+                + `<span aria-hidden="true">${label}</span><span class="visually-hidden">${text}</span></td>`;
         };
 
         const hours = rows[0].hours.map(cell => cell.hour);
@@ -379,7 +391,7 @@
         summaryEl.className = "small mb-3";
         summaryEl.innerHTML = peak
             ? `Busiest: <span class="fw-semibold">${AdminUI.DAY_NAMES[peak.day]}, ${hourLabel(peak.hour)}</span>`
-                + ` <span class="text-body-secondary">· on average ${peak.tables} of ${peakHours.tableCount} tables in use</span>`
+                + ` <span class="text-body-secondary">· on average ${tablesText(peak.tables)} of ${peakHours.tableCount} tables in use</span>`
             : `<span class="text-body-secondary">No tables were in use in this date range.</span>`;
     };
 

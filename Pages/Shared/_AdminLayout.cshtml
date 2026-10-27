@@ -95,7 +95,8 @@
                                     <li class="nav-item mb-2">
                                         <a asp-page="@item.Page"
                                             class="nav-button @(isActive ? "active" : "")">
-                                            <i class="@item.Icon"></i>
+                                            @* fa-fw gives every icon the same width, so the labels line up. *@
+                                            <i class="@item.Icon fa-fw" aria-hidden="true"></i>
                                             @item.Title
                                         </a>
                                     </li>

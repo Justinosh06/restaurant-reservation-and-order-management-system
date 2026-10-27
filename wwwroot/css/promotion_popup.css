@@ -1,6 +1,6 @@
 /* Promotion pop-up (see Pages/Shared/_PromotionPopup.cshtml), used on the landing page and the table ordering page.
    One poster at a time in the middle of the screen over a dimmed page: tag, title, countdown, poster,
-   description and dates, all centred. The close button at the top right is the only thing to click. */
+   description and dates, all centred. Also used by the customer Promotions page to open one poster. */
 .promo-popup {
     position: fixed;
     inset: 0;
@@ -13,8 +13,135 @@
 }
 
 .promo-popup[hidden],
-.promo-card[hidden] {
+.promo-card[hidden],
+.promo-nav[hidden] {
     display: none;
+}
+
+/* The landing / table page pop-up: one window holding every poster, with a single close button at the top right
+   and "< 1 of 3 >" along the bottom (the Promotions page viewer shows a single .promo-card instead). */
+.promo-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 460px;
+    max-height: calc(100dvh - 32px);
+    overflow: hidden;
+    border-radius: 28px;
+    background: white;
+    color: black;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    animation: promo-in 250ms ease-out;
+}
+
+/* The posters are stacked in the same spot and the ones not showing are only made invisible, so the window
+   always takes the height of the tallest one: it doesn't resize, and the buttons don't move, between posters. */
+.promo-slides {
+    display: grid;
+    min-height: 0;
+    overflow-x: hidden; /* a poster sliding in or out mustn't flash a sideways scrollbar */
+    overflow-y: auto;
+}
+
+/* A shorter poster sits in the middle of the window rather than at the top. */
+.promo-stage .promo-card {
+    grid-area: 1 / 1;
+    justify-content: center;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: 12px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    animation: none;
+}
+
+/* A class, not the hidden attribute: Bootstrap makes [hidden] display: none !important, which would collapse it. */
+.promo-stage .promo-card.promo-offstage {
+    visibility: hidden;
+}
+
+/* Leaves room for the arrows below, so a poster with an image still fits without scrolling. */
+.promo-stage .promo-image {
+    max-height: 40dvh;
+}
+
+.promo-close-all {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 100%;
+    background: white;
+    color: #888888;
+    font-size: 1.5rem;
+    transition: 200ms ease-in-out;
+}
+
+.promo-close-all:hover {
+    background: #F2F2F3;
+    color: black;
+}
+
+.promo-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 20px 18px;
+    border-top: 1px solid #EDEDEE;
+}
+
+.promo-pager[hidden] {
+    display: none;
+}
+
+.promo-position {
+    min-width: 4.5em;
+    color: #666666;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.promo-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid #DADADC;
+    border-radius: 100%;
+    background: white;
+    color: #2B2B2E;
+    font-size: 1rem;
+    transition: 200ms ease-in-out;
+}
+
+.promo-nav:hover:not(:disabled) {
+    border-color: #2B2B2E;
+    background: #F2F2F3;
+}
+
+.promo-close-all:focus-visible,
+.promo-nav:focus-visible {
+    outline: 2px solid black;
+    outline-offset: 2px;
+}
+
+/* At the first or last promotion the arrow stays in place, faded. */
+.promo-nav:disabled {
+    opacity: 0.35;
+    cursor: default;
 }
 
 /* The page behind does not scroll while a poster is open. */
@@ -135,6 +262,47 @@ body.promo-open {
     background: #F2F2F3;
 }
 
+/* Takes the image's place when a promotion has none: the discount in large type on the dark tag colour,
+   with a faint dotted texture so the panel doesn't read as a flat block. */
+.promo-offer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 180px;
+    margin-top: 4px;
+    padding: 24px 16px;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle, rgba(255, 255, 255, 0.07) 1.5px, transparent 1.5px) 0 0 / 16px 16px,
+        #2B2B2E;
+    color: white;
+    font-family: "Bricolage Grotesque", sans-serif;
+    line-height: 1;
+}
+
+.promo-offer-value {
+    color: #FFC83D;
+    font-size: clamp(3.25rem, 14vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -2px;
+    white-space: nowrap;
+}
+
+.promo-offer-label {
+    margin-top: 6px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+}
+
+.promo-offer-icon {
+    color: #FFC83D;
+    font-size: 3.5rem;
+}
+
 .promo-description {
     margin: 4px 0 0;
     color: #2B2B2E;
@@ -177,5 +345,17 @@ body.promo-open {
 
     .promo-title {
         font-size: 1.45rem;
+    }
+
+    .promo-stage {
+        border-radius: 24px;
+    }
+
+    .promo-stage .promo-card {
+        padding-bottom: 10px;
+    }
+
+    .promo-pager {
+        padding: 10px 16px 14px;
     }
 }

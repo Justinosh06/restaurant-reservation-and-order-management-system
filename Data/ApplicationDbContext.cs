@@ -331,6 +331,9 @@ namespace RestaurantReservation.Data
                 entity.Property(p => p.DiscountType)
                       .HasConversion<string>()
                       .HasMaxLength(20);
+                entity.Property(p => p.Audience)
+                      .HasConversion<string>()
+                      .HasMaxLength(20);
                 entity.HasIndex(p => p.Code)
                       .IsUnique()
                       .HasFilter("[Code] IS NOT NULL");

@@ -32,6 +32,7 @@
     const discountTypeInput = document.getElementById("promo-discount-type");
     const discountValueInput = document.getElementById("promo-discount-value");
     const minSpendInput = document.getElementById("promo-min-spend");
+    const audienceInput = document.getElementById("promo-audience");
     const startInput = document.getElementById("promo-start");
     const endInput = document.getElementById("promo-end");
     const fileInput = document.getElementById("promo-image");
@@ -50,11 +51,15 @@
 
     const formatCurrency = (amount) => `${currencySymbol} ${Number(amount).toFixed(2)}`;
 
-    // e.g. "20% off, min. spend $ 100.00"; null for promotions made before discounts existed.
+    const audienceText = { Members: "members only", Birthday: "birthday month only" };
+
+    // e.g. "20% off, min. spend $ 100.00, members only"; null for promotions made before discounts existed.
     const discountText = (p) => {
         if (!p.discountType) return null;
-        const off = p.discountType === "Percentage" ? `${p.discountValue}% off` : `${formatCurrency(p.discountValue)} off`;
-        return p.minimumSpend > 0 ? `${off}, min. spend ${formatCurrency(p.minimumSpend)}` : off;
+        const parts = [p.discountType === "Percentage" ? `${p.discountValue}% off` : `${formatCurrency(p.discountValue)} off`];
+        if (p.minimumSpend > 0) parts.push(`min. spend ${formatCurrency(p.minimumSpend)}`);
+        if (audienceText[p.audience]) parts.push(audienceText[p.audience]);
+        return parts.join(", ");
     };
 
     const discountLine = (p) => {
@@ -224,6 +229,7 @@
         discountTypeInput.value = p?.discountType ?? "Percentage";
         discountValueInput.value = p?.discountType ? p.discountValue : "";
         minSpendInput.value = p?.minimumSpend > 0 ? p.minimumSpend : "";
+        audienceInput.value = p?.audience ?? "Everyone";
         syncDiscountInputs();
         startInput.value = p?.startDate ?? "";
         endInput.value = p?.endDate ?? "";
@@ -300,6 +306,7 @@
         data.append("discountType", discountTypeInput.value);
         data.append("discountValue", discountValueInput.value);
         data.append("minimumSpend", minSpendInput.value);
+        data.append("audience", audienceInput.value);
         data.append("startDate", startInput.value);
         data.append("endDate", endInput.value);
         data.append("removeImage", String(removeSavedImage));

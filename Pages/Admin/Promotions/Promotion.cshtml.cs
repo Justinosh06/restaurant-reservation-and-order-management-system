@@ -78,12 +78,13 @@ public class PromotionModel : PageModel
         [FromForm] string? discountType,
         [FromForm] string? discountValue,
         [FromForm] string? minimumSpend,
+        [FromForm] string? audience,
         IFormFile? image)
     {
         var promotion = new Promotion();
         var error = Apply(promotion, title, description, startDate, endDate)
             ?? ApplyDiscount(
-                promotion, discountType, discountValue, minimumSpend,
+                promotion, discountType, discountValue, minimumSpend, audience,
                 (await _restaurantCurrency.GetAsync()).GetSymbol())
             ?? await ApplyCodeAsync(promotion, code);
         if (error is not null)
@@ -128,6 +129,7 @@ public class PromotionModel : PageModel
         [FromForm] string? discountType,
         [FromForm] string? discountValue,
         [FromForm] string? minimumSpend,
+        [FromForm] string? audience,
         [FromForm] bool removeImage,
         IFormFile? image)
     {
@@ -139,7 +141,7 @@ public class PromotionModel : PageModel
 
         var error = Apply(promotion, title, description, startDate, endDate)
             ?? ApplyDiscount(
-                promotion, discountType, discountValue, minimumSpend,
+                promotion, discountType, discountValue, minimumSpend, audience,
                 (await _restaurantCurrency.GetAsync()).GetSymbol())
             ?? await ApplyCodeAsync(promotion, code);
         if (error is not null)
@@ -214,14 +216,20 @@ public class PromotionModel : PageModel
         return null;
     }
 
-    // Sets a percentage or a fixed discount and an optional minimum spend, all monetary values in the restaurant currency.
+    // Sets a percentage or a fixed discount, an optional minimum spend (monetary values in the restaurant currency)
+    // and who can use the code.
     private static string? ApplyDiscount(
         Promotion promotion,
         string? discountType,
         string? discountValue,
         string? minimumSpend,
+        string? audience,
         string currencySymbol)
     {
+        if (!Enum.TryParse<PromotionAudience>(audience, out var who) || !Enum.IsDefined(who))
+        {
+            return "Please choose who can use the promo code.";
+        }
         if (!Enum.TryParse<PromotionDiscountType>(discountType, out var type) || !Enum.IsDefined(type))
         {
             return "Please choose the kind of discount the promo code gives.";
@@ -260,6 +268,7 @@ public class PromotionModel : PageModel
         promotion.DiscountType = type;
         promotion.DiscountValue = amount;
         promotion.MinimumSpend = (int)(minimum * 100);
+        promotion.Audience = who;
         return null;
     }
 
@@ -324,6 +333,7 @@ public class PromotionModel : PageModel
         discountType = p.DiscountType?.ToString(),
         // Percent for Percentage; the restaurant currency for FixedAmount and the minimum spend.
         discountValue = p.DiscountType == PromotionDiscountType.FixedAmount ? p.DiscountValue / 100m : p.DiscountValue,
-        minimumSpend = p.MinimumSpend / 100m
+        minimumSpend = p.MinimumSpend / 100m,
+        audience = p.Audience.ToString()
     };
 }

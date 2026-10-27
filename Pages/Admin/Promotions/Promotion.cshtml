@@ -134,6 +134,13 @@
                         </div>
                     </div>
                     <div class="form-text">Taken off the orders total when a customer enters the promo code at checkout.</div>
+                    <label for="promo-audience" class="form-label small text-body-secondary mb-1 mt-2">Who can use it</label>
+                    <select class="form-select" id="promo-audience" required aria-describedby="promo-audience-help">
+                        <option value="Everyone">Everyone</option>
+                        <option value="Members">Members only (signed in to an account)</option>
+                        <option value="Birthday">Members in their birthday month</option>
+                    </select>
+                    <div class="form-text" id="promo-audience-help">Birthday codes need the date of birth on the customer's profile.</div>
                 </fieldset>
 
                 <div class="row g-2">

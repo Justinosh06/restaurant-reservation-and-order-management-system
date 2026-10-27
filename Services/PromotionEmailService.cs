@@ -136,7 +136,7 @@ public class PromotionEmailWorker : BackgroundService
         }
     }
 
-    // e.g. "20% off" or "RM 10.00 off", plus the minimum spend when there is one.
+    // e.g. "20% off" or "RM 10.00 off", plus the minimum spend and who can use it when they apply.
     private static string? OfferText(Promotion promotion, CurrencyType currency)
     {
         if (promotion.DiscountType is null)
@@ -147,7 +147,16 @@ public class PromotionEmailWorker : BackgroundService
         var offer = promotion.DiscountType == PromotionDiscountType.Percentage
             ? $"{promotion.DiscountValue}% off"
             : $"{currency.FormatCents(promotion.DiscountValue)} off";
-        return promotion.MinimumSpend > 0 ? $"{offer} when you spend {currency.FormatCents(promotion.MinimumSpend)} or more" : offer;
+        if (promotion.MinimumSpend > 0)
+        {
+            offer += $" when you spend {currency.FormatCents(promotion.MinimumSpend)} or more";
+        }
+        return promotion.Audience switch
+        {
+            PromotionAudience.Members => $"{offer}, for members signed in to their account",
+            PromotionAudience.Birthday => $"{offer}, for members during their birthday month",
+            _ => offer
+        };
     }
 
     private static string DatesText(Promotion promotion) =>

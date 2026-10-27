@@ -1,9 +1,11 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Extensions;
 using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Authentication;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
@@ -303,7 +305,7 @@ public class CheckoutModel : PageModel
                 ? $"{code} expired on {promotion.EndDate:d MMM yyyy}."
             : subtotal < promotion.MinimumSpend
                 ? $"{code} needs a minimum spend of {CurrencySymbol} {promotion.MinimumSpend / 100m:F2}. Your orders come to {CurrencySymbol} {TotalAmount:F2}."
-            : null;
+            : promotion.AudienceError(await GetSessionCustomerAsync(session.Session), _clock.Today);
         if (PromoError is not null)
         {
             return RedirectToPage("/Table/Checkout", new { tableId = TableId });
@@ -350,9 +352,28 @@ public class CheckoutModel : PageModel
                 : $"Promo code {promotion.Code} is no longer running, so it has been removed.";
         }
 
+        // e.g. a birthday code applied on the last day of the birthday month and paid for after midnight.
+        var audienceError = promotion.AudienceError(await GetSessionCustomerAsync(session), _clock.Today);
+        if (audienceError is not null)
+        {
+            await ClearPromotionAsync(session.Id);
+            return $"{audienceError} It has been removed.";
+        }
+
         AppliedPromotion = promotion;
         PromoDiscount = promotion.DiscountOn((int)(TotalAmount * 100m)) / 100m;
         return null;
+    }
+
+    // The account using this table, for members-only and birthday promo codes: the one the session is linked to
+    // (a checked-in reservation), otherwise the customer signed in on this device; null for a guest.
+    private async Task<Customer?> GetSessionCustomerAsync(RestaurantReservation.Models.Session session)
+    {
+        var customerId = session.CustomerId
+            ?? (User.IsInRole(AppRoles.Customer) ? User.FindFirstValue(ClaimTypes.NameIdentifier) : null);
+        return customerId is null
+            ? null
+            : await _db.Customers.AsNoTracking().FirstOrDefaultAsync(customer => customer.Id == customerId);
     }
 
     private Task ClearPromotionAsync(string sessionId) =>
