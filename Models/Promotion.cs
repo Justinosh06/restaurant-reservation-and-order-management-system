@@ -43,6 +43,9 @@ namespace RestaurantReservation.Models
         [Range(0, 10000000)]
         public int MinimumSpend { get; set; }
 
+        // Who can use the code: anyone, customers signed in to an account, or customers in their birthday month.
+        public PromotionAudience Audience { get; set; } = PromotionAudience.Everyone;
+
         // When customers were emailed about this promotion (UTC); null until it has started and been sent.
         // Set before sending, so a promotion is only ever emailed once, even if it is edited later.
         public DateTime? EmailedAt { get; set; }
@@ -62,11 +65,33 @@ namespace RestaurantReservation.Models
                 : DiscountValue;
             return Math.Clamp(discount, 0, subtotal);
         }
+
+        // Why this customer can't use the code today, or null when they can.
+        // customer is null when the table isn't linked to an account.
+        public string? AudienceError(Customer? customer, DateOnly today) => Audience switch
+        {
+            PromotionAudience.Members when customer is null =>
+                $"{Code} is for members only. Log in to your account to use it.",
+            PromotionAudience.Birthday when customer is null =>
+                $"{Code} is a birthday treat for members. Log in to your account to use it.",
+            PromotionAudience.Birthday when customer.DateOfBirth is null =>
+                $"{Code} is a birthday treat. Add your date of birth on your profile page to use it.",
+            PromotionAudience.Birthday when customer.DateOfBirth.Value.Month != today.Month =>
+                $"{Code} can only be used during your birthday month ({customer.DateOfBirth.Value:MMMM}).",
+            _ => null
+        };
     }
 
     public enum PromotionDiscountType
     {
         Percentage,
         FixedAmount
+    }
+
+    public enum PromotionAudience
+    {
+        Everyone,
+        Members,
+        Birthday
     }
 }

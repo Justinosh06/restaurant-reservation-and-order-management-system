@@ -142,6 +142,15 @@
                 {
                     <p class="promo-feedback" id="promoFeedback" role="status">@Model.PromoMessage</p>
                 }
+
+                @* Members-only and birthday codes need an account; the login choice is otherwise only in the pop-up. *@
+                @if (User.Identity?.IsAuthenticated != true && !Model.IsCustomerBound)
+                {
+                    <p class="promo-feedback">
+                        Have a member or birthday code?
+                        <a asp-page="/Login" asp-route-returnUrl="@($"/Table/{Model.TableId}/Checkout")">Log in</a> to use it.
+                    </p>
+                }
             </div>
         }
 

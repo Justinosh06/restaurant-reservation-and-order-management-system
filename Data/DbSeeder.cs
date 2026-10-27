@@ -126,6 +126,9 @@ public static class DbSeeder
             "IF COL_LENGTH('Promotions', 'DiscountValue') IS NULL ALTER TABLE Promotions ADD DiscountValue int NOT NULL DEFAULT 0");
         await db.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('Promotions', 'MinimumSpend') IS NULL ALTER TABLE Promotions ADD MinimumSpend int NOT NULL DEFAULT 0");
+        // Who can use a promo code; existing promotions stay open to everyone.
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Promotions', 'Audience') IS NULL ALTER TABLE Promotions ADD Audience nvarchar(20) NOT NULL DEFAULT 'Everyone'");
         await db.Database.ExecuteSqlRawAsync("""
             IF COL_LENGTH('Sessions', 'PromotionId') IS NULL
             BEGIN
