@@ -1,0 +1,8 @@
+@using Restaurant_Reservation_and_Order_Management_System.Pages.Policies
+@* Links to the site's policies, for the footers of the customer pages. *@
+<nav class="policy-links" aria-label="Policies">
+    @foreach (var (name, title) in PolicyModel.Policies)
+    {
+        <a href="/Policies/@name">@title</a>
+    }
+</nav>

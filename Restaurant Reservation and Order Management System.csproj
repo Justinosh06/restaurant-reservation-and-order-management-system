@@ -27,4 +27,9 @@
     <Watch Remove="wwwroot\uploads\**" />
   </ItemGroup>
 
+  <!-- The policy texts (shown by Pages/Policies) are read from disk, so they ship with the site. -->
+  <ItemGroup>
+    <None Update="Content\Policies\*.md" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
