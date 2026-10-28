@@ -1,0 +1,80 @@
+@model RestaurantReservation.Models.Promotion
+@{
+    // One promotion poster (styles in promotion_popup.css). Shown by the pop-up on the landing and table pages
+    // (_PromotionPopup) and when a promotion is opened on the customer's Promotions page.
+    // The promotion runs to the end of its last day; the countdown counts down to that moment.
+    var endsAt = Model.EndDate.ToDateTime(new TimeOnly(23, 59, 59));
+
+    var currencySymbol = ViewData["CurrencySymbol"]?.ToString()
+        ?? throw new InvalidOperationException("The restaurant currency symbol was not provided.");
+
+    // The big number on a poster without an image: "20%" or "RM 10" (cents only when there are any).
+    string OfferValue(RestaurantReservation.Models.Promotion promotion) =>
+        promotion.DiscountType == RestaurantReservation.Models.PromotionDiscountType.Percentage
+            ? $"{promotion.DiscountValue}%"
+            : $"{currencySymbol} {promotion.DiscountValue / 100m:0.##}";
+
+    // e.g. "20% off" or "$ 10.00 off, min. spend $ 100.00 (members only)".
+    string DiscountText(RestaurantReservation.Models.Promotion promotion)
+    {
+        var off = promotion.DiscountType == RestaurantReservation.Models.PromotionDiscountType.Percentage
+            ? $"{promotion.DiscountValue}% off"
+            : $"{currencySymbol} {promotion.DiscountValue / 100m:F2} off";
+        var text = promotion.MinimumSpend > 0 ? $"{off}, min. spend {currencySymbol} {promotion.MinimumSpend / 100m:F2}" : off;
+        return promotion.Audience switch
+        {
+            RestaurantReservation.Models.PromotionAudience.Members => $"{text} (members only)",
+            RestaurantReservation.Models.PromotionAudience.Birthday => $"{text} (members, during your birthday month)",
+            _ => text
+        };
+    }
+}
+
+<section class="promo-card" data-promo-id="@Model.Id" role="dialog" aria-modal="true"
+         aria-labelledby="promo-title-@Model.Id" hidden>
+    <button type="button" class="promo-close" aria-label="Close promotion">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+
+    <span class="promo-tag"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Limited-time promotion</span>
+
+    <h2 class="promo-title" id="promo-title-@Model.Id">@Model.Title</h2>
+
+    <p class="promo-countdown">
+        <i class="fa-regular fa-clock" aria-hidden="true"></i>
+        Ends in: <span class="promo-time-left" data-ends="@endsAt.ToString("yyyy-MM-ddTHH:mm:ss")"></span>
+    </p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+    {
+        <img class="promo-image" src="@Url.Content(Model.ImageUrl)" alt="@Model.Title" />
+    }
+    else
+    {
+        @* No poster image: the offer itself fills that space, so the card doesn't look empty.
+           Hidden from screen readers because the code line below says the same thing. *@
+        <div class="promo-offer" aria-hidden="true">
+            @if (Model.DiscountType is null)
+            {
+                <i class="fa-solid fa-tags promo-offer-icon"></i>
+            }
+            else
+            {
+                <span class="promo-offer-value">@OfferValue(Model)</span>
+                <span class="promo-offer-label">off</span>
+            }
+        </div>
+    }
+
+    <p class="promo-description">@Model.Description</p>
+
+    @* A code only means something at checkout once the promotion has a discount. *@
+    @if (!string.IsNullOrWhiteSpace(Model.Code) && Model.DiscountType is not null)
+    {
+        <p class="promo-code">Use code <strong>@Model.Code</strong> at checkout for @DiscountText(Model)</p>
+    }
+
+    <p class="promo-dates">
+        Valid @Model.StartDate.ToString("d MMM") &ndash; @Model.EndDate.ToString("d MMM yyyy")
+    </p>
+</section>

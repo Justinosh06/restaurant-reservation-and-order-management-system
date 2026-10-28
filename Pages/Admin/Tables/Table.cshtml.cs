@@ -1,0 +1,430 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using RestaurantReservation.Data;
+using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Admin;
+using RestaurantReservation.Infrastructure.Authentication;
+using RestaurantReservation.Models;
+using RestaurantReservation.Models.Enums;
+using RestaurantReservation.Services;
+// The Razor pages in Pages/Table compile into a namespace called Table, which hides the model's short name here.
+using DiningTable = RestaurantReservation.Models.Table;
+
+namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin;
+
+public class TableManagementModel(
+    ApplicationDbContext db,
+    IConfiguration configuration,
+    DiningSessionService diningSessions,
+    RestaurantCurrency restaurantCurrency) : PageModel
+{
+    // Table sizes staff can add. Chairs are drawn half above and half below the table.
+    public static readonly int[] SeatOptions = [2, 4, 6];
+
+    // Tables per row on the floor plan, used to place a new table after the last one.
+    private const int FloorColumns = 6;
+
+    public List<DiningTable> Tables { get; private set; } = [];
+
+    public List<ReservationSummary> Reservations { get; private set; } = [];
+
+    public string? SelectedTableId { get; private set; }
+
+    // For each table, the upcoming bookings it is the only table of: removing the table sends them
+    // back to Pending (they are never deleted), so staff are told before they confirm.
+    public Dictionary<string, int> UnseatCounts { get; private set; } = [];
+
+    // Upcoming bookings that also use other tables; removing the table only takes it off them.
+    public Dictionary<string, int> SharedCounts { get; private set; } = [];
+
+    // Tables with guests checked in right now; these can't be removed until the guests have left.
+    public HashSet<string> SeatedNowTableIds { get; private set; } = [];
+
+    public Dictionary<string, RestaurantReservation.Models.Session> ActiveSessions { get; private set; } = [];
+
+    // For each table with a session, the orders that stop it being ended, one line each
+    // (see DescribeOpenOrdersAsync). Shown in the table's panel next to End dining session.
+    public Dictionary<string, List<string>> OpenOrderLines { get; private set; } = [];
+
+    // Set when End dining session was refused because of open orders: the table and one line per
+    // order, shown in a pop-up so staff know what to finish first.
+    [TempData]
+    public string? EndSessionBlockedTable { get; set; }
+
+    [TempData]
+    public string? EndSessionBlockedOrders { get; set; }
+
+    // Upcoming bookings that already have a table, soonest first, for the check-in sidebar.
+    // Assigning tables happens on Reservation Management's Pending tab.
+    public List<ReservationSummary> Queue { get; private set; } = [];
+
+    // Guests can be checked in from this long before their booking until its slot ends.
+    public static readonly TimeSpan CheckInOpensBefore = TimeSpan.FromHours(1);
+
+    public static bool CanCheckIn(ReservationSummary reservation, DateTime now) =>
+        reservation.HasTable
+        && reservation.Status != ReservationStatus.CheckedIn
+        && now >= reservation.ReservationAt - CheckInOpensBefore
+        && now < reservation.EndsAt;
+
+    [TempData]
+    public string? StatusMessage { get; set; }
+
+    public async Task OnGetAsync(string? tableId)
+    {
+        Tables = await LoadTablesAsync();
+
+        var activeSessions = await db.Sessions.AsNoTracking()
+            .Include(session => session.Customer)
+            .Include(session => session.Orders)
+            .ThenInclude(order => order.OrderItems)
+            .Where(session => session.EndingTime == null)
+            .ToListAsync();
+        ActiveSessions = activeSessions.ToDictionary(session => session.TableId, StringComparer.Ordinal);
+        foreach (var session in activeSessions)
+        {
+            var lines = await DescribeOpenOrdersAsync(session.Orders.Where(DiningSessionService.IsOpen).ToList());
+            if (lines.Count > 0)
+            {
+                OpenOrderLines[session.TableId] = lines;
+            }
+        }
+
+        var reservations = await db.Reservations.AsNoTracking()
+            .Include(reservation => reservation.Customer)
+            .Include(reservation => reservation.ReservationTables)
+            .Where(reservation => reservation.Status != ReservationStatus.Cancelled
+                && reservation.Status != ReservationStatus.Completed)
+            .ToListAsync();
+        Reservations = reservations.Select(ReservationSummary.From).ToList();
+
+        var now = DateTime.Now;
+        var upcoming = Reservations.Where(reservation => reservation.IsActive(now)).ToList();
+        UnseatCounts = upcoming
+            .Where(reservation => reservation.TableIds.Count == 1)
+            .GroupBy(reservation => reservation.TableIds[0])
+            .ToDictionary(group => group.Key, group => group.Count());
+        SharedCounts = upcoming
+            .Where(reservation => reservation.TableIds.Count > 1)
+            .SelectMany(reservation => reservation.TableIds)
+            .GroupBy(tableId => tableId)
+            .ToDictionary(group => group.Key, group => group.Count());
+        SeatedNowTableIds = upcoming
+            .Where(reservation => reservation.Status == ReservationStatus.CheckedIn)
+            .SelectMany(reservation => reservation.TableIds)
+            .Concat(ActiveSessions.Keys)
+            .ToHashSet();
+
+        // Only today's bookings (plus anyone still seated from before, e.g. past midnight);
+        // later days are on Reservation Management.
+        Queue = Reservations
+            .Where(reservation => reservation.HasTable && reservation.IsActive(now)
+                && (reservation.ReservationAt.Date == now.Date || reservation.IsSeated))
+            .OrderBy(reservation => reservation.ReservationAt)
+            .ToList();
+
+        SelectedTableId = Tables.FirstOrDefault(table => table.Id == tableId)?.Id;
+    }
+
+    public async Task<IActionResult> OnPostAddTableAsync(int seats, TableShape shape = TableShape.Rectangle)
+    {
+        if (!SeatOptions.Contains(seats))
+        {
+            StatusMessage = "Choose how many seats the new table has.";
+            return RedirectToPage();
+        }
+
+        var tables = await LoadTablesAsync();
+        var last = tables.LastOrDefault();
+        var (column, row) = last is null ? (1, 1)
+            : last.CoordinateX < FloorColumns ? (last.CoordinateX + 1, last.CoordinateY)
+            : (1, last.CoordinateY + 1);
+
+        var table = new DiningTable
+        {
+            Id = NextTableId(tables),
+            Capacity = seats,
+            Shape = Enum.IsDefined(shape) ? shape : TableShape.Rectangle,
+            CoordinateX = column,
+            CoordinateY = row
+        };
+        db.Tables.Add(table);
+        await db.SaveChangesAsync();
+
+        StatusMessage = $"{(table.Shape == TableShape.Round ? "Round table" : "Table")} {table.Id} added with {seats} seats.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostRemoveTableAsync(string? tableId)
+    {
+        var table = tableId is null ? null : await db.Tables.FindAsync(tableId);
+        if (table is null)
+        {
+            StatusMessage = "That table was already removed.";
+            return RedirectToPage();
+        }
+
+        if (await db.Sessions.AnyAsync(session => session.TableId == table.Id && session.EndingTime == null))
+        {
+            StatusMessage = $"Table {table.Id} has an active dining session. It can't be removed until the session is paid and closed.";
+            return RedirectToPage();
+        }
+
+        // Bookings are never deleted with a table: each one just loses this table. Upcoming bookings
+        // that had no other table go back to Pending so staff can seat them elsewhere.
+        var reservations = await db.Reservations
+            .Include(reservation => reservation.Customer)
+            .Include(reservation => reservation.ReservationTables)
+            .Where(reservation => reservation.ReservationTables.Any(link => link.TableId == table.Id))
+            .ToListAsync();
+        var now = DateTime.Now;
+        var upcoming = reservations
+            .Select(ReservationSummary.From)
+            .Where(summary => summary.IsActive(now)
+                && summary.Status != ReservationStatus.Cancelled
+                && summary.Status != ReservationStatus.Completed)
+            .ToList();
+
+        var seated = upcoming.FirstOrDefault(summary => summary.Status == ReservationStatus.CheckedIn);
+        if (seated is not null)
+        {
+            StatusMessage = $"{seated.CustomerName} is checked in at table {table.Id} right now. "
+                + "Remove the table once they have left, or undo the check-in if it was a mistake.";
+            return RedirectToPage();
+        }
+
+        db.ReservationTables.RemoveRange(reservations
+            .SelectMany(reservation => reservation.ReservationTables)
+            .Where(link => link.TableId == table.Id));
+        db.Tables.Remove(table);
+        await db.SaveChangesAsync();
+
+        var backToPending = upcoming.Count(summary => summary.TableIds.Count == 1);
+        var shared = upcoming.Count - backToPending;
+        StatusMessage = $"Table {table.Id} removed."
+            + (backToPending == 0 ? "" : $" {backToPending} upcoming booking{(backToPending == 1 ? " is" : "s are")} back in Pending — seat {(backToPending == 1 ? "it" : "them")} on Reservation Management.")
+            + (shared == 0 ? "" : $" {shared} booking{(shared == 1 ? " keeps its" : "s keep their")} other tables.");
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostEndSessionAsync(string? tableId)
+    {
+        if (string.IsNullOrWhiteSpace(tableId))
+        {
+            StatusMessage = "Select a valid table.";
+            return RedirectToPage();
+        }
+
+        var table = await db.Tables.FindAsync(tableId);
+        if (table is null)
+        {
+            StatusMessage = "That table no longer exists.";
+            return RedirectToPage();
+        }
+
+        var result = await diningSessions.EndSessionAsync(table.Id);
+        switch (result.Outcome)
+        {
+            case EndSessionOutcome.Ended:
+                StatusMessage = $"The dining session at table {table.Id} has ended.";
+                break;
+            case EndSessionOutcome.NoActiveSession:
+                StatusMessage = $"Table {table.Id} has no dining session open. It may have been ended already.";
+                break;
+            default:
+                EndSessionBlockedTable = table.Id;
+                EndSessionBlockedOrders = string.Join("\n", await DescribeOpenOrdersAsync(result.OpenOrders));
+                break;
+        }
+        return RedirectToPage();
+    }
+
+    // One line per unfinished order, saying what it is and what it is waiting for, e.g.
+    // "GR Yaris ×1 · Pending, in the kitchen · RM9,000.00 · not paid".
+    private async Task<List<string>> DescribeOpenOrdersAsync(IReadOnlyList<Order> orders)
+    {
+        if (orders.Count == 0)
+        {
+            return [];
+        }
+
+        var orderIds = orders.Select(order => order.Id).ToArray();
+        var paidOrderIds = (await db.Transactions.AsNoTracking()
+                .Where(transaction => orderIds.Contains(transaction.OrderId)
+                    && transaction.Status == TransactionStatus.Succeeded)
+                .Select(transaction => transaction.OrderId)
+                .ToListAsync())
+            .ToHashSet(StringComparer.Ordinal);
+        var currency = await restaurantCurrency.GetAsync();
+
+        return orders.Select(order =>
+        {
+            var items = order.OrderItems.Count == 0
+                ? "Order"
+                : string.Join(", ", order.OrderItems.Select(item => $"{item.ItemName} ×{item.Quantity}"));
+            var paid = paidOrderIds.Contains(order.Id);
+            var state = order.Status switch
+            {
+                OrderStatus.InQueue => "Pending, in the kitchen",
+                OrderStatus.Preparing => "Preparing, in the kitchen",
+                _ when paid => "Served and paid, not marked complete",
+                _ => "Served, waiting for payment"
+            };
+            return $"{items} · {state} · {currency.FormatCents(order.TotalAmount)} · {(paid ? "paid" : "not paid")}";
+        }).ToList();
+    }
+
+    // Marks the guests as arrived. Their tables show as Checked in until the booking's slot ends.
+    public async Task<IActionResult> OnPostCheckInAsync(string? reservationId)
+    {
+        var reservation = await FindReservationAsync(reservationId);
+        if (reservation is null)
+        {
+            StatusMessage = "That reservation no longer exists.";
+            return RedirectToPage();
+        }
+
+        var summary = ReservationSummary.From(reservation);
+        if (reservation.Status == ReservationStatus.CheckedIn)
+        {
+            StatusMessage = $"{summary.CustomerName} is already checked in.";
+            return RedirectToPage();
+        }
+
+        if (!CanCheckIn(summary, DateTime.Now))
+        {
+            StatusMessage = !summary.HasTable
+                ? $"{summary.CustomerName} has no table yet. Assign one on Reservation Management first."
+                : $"{summary.CustomerName} can be checked in from "
+                    + $"{(summary.ReservationAt - CheckInOpensBefore).ToString("ddd d MMM, h:mm tt", CultureInfo.CurrentCulture)}.";
+            return RedirectToPage();
+        }
+
+        var tableIds = reservation.ReservationTables
+            .Select(link => link.TableId)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var activeSessions = await db.Sessions
+            .Include(session => session.Orders)
+            .Where(session => tableIds.Contains(session.TableId) && session.EndingTime == null)
+            .ToListAsync();
+
+        if (reservation.CustomerId is not null &&
+            activeSessions.Any(session =>
+                session.CustomerId is not null &&
+                session.CustomerId != reservation.CustomerId))
+        {
+            StatusMessage = $"A table assigned to {summary.CustomerName} already has an active dining session for another customer.";
+            return RedirectToPage();
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var tableId in tableIds)
+        {
+            var activeSession = activeSessions.FirstOrDefault(session => session.TableId == tableId);
+            if (activeSession is null)
+            {
+                // Own Id now: two blank Ids would clash when one booking spans several tables.
+                db.Sessions.Add(new RestaurantReservation.Models.Session
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    TableId = tableId,
+                    CustomerId = reservation.CustomerId,
+                    StartingTime = now
+                });
+                continue;
+            }
+
+            if (reservation.CustomerId is not null && activeSession.CustomerId is null)
+            {
+                activeSession.CustomerId = reservation.CustomerId;
+                foreach (var order in activeSession.Orders)
+                {
+                    order.CustomerId = reservation.CustomerId;
+                }
+            }
+        }
+
+        reservation.Status = ReservationStatus.CheckedIn;
+        reservation.CheckedInAt = now;
+        await db.SaveChangesAsync();
+        StatusMessage = $"{summary.CustomerName} ({summary.PartySize} guests) checked in at {summary.TableLabel}.";
+        return RedirectToPage();
+    }
+
+    // Takes back a check-in made by mistake.
+    public async Task<IActionResult> OnPostUndoCheckInAsync(string? reservationId)
+    {
+        var reservation = await FindReservationAsync(reservationId);
+        if (reservation is not { Status: ReservationStatus.CheckedIn })
+        {
+            StatusMessage = "That reservation isn't checked in.";
+            return RedirectToPage();
+        }
+
+        // Check-in opened a dining session on each table (same start time as CheckedInAt);
+        // undoing it removes them, or they would carry on as walk-ins. Ones already ordered on stay.
+        var tableIds = reservation.ReservationTables.Select(link => link.TableId).ToArray();
+        var openedSessions = await db.Sessions
+            .Include(session => session.Orders)
+            .Where(session => tableIds.Contains(session.TableId)
+                && session.EndingTime == null
+                && session.StartingTime == reservation.CheckedInAt)
+            .ToListAsync();
+        if (openedSessions.Any(session => session.Orders.Count > 0))
+        {
+            StatusMessage = $"{ReservationSummary.From(reservation).CustomerName} has already ordered, so the check-in can't be undone. "
+                + "Use End session when they leave.";
+            return RedirectToPage();
+        }
+
+        var sessionIds = openedSessions.Select(session => session.Id).ToArray();
+        db.CartItems.RemoveRange(await db.CartItems.Where(item => sessionIds.Contains(item.SessionId)).ToListAsync());
+        db.Sessions.RemoveRange(openedSessions);
+        reservation.Status = ReservationStatus.Confirmed;
+        reservation.CheckedInAt = null;
+        await db.SaveChangesAsync();
+        StatusMessage = $"Check-in undone for {ReservationSummary.From(reservation).CustomerName}.";
+        return RedirectToPage();
+    }
+
+    private async Task<RestaurantReservation.Models.Reservation?> FindReservationAsync(string? reservationId) =>
+        reservationId is null ? null : await db.Reservations
+            .Include(item => item.Customer)
+            .Include(item => item.ReservationTables)
+            .FirstOrDefaultAsync(item => item.Id == reservationId
+                && item.Status != ReservationStatus.Cancelled
+                && item.Status != ReservationStatus.Completed);
+
+    // The page a table's QR code opens: the table's menu on the customer site, e.g. /Table/T1.
+    // The code itself is drawn in the browser by qrcode.js (wwwroot/lib/qrcodejs).
+    // Phones can't reach "localhost", so TableQr:BaseUrl in appsettings can point at this
+    // computer's network address (e.g. http://192.168.1.20:5105); otherwise the site's own address.
+    public string MenuUrl(string tableId)
+    {
+        var configured = configuration["TableQr:BaseUrl"];
+        var site = string.IsNullOrWhiteSpace(configured)
+            ? SiteHosts.MainSiteUrl(Request, string.Empty)
+            : configured.TrimEnd('/');
+        return $"{site}/Table/{Uri.EscapeDataString(tableId)}";
+    }
+
+    private Task<List<DiningTable>> LoadTablesAsync() =>
+        db.Tables.AsNoTracking()
+            .OrderBy(table => table.CoordinateY)
+            .ThenBy(table => table.CoordinateX)
+            .ThenBy(table => table.Id)
+            .ToListAsync();
+
+    // Tables are named T1, T2, ...; a new one takes the number after the highest in use.
+    private static string NextTableId(IEnumerable<DiningTable> tables)
+    {
+        var highest = tables
+            .Select(table => table.Id.StartsWith('T') && int.TryParse(table.Id[1..], out var number) ? number : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+        return $"T{highest + 1}";
+    }
+}

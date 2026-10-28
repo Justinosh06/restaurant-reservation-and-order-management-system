@@ -1,3 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
+
+:root {
+  --primary-color: #0e5847;
+  --secondary-color: #dafc92;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 html {
   font-size: 14px;
 }
@@ -17,10 +30,6 @@ html {
   min-height: 100%;
 }
 
-body {
-  margin-bottom: 60px;
-}
-
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;
@@ -28,4 +37,51 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+
+button {
+  border: none;
+  background: none;
+}
+
+::selection {
+  background: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+/* Options a dish was ordered with (Pages/Shared/_ItemOptions): small grey chips, readable on white and grey cards. */
+.item-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.item-option {
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #444444;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* The footer links (Pages/Shared/_PolicyLinks.cshtml). */
+.policy-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: .875rem;
+}
+
+.policy-links a {
+  color: #6c757d;
+  text-decoration: none;
+}
+
+.policy-links a:hover {
+  color: #212529;
+  text-decoration: underline;
 }

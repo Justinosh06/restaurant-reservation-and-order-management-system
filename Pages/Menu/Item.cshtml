@@ -1,0 +1,135 @@
+@page "/Menu/{menuItemId}"
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure
+@using RestaurantReservation.Models.Enums
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Menu.ItemModel
+@{
+    // Full-screen like the table's menu item page, so it has no menu header or footer.
+    Layout = "_MenuItemLayout";
+    ViewData["Title"] = Model.Item.Name;
+
+    // Star icons for a rating: full, half or empty for each of the five stars.
+    string StarIcon(double rating, int star) =>
+        rating >= star ? "fa-solid fa-star"
+        : rating >= star - 0.5 ? "fa-solid fa-star-half-stroke"
+        : "fa-regular fa-star";
+}
+
+<link rel="stylesheet" href="~/css/menu_view.css" asp-append-version="true" />
+
+<div class="page-container">
+    <header class="header">
+        @* Back to where the dish was opened from: the home page, the Reviews page (keeping its star filter),
+           or the menu. *@
+        @if (Request.Query["from"] == "home")
+        {
+            <a asp-page="/Index" class="back-btn" aria-label="Back to home">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        }
+        else if (Request.Query["from"] == "reviews")
+        {
+            int? reviewsRating = int.TryParse(Request.Query["rating"], out var stars) && stars is >= 1 and <= 5 ? stars : null;
+
+            <a asp-page="/Reviews" asp-route-rating="@reviewsRating" class="back-btn" aria-label="Back to reviews">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        }
+        else
+        {
+            <a asp-page="/Menu/Index" class="back-btn" aria-label="Back to menu">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        }
+    </header>
+
+    <div class="menu-item-container">
+        <div class="display-container">
+            @if (string.IsNullOrWhiteSpace(Model.Item.ThumbnailImage))
+            {
+                <div class="menu-item-image no-image" aria-hidden="true">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+            }
+            else
+            {
+                <img class="menu-item-image" src="@Url.Content(Model.Item.ThumbnailImage)" alt="@Model.Item.Name" />
+            }
+        </div>
+
+        <div class="info-container">
+            <span class="category">
+                <i class="fa-solid @(Model.Item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils")"></i>
+                @Model.Item.MenuItemType
+            </span>
+
+            <h1 class="title">@Model.Item.Name</h1>
+
+            <div class="rating-summary">
+                @if (Model.Reviews.Count == 0)
+                {
+                    <span class="rating-count">No ratings yet</span>
+                }
+                else
+                {
+                    <span class="stars" aria-label="@Model.AverageRating out of 5">
+                        @for (var star = 1; star <= 5; star++)
+                        {
+                            <i class="@StarIcon(Model.AverageRating, star)"></i>
+                        }
+                    </span>
+                    <span class="rating-value">@Model.AverageRating.ToString("0.0")</span>
+                    <span class="rating-count">(@Model.Reviews.Count @(Model.Reviews.Count == 1 ? "review" : "reviews"))</span>
+                }
+            </div>
+
+            <p class="price">@Model.Currency.FormatCents(Model.Item.Price)</p>
+
+            <section class="info-section">
+                <h2 class="section-label">About</h2>
+
+                @if (string.IsNullOrWhiteSpace(Model.Item.Description))
+                {
+                    <p class="description muted">No description yet.</p>
+                }
+                else
+                {
+                    <div class="description markdown-body">@Model.Item.Description.ToHtml()</div>
+                }
+            </section>
+
+            <section class="info-section">
+                <h2 class="section-label">Reviews</h2>
+
+                @if (Model.Reviews.Count == 0)
+                {
+                    <p class="description muted">Nobody has reviewed this dish yet.</p>
+                }
+                else
+                {
+                    <ul class="review-list">
+                        @foreach (var review in Model.Reviews)
+                        {
+                            <li class="review">
+                                <div class="review-head">
+                                    <strong>@(review.Customer?.FirstName ?? "Guest")</strong>
+                                    <span class="stars" aria-label="@review.Rating out of 5">
+                                        @for (var star = 1; star <= 5; star++)
+                                        {
+                                            <i class="@StarIcon(review.Rating, star)"></i>
+                                        }
+                                    </span>
+                                </div>
+                                <partial name="_ItemOptions" model="Model.OptionsFor(review)" />
+                                @if (!string.IsNullOrWhiteSpace(review.Description))
+                                {
+                                    <p>@review.Description</p>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+    </div>
+</div>

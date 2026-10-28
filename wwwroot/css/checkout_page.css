@@ -1,0 +1,356 @@
+.checkout-choice-modal {
+    .modal-content {
+        border: 0;
+        border-radius: 28px;
+        padding: 12px;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .modal-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -1px;
+        margin-bottom: 8px;
+    }
+
+    .modal-body > p {
+        color: #777777;
+        margin-bottom: 24px;
+    }
+
+    .checkout-choice-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .checkout-choice-guest,
+    .checkout-choice-login {
+        border: 0;
+        border-radius: 100px;
+        font: inherit;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .checkout-choice-guest {
+        background: var(--secondary-color);
+        color: var(--primary-color);
+    }
+
+    .checkout-choice-login {
+        background: #f2f2f3;
+        color: #222222;
+    }
+}
+
+.checkout-container {
+    padding: 8px;
+    max-width: 600px;
+    margin-inline: auto;
+
+    .section-title {
+        position: absolute;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 1.5rem;
+        text-align: center;
+        letter-spacing: -1px;
+        font-weight: 600;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .alert-text {
+        color: var(--primary-color);
+        background: #edfdca;
+        padding: 24px;
+        font-weight: 600;
+        border-radius: 30px;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .order-list {
+        gap: 8px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 30px;
+        margin-bottom: 16px;
+
+        .order-wrapper {
+            padding: 8px;
+            border-radius: 30px;
+            background: #F2F2F3;
+            transition: 400ms ease-in-out;
+
+            .order-btn {
+                padding: 24px;
+                background: white;
+                border-radius: 22px;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+                text-align: left;
+
+                .title-row {
+                    display: flex;
+                    justify-content: space-between;
+
+                    .title {
+                        font-size: 1rem;
+                        font-weight: 300;
+                        color: #888888;
+                        font-family: "Bricolage Grotesque", sans-serif;
+                    }
+
+                    .title-id {
+                        font-size: 1.8rem;
+                    }
+
+                    .status {
+                        background: var(--secondary-color);
+                        color: var(--primary-color);
+                        height: fit-content;
+                        font-size: 0.9rem;
+                        padding: 4px 12px;
+                        border-radius: 30px;
+                        font-weight: 600;
+                        font-family: "Bricolage Grotesque", sans-serif;
+                    }
+                }
+
+                .detail {
+                    font-size: 1rem;
+                    margin-bottom: 0;
+                    letter-spacing: -1px;
+                    color: #888888;
+                    font-weight: 500;
+                }
+            }
+
+            .order-items {
+                padding: 8px 16px;
+
+                .cancel-order-form {
+                    margin-top: 12px;
+                }
+
+                .cancel-order-btn {
+                    border-radius: 100px;
+                    width: 100%;
+                    padding: 12px 16px;
+                    color: #b42318;
+                    background: #ffbdb8;
+                    font-weight: 600;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .order-item {
+                    padding: 12px 0;
+                    display: flex;
+                    flex-direction: column;
+                    font-family: "Bricolage Grotesque", sans-serif;
+
+                    .order-item-details {
+                        display: flex;
+                        flex-direction: column;
+
+                        .order-item-name {
+                            font-size: 1.2rem;
+                            font-weight: 600;
+                            margin-bottom: 16px;
+                        }
+                    }
+                }
+
+                .order-item:not(:last-child) {
+                    border-bottom: 1px solid #cccccc;
+                }
+            }
+        }
+    }
+
+    /* Promo code: an input and Apply button, or the applied code with Remove. */
+    .promo-code-box {
+        margin: 0 0 16px;
+        font-family: "Bricolage Grotesque", sans-serif;
+
+        .promo-form,
+        .promo-applied {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 6px 6px 20px;
+            border-radius: 100px;
+            background: #f1f1f1;
+        }
+
+        .promo-input {
+            flex: 1;
+            min-width: 0;
+            border: 0;
+            background: transparent;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--primary-color);
+        }
+
+        .promo-input::placeholder {
+            letter-spacing: 0;
+            text-transform: none;
+            font-weight: 500;
+            color: #888888;
+        }
+
+        .promo-input:focus {
+            outline: none;
+        }
+
+        .promo-form:focus-within {
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .promo-apply-btn,
+        .promo-remove-btn {
+            flex-shrink: 0;
+            border: 0;
+            border-radius: 100px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+
+        .promo-apply-btn {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+        }
+
+        .promo-applied {
+            background: #edfdca;
+            color: var(--primary-color);
+
+            .promo-applied-text {
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                line-height: 1.2;
+
+                strong {
+                    letter-spacing: 1px;
+                }
+
+                span {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    font-size: 0.85rem;
+                    color: #555555;
+                }
+            }
+        }
+
+        .promo-remove-btn {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .promo-feedback {
+            margin: 8px 20px 0;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+
+        .promo-feedback-error {
+            color: #b42318;
+        }
+    }
+
+    .checkout-total-breakdown {
+        display: grid;
+        gap: 8px;
+        margin: 0 8px 16px;
+        font-family: "Bricolage Grotesque", sans-serif;
+
+        > div {
+            display: flex;
+            justify-content: space-between;
+            color: #777777;
+        }
+
+        .checkout-amount-due {
+            padding-top: 8px;
+            border-top: 1px solid #cccccc;
+            color: var(--primary-color);
+        }
+    }
+
+    .pay-btn {
+        gap: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--secondary-color);
+        color: var(--primary-color);
+        border-radius: 100px;
+        padding: 6px 24px;
+        font-weight: 600;
+        font-size: 1rem;
+        font-family: "Bricolage Grotesque", sans-serif;
+
+        .total-price {
+            text-align: center;
+            letter-spacing: -1px;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .icon {
+            font-size: 2.5rem;
+            color: #635BFF;
+        }
+    }
+
+    .pay-btn:disabled {
+        filter: brightness(0.85);
+    }
+}
+
+.content-container:has(.empty-container) {
+    margin-top: auto;
+    margin-bottom: auto;
+
+    .empty-container {
+        display: flex;
+        flex-direction: column;
+
+        .empty-text {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .view-cart-btn {
+            width: 100%;
+            text-align: center;
+            padding: 12px 24px;
+            background: black;
+            color: white;
+            text-decoration: none;
+            border-radius: 100px;
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    .checkout-container {
+        .section-title {
+            display: none;
+        }
+    }
+}

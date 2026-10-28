@@ -1,0 +1,194 @@
+@page "/Admin/Orders"
+@model RestaurantReservation.Pages.Admin.Orders.OrderModel
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<div class="admin-page px-3 pt-3 pb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="h4 fw-semibold mb-1">Orders</h1>
+        </div>
+        @if (Model.IsOpenNow == true)
+        {
+            <span class="badge rounded-pill bg-success-subtle text-success-emphasis fw-medium px-3 py-2"><i class="fa-solid fa-circle small me-2"></i>Restaurant open</span>
+        }
+        else if (Model.IsOpenNow == false)
+        {
+            <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis fw-medium px-3 py-2"><i class="fa-solid fa-circle small me-2"></i>Restaurant closed</span>
+        }
+        else
+        {
+            @if (User.IsInRole("Administrator"))
+            {
+                <a asp-page="/Admin/Settings/Setting" class="small text-body-secondary">Opening hours not set</a>
+            }
+            else
+            {
+                <span class="small text-body-secondary">Opening hours not set</span>
+            }
+        }
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xxl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 rounded-4 m-1">
+                    <div class="card-body">
+                        <div class="small text-body-secondary fw-medium">Pending</div>
+                        <div class="fs-4 fw-semibold" id="summary-Pending">-</div>
+                    </div>
+                </div>
+                <div class="small text-body-secondary px-3 py-2">Waiting to start</div>
+            </div>
+        </div>
+        <div class="col-6 col-xxl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 rounded-4 m-1">
+                    <div class="card-body">
+                        <div class="small text-body-secondary fw-medium">Preparing</div>
+                        <div class="fs-4 fw-semibold" id="summary-Preparing">-</div>
+                    </div>
+                </div>
+                <div class="small text-body-secondary px-3 py-2">In the kitchen</div>
+            </div>
+        </div>
+        <div class="col-6 col-xxl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 rounded-4 m-1">
+                    <div class="card-body">
+                        <div class="small text-body-secondary fw-medium">Served</div>
+                        <div class="fs-4 fw-semibold" id="summary-Served">-</div>
+                    </div>
+                </div>
+                <div class="small text-body-secondary px-3 py-2">Ready at the table</div>
+            </div>
+        </div>
+        <div class="col-6 col-xxl-3">
+            <div class="card h-100 border-0 bg-body-tertiary rounded-4">
+                <div class="card bg-body border-0 rounded-4 m-1">
+                    <div class="card-body">
+                        <div class="small text-body-secondary fw-medium">Overdue</div>
+                        <div class="fs-4 fw-semibold" id="summary-overdue">-</div>
+                    </div>
+                </div>
+                <div class="small text-body-secondary px-3 py-2">Waiting over 15 min</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-inline-flex gap-1 bg-body border rounded-pill p-1 mb-3" role="tablist" id="order-tabs">
+        <button type="button" class="btn btn-sm rounded-pill px-3 btn-dark active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" role="tab" aria-controls="active-pane" aria-selected="true">
+            <i class="fa-solid fa-clipboard-list me-1"></i>Live orders <span class="badge rounded-pill text-bg-light border ms-1" id="count-active">0</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-3" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" role="tab" aria-controls="history-pane" aria-selected="false">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i>Order history
+        </button>
+    </div>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="active-pane" role="tabpanel" aria-labelledby="active-tab">
+            <div class="d-flex justify-content-end gap-2 bg-body-tertiary rounded-4 p-3 mb-3">
+                <div class="input-group input-group-sm w-auto search-pill">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+                    <input type="search" id="order-search" class="form-control" placeholder="Search orders" aria-label="Search by order, table or customer" title="Search by order, table or customer" />
+                </div>
+                <button type="button" class="btn btn-sm btn-light filter-pill" id="order-refresh" title="Refresh orders">
+                    <i class="fa-solid fa-rotate"></i><span class="d-none d-sm-inline ms-1">Refresh</span>
+                </button>
+            </div>
+
+            <div class="row g-3" id="order-board">
+                <div class="col-lg-6">
+                    <section class="card border-0 bg-body-tertiary rounded-4 h-100" aria-labelledby="heading-Pending">
+                        <div class="d-flex align-items-center gap-2 px-3 pt-3 pb-2">
+                            <h2 class="small text-body-secondary fw-medium mb-0" id="heading-Pending">Pending</h2>
+                            <span class="badge rounded-pill bg-body text-body border" id="count-Pending">0</span>
+                        </div>
+                        <div class="d-flex flex-column gap-1 p-1 pt-0" id="column-Pending"></div>
+                    </section>
+                </div>
+
+                <div class="col-lg-6 d-flex flex-column gap-3">
+                    <section class="card border-0 bg-body-tertiary rounded-4 flex-grow-1" aria-labelledby="heading-Preparing">
+                        <div class="d-flex align-items-center gap-2 px-3 pt-3 pb-2">
+                            <h2 class="small text-body-secondary fw-medium mb-0" id="heading-Preparing">Preparing</h2>
+                            <span class="badge rounded-pill bg-body text-body border" id="count-Preparing">0</span>
+                        </div>
+                        <div class="d-flex flex-column gap-1 p-1 pt-0" id="column-Preparing"></div>
+                    </section>
+
+                    <section class="card border-0 bg-body-tertiary rounded-4" aria-labelledby="heading-Served">
+                        <div class="d-flex align-items-center gap-2 px-3 pt-3 pb-2">
+                            <h2 class="small text-body-secondary fw-medium mb-0" id="heading-Served">Served</h2>
+                            <span class="badge rounded-pill bg-body text-body border" id="count-Served">0</span>
+                        </div>
+                        <div class="d-flex flex-column gap-1 p-1 pt-0" id="column-Served"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab">
+            <section class="card border-0 bg-body-tertiary rounded-4">
+                <div class="d-flex flex-wrap align-items-center gap-2 px-3 pt-3 pb-2">
+                    <span class="small text-body-secondary fw-medium">Completed dining sessions <span class="fw-normal" id="history-count"></span></span>
+
+                    <form id="history-form" class="d-flex flex-wrap align-items-center gap-2 ms-lg-auto">
+                        <div class="dropdown" data-date-range>
+                            <input type="hidden" id="history-from" data-range-from min="2000-01-01" max="@Model.Today.ToString("yyyy-MM-dd")"
+                                   value="@Model.Today.AddDays(-6).ToString("yyyy-MM-dd")" />
+                            <input type="hidden" id="history-to" data-range-to max="@Model.Today.ToString("yyyy-MM-dd")"
+                                   value="@Model.Today.ToString("yyyy-MM-dd")" />
+                            <button type="button" class="btn btn-sm btn-light rounded-pill px-3" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Choose a date range">
+                                <i class="fa-regular fa-calendar me-1"></i><span data-range-label></span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
+                        </div>
+                    </form>
+
+                    <div class="input-group input-group-sm w-auto search-pill">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-body-secondary"></i></span>
+                        <input type="search" id="history-search" class="form-control" placeholder="Search name, order or table" aria-label="Search order history" />
+                    </div>
+                </div>
+
+                <div class="row g-1 p-1 pt-0" id="history-grid"></div>
+                <div class="text-center pb-3">
+                    <button type="button" class="btn btn-sm btn-light border d-none" id="history-more">Load more</button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="order-modal" tabindex="-1" aria-labelledby="order-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="order-modal-title">Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="order-modal-body"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="payment-modal" tabindex="-1" aria-labelledby="payment-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="payment-modal-title">Dining session payment details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="payment-modal-body"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
+    <script src="~/js/admin/date-range-picker.js" asp-append-version="true"></script>
+    <script src="~/js/admin/orders.js" asp-append-version="true"></script>
+    <script src="~/js/admin/order-history.js" asp-append-version="true"></script>
+}

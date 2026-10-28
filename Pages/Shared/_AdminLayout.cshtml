@@ -1,0 +1,182 @@
+@using Microsoft.AspNetCore.Identity
+@* @inject SignInManager<IdentityUser> SignInManager *@
+@* @inject UserManager<IdentityUser> UserManager *@
+
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Infrastructure.Authentication
+@using RestaurantReservation.Infrastructure.Navigation
+@inject SidebarNavService NavService
+@inject RestaurantCurrency Currency
+@inject AdminPortalService Portal
+
+@{
+    var navGroups = await NavService.GetNavGroupsForUserAsync(User);
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+    var currency = await Currency.GetAsync();
+    var me = await Portal.GetAsync(User);
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Restaurant Admin Portal</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/avatar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin_layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/confirm-dialog.css" asp-append-version="true" />
+</head>
+<body data-currency-symbol="@currency.GetSymbol()" data-currency-code="@currency.GetCode()" data-role="@(User.IsInRole(AppRoles.Administrator) ? AppRoles.Administrator : AppRoles.Staff)">
+    @Html.AntiForgeryToken()
+    <div class="page-content">
+        @* On screens narrower than 992px the sidebar becomes a slide-out menu (Bootstrap offcanvas-lg),
+           opened from the top bar's menu button. *@
+        <div class="sidebar offcanvas-lg offcanvas-start" id="admin-sidebar" tabindex="-1" aria-label="Admin menu">
+            <div class="header">
+                <h1 class="logo">Resto</h1>
+                <button type="button" class="btn-close d-lg-none order-last mt-2 me-2" data-bs-dismiss="offcanvas" data-bs-target="#admin-sidebar" aria-label="Close menu"></button>
+
+                <div class="dropdown notification-bell">
+                    <button type="button" class="bell-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                            aria-label="Announcements@(me.UnreadCount > 0 ? $", {me.UnreadCount} unread" : "")" id="notification-bell">
+                        <i class="fa-regular fa-bell"></i>
+                        @if (me.UnreadCount > 0)
+                        {
+                            <span class="bell-count" id="notification-count">@(me.UnreadCount > 9 ? "9+" : me.UnreadCount.ToString())</span>
+                        }
+                    </button>
+                    <div class="dropdown-menu notification-menu">
+                        <div class="notification-head">
+                            <span>Announcements</span>
+                            @if (me.UnreadCount > 0)
+                            {
+                                <span class="unread-label" id="notification-unread">@me.UnreadCount new</span>
+                            }
+                        </div>
+                        @if (me.Notifications.Count == 0)
+                        {
+                            <p class="notification-empty">No announcements right now.</p>
+                        }
+                        else
+                        {
+                            <ul class="notification-list">
+                                @foreach (var note in me.Notifications)
+                                {
+                                    <li class="@(note.IsUnread ? "unread" : "")">
+                                        <a asp-page="/Admin/Notifications/Notification" asp-fragment="ann-@note.Id">
+                                            <span class="notification-title">@note.Title</span>
+                                            <span class="notification-text">@note.Description</span>
+                                            <span class="notification-meta">@note.Category &middot; @note.PostedAt.ToRestaurantTime().ToString("d MMM, h:mm tt")</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        <a class="notification-all" asp-page="/Admin/Notifications/Notification">View all announcements</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-content">
+                <ul class="d-flex flex-column nav-groups-container">
+                    @foreach (var group in navGroups)
+                    {
+                        <li class="nav-group">
+                            <h2 class="nav-group-title">@group.Title</h2>
+                            <ul class="d-flex flex-column nav-item-container">
+                                @foreach (var item in group.NavLinks)
+                                {
+                                    var isActive = string.Equals(currentPage, item.Page, StringComparison.OrdinalIgnoreCase);
+                                    <li class="nav-item mb-2">
+                                        <a asp-page="@item.Page"
+                                            class="nav-button @(isActive ? "active" : "")">
+                                            @* fa-fw gives every icon the same width, so the labels line up. *@
+                                            <i class="@item.Icon fa-fw" aria-hidden="true"></i>
+                                            @item.Title
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div class="footer dropup">
+                <button type="button" class="profile-btn w-100 text-start" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="avatar @me.AvatarGender">
+                        <img class="avatar-img" src="~/images/avatar-@(me.AvatarGender).png" alt="" />
+                    </div>
+                    <div class="right-container">
+                        <h4 class="name">@me.DisplayName</h4>
+                        <p class="email">@me.Email</p>
+                    </div>
+                </button>
+                <ul class="dropdown-menu w-100 profile-menu">
+                    <li>
+                        <a class="dropdown-item" asp-page="/Admin/Profile/Profile">
+                            <i class="fa-regular fa-user fa-fw me-2"></i>Profile
+                        </a>
+                    </li>
+                    <li>
+                        <form method="post" asp-page="/Admin/Logout">
+                            <button type="submit" class="dropdown-item logout-item">
+                                <i class="fa-solid fa-arrow-right-from-bracket fa-fw me-2"></i>Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <main role="main" class="content-container">
+            <div class="admin-topbar d-lg-none">
+                <button type="button" class="menu-btn" data-bs-toggle="offcanvas" data-bs-target="#admin-sidebar" aria-controls="admin-sidebar"
+                        aria-label="Open menu@(me.UnreadCount > 0 ? $", {me.UnreadCount} unread announcements" : "")">
+                    <i class="fa-solid fa-bars"></i>
+                    @if (me.UnreadCount > 0)
+                    {
+                        <span class="menu-dot"></span>
+                    }
+                </button>
+                <span class="logo">Resto</span>
+                <span class="page-title text-truncate">@ViewData["Title"]</span>
+            </div>
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
+    <script src="~/js/admin/notifications.js" asp-append-version="true"></script>
+    <script src="https://kit.fontawesome.com/f3ce044c74.js" crossorigin="anonymous"></script>
+    <script>
+        window.addEventListener("pageshow", (event) => {
+            if (event.persisted) window.location.reload();
+        });
+
+        document.addEventListener("submit", (event) => {
+            if (event.defaultPrevented || !(event.target instanceof HTMLFormElement)) return;
+
+            const form = event.target;
+            if (form.dataset.submitting === "true") {
+                event.preventDefault();
+                return;
+            }
+
+            form.dataset.submitting = "true";
+            form.querySelectorAll('button:not([type]), button[type="submit"], input[type="submit"]')
+                .forEach(button => { button.disabled = true; });
+        });
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

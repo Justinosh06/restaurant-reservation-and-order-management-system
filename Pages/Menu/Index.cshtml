@@ -1,0 +1,109 @@
+@page
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Models.Enums
+@model Restaurant_Reservation_and_Order_Management_System.Pages.Menu.IndexModel
+@{
+    ViewData["Title"] = "Menu";
+}
+
+<link rel="stylesheet" href="~/css/table_page.css" asp-append-version="true" />
+
+@* Same layout as the table ordering menu (Pages/Table/Index): title with the food count, search and category
+   filters (tableMenu.js), and the same dish cards. View only, so the cards have no add (+) button. *@
+<div class="menu-container">
+    <div class="menu-header">
+        <h1 class="title">Menu<span class="content-number" id="menu-total-count">@Model.Items.Count</span></h1>
+
+        <div class="pill-filter-row">
+            <div class="menu-search">
+                <button type="button" class="searchbar-btn" aria-label="Search menu" aria-expanded="false">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                </button>
+
+                <div class="search-modal" role="dialog" aria-modal="true" aria-label="Search menu" hidden>
+                    <form class="searchbar-popup">
+                        <input id="menu-search-input" class="searchbar-input" type="search" placeholder="Search menu items" autocomplete="off" />
+                        <button type="submit" class="searchbar-submit">Search</button>
+                        <button type="button" class="searchbar-close" aria-label="Close search">&times;</button>
+                    </form>
+                    <div class="search-recommendations" hidden>
+                        <div class="search-recommendation-group search-recent-searches" hidden>
+                            <h2>Recent searches</h2>
+                            <ul class="search-recommendation-list"></ul>
+                        </div>
+                        <div class="search-recommendation-group search-top-rated" hidden>
+                            <h2>Top rated</h2>
+                            <ul class="search-recommendation-list"></ul>
+                        </div>
+                        <div class="search-recommendation-group search-matches" hidden>
+                            <h2>Suggestions</h2>
+                            <ul class="search-recommendation-list"></ul>
+                            <p class="search-recommendation-empty" hidden>No matching menu items.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="active-search" hidden>
+                    <button type="button" class="active-search-query"></button>
+                    <button type="button" class="clear-search" aria-label="Clear search">&times;</button>
+                </div>
+            </div>
+
+            <button type="button" class="filter-pill active" data-category="all">All</button>
+
+            @foreach (var type in Model.Items.Select(item => item.MenuItemType).Distinct().OrderBy(type => type))
+            {
+                <button type="button" class="filter-pill" data-category="@type.ToString().ToLower()">@type</button>
+            }
+        </div>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <p class="text-secondary">Our menu is being updated. Please check back soon.</p>
+    }
+
+    <div class="menu-grid">
+        @foreach (var item in Model.Items)
+        {
+            <a asp-page="/Menu/Item"
+               asp-route-menuItemId="@item.Id"
+               class="item-card-link text-decoration-none text-reset"
+               data-category="@item.MenuItemType.ToString().ToLower()"
+               data-search-name="@item.Name"
+               data-top-rated-order="@Model.TopRatedMenuItemIds.IndexOf(item.Id)">
+
+                <div class="item-card">
+                    <div class="thumbnail-container">
+                        @if (!string.IsNullOrWhiteSpace(item.ThumbnailImage))
+                        {
+                            <img class="thumbnail-img" src="@Url.Content(item.ThumbnailImage)" alt="@item.Name" />
+                        }
+                        else
+                        {
+                            <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils") icon" aria-hidden="true"></i>
+                        }
+                    </div>
+
+                    <div class="info-container">
+                        <div class="left-section">
+                            <h3 class="item-title">@item.Name</h3>
+                            <span class="category">
+                                <i class="fa-solid @(item.MenuItemType == MenuItemType.Beverage ? "fa-martini-glass-citrus" : "fa-utensils me-1")" aria-hidden="true"></i>
+                                @item.MenuItemType
+                            </span>
+                        </div>
+
+                        <div class="right-section">
+                            <span class="price">@Model.Currency.FormatCents(item.Price)</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/tableMenu.js" asp-append-version="true"></script>
+}

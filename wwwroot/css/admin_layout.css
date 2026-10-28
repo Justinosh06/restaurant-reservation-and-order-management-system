@@ -1,0 +1,359 @@
+body {
+    height: 100dvh;
+    overflow: hidden;
+    padding: 8px;
+
+    .page-content {
+        height: 100%;
+        overflow-y: auto;
+        display: flex;
+    }
+}
+
+.sidebar {
+    width: 280px;
+    display: flex;
+    padding: 24px 8px;
+    padding-bottom: 8px;
+    flex-direction: column;
+    background: #f2f2f3;
+    border-radius: 20px;
+
+    .header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+
+        .logo {
+            font-size: 1.8rem;
+            letter-spacing: -2px;
+            font-weight: 700;
+            margin-left: 16px;
+            margin-bottom: 35px;
+            user-select: none;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+    }
+
+    .menu-content {
+        overflow-y: auto;
+        max-height: 100%;
+
+        .nav-groups-container {
+            list-style: none;
+            padding-left: 0;
+
+            .nav-group {
+                margin-bottom: 20px;
+
+                .nav-group-title {
+                    color: #999999;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    margin: 0 0 10px;
+                    margin-left: 16px;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                    text-transform: uppercase;
+                }
+
+                .nav-item-container {
+                    list-style: none;
+                    margin-bottom: 0;
+                    padding-left: 0;
+
+                    .nav-item {
+                        display: flex;
+                        flex-direction: column;
+                        width: 100%;
+
+                        .nav-button {
+                            gap: 8px;
+                            display: flex;
+                            color: #888888;
+                            font-weight: 500;
+                            align-items: center;
+                            text-decoration: none;
+                            padding: 8px 16px;
+                            border-radius: 16px;
+                            font-family: "Bricolage Grotesque", sans-serif;
+                            transition: 300ms ease-in-out;
+                        }
+
+                        .nav-button.active {
+                            color: black;
+                            background-color: white;
+                        }
+
+                        .nav-button:hover {
+                            color: black;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .footer {
+        margin-top: auto;
+
+        .profile-btn {
+            gap: 12px;
+            display: flex;
+            padding: 8px;
+            align-items: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 300ms ease-in-out;
+
+            .right-container {
+                display: flex;
+                justify-content: center;
+                flex-direction: column;
+
+                .name {
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: black;
+                    margin-bottom: 0;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+
+                .email {
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    color: #888888;
+                    margin-bottom: 0;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+            }
+        }
+
+        .profile-btn:hover {
+            background: white;
+            border-radius: 16px;
+        }
+    }
+}
+
+.content-container {
+    width: 100%;
+    min-width: 0;
+    overflow-y: scroll;
+}
+
+/* Responsive: the sidebar is a Bootstrap offcanvas-lg, which makes its own background transparent on
+   large screens, so the grey is set again here. */
+.sidebar {
+    --bs-offcanvas-width: 300px;
+    background-color: #f2f2f3 !important;
+    flex-shrink: 0;
+
+    .header .notification-bell {
+        margin-left: auto;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .sidebar {
+        width: 270px;
+    }
+}
+
+/* Below 992px the sidebar slides in from the left; a top bar with a menu button takes its place. */
+@media (max-width: 991.98px) {
+    body {
+        padding: 0;
+    }
+
+    .sidebar {
+        max-width: 85vw;
+        border-radius: 0 20px 20px 0;
+    }
+
+    .content-container {
+        overflow-y: auto;
+    }
+}
+
+.admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--bs-body-bg);
+    border-bottom: 1px solid #f2f2f3;
+    font-family: "Bricolage Grotesque", sans-serif;
+
+    .menu-btn {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 14px;
+        background: #f2f2f3;
+        color: black;
+        font-size: 1.1rem;
+    }
+
+    .menu-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--bs-danger);
+    }
+
+    .logo {
+        font-size: 1.4rem;
+        letter-spacing: -1.5px;
+        font-weight: 700;
+    }
+
+    .page-title {
+        margin-left: auto;
+        color: #888888;
+        font-weight: 500;
+    }
+}
+
+/* Announcement bell next to the logo (Pages/Shared/_AdminLayout.cshtml, js/admin/notifications.js). */
+.notification-bell {
+    margin-right: 8px;
+
+    .bell-btn {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 14px;
+        background: transparent;
+        color: #888888;
+        font-size: 1.1rem;
+        transition: 300ms ease-in-out;
+    }
+
+    .bell-btn:hover,
+    .bell-btn[aria-expanded="true"] {
+        color: black;
+        background: white;
+    }
+
+    .bell-count {
+        position: absolute;
+        top: 4px;
+        right: 2px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: var(--bs-danger);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 18px;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .notification-menu {
+        width: 320px;
+        padding: 6px;
+        border: 0;
+        border-radius: 16px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .notification-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px;
+        font-weight: 600;
+
+        .unread-label {
+            color: var(--bs-danger);
+            font-size: 0.8rem;
+        }
+    }
+
+    .notification-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 340px;
+        overflow-y: auto;
+
+        a {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 8px 10px 8px 22px;
+            border-radius: 12px;
+            color: inherit;
+            text-decoration: none;
+            position: relative;
+            transition: 300ms ease-in-out;
+        }
+
+        a:hover {
+            background: #f2f2f3;
+        }
+
+        .unread a::before {
+            content: "";
+            position: absolute;
+            left: 8px;
+            top: 15px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--bs-danger);
+        }
+
+        .notification-title {
+            font-weight: 600;
+        }
+
+        .notification-text {
+            color: #666666;
+            font-size: 0.85rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .notification-meta {
+            color: #999999;
+            font-size: 0.75rem;
+        }
+    }
+
+    .notification-empty {
+        color: #888888;
+        font-size: 0.9rem;
+        padding: 4px 10px 10px;
+        margin: 0;
+    }
+
+    .notification-all {
+        display: block;
+        text-align: center;
+        padding: 8px;
+        margin-top: 4px;
+        border-top: 1px solid #f2f2f3;
+        color: #888888;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .notification-all:hover {
+        color: black;
+    }
+}

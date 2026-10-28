@@ -1,0 +1,154 @@
+.page-content {
+padding: 12px;
+min-height: 100dvh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+
+    .status-container {
+        padding: 12px;
+        display: flex;
+        margin-bottom: 12px;
+        align-items: center;
+        flex-direction: column;
+
+        i {
+            font-size: 5rem;
+            margin-bottom: 12px;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        i.success {
+            background-image: linear-gradient(135deg, #a8ff78 0%, #78ffd6 25%, #00b09b 50%, #96c93d 75%, #228b22 100%);
+        }
+
+        i.failed {
+            background-image: linear-gradient(135deg, #ff9999 0%, #ff5e62 25%, #cc2b5e 50%, #ff416c 75%, #8b0000 100%);
+        }
+
+        i.pending {
+            background-image: linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #9e9e9e 50%, #757575 75%, #424242 100%);
+        }
+
+        i.refund {
+            background-image: linear-gradient(135deg, #ffe082 0%, #ffb74d 25%, #f57c00 50%, #e65100 75%, #8d6e63 100%);
+        }
+
+        .payment-status {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .payment-status-msg {
+            font-size: 1rem;
+            color: #666666;
+        }
+    }
+
+    .payment-container {
+        background: #F2F2F3;
+        border-radius: 20px;
+        padding: 8px;
+        width: 100%;
+        max-width: 540px;
+        margin-inline: auto;
+
+        .inner-container {
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+
+            .amount-header {
+                font-size: 1rem;
+                color: #888888;
+                line-height: 0.9;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            .amount {
+                font-size: 3rem;
+                font-weight: 500;
+                font-family: "Bricolage Grotesque", sans-serif;
+
+                span {
+                    font-size: 1.2rem;
+                    color: #888888;
+                }
+            }
+
+            .data-row {
+                display: flex;
+                align-content: center;
+
+                span:first-child {
+                    flex: 1;
+                    display: flex;
+                    align-items: center;
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    color: #888888;
+
+                    i {
+                        font-size: 0.8rem;
+                        margin-right: 3px;
+                        flex-shrink: 0;
+                        width: 16px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                    }
+                }
+
+                span:last-child {
+                    flex: 1;
+                    text-align: right;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    font-size: 1rem;
+                    font-weight: 500;
+                    color: black;
+                    font-family: "Bricolage Grotesque", sans-serif;
+                }
+            }
+        }
+    }
+
+    .btn-container {
+        width: 100%;
+        max-width: 540px;
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+
+        button,
+        a {
+            flex: 1;
+            border-radius: 20px;
+            padding: 10px;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .back-btn {
+            background: #f2f2f3;
+            color: #212529;
+        }
+
+        .receipt-btn,
+        .retry-btn,
+        .refresh-btn {
+            background: black;
+            color: white;
+        }
+    }
+}

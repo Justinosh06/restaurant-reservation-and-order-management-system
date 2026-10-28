@@ -1,0 +1,52 @@
+@using Microsoft.EntityFrameworkCore
+@using RestaurantReservation.Data
+@using RestaurantReservation.Extensions
+@using RestaurantReservation.Infrastructure.Admin
+@using RestaurantReservation.Models
+@inject ApplicationDbContext Db
+@inject RestaurantCurrency RestaurantCurrency
+@{
+    // Promotion posters that pop up on the landing page and the table ordering page, one at a time with arrows
+    // to move between them. Only promotions running today are shown. Closing the pop-up closes all of them, and
+    // promotionPopup.js remembers that in this browser tab (sessionStorage), so logging in or reloading does not
+    // show them again.
+    var today = DateOnly.FromDateTime(DateTime.Now);
+    ViewData["CurrencySymbol"] = (await RestaurantCurrency.GetAsync()).GetSymbol();
+    var promotions = await Db.Promotions
+        .AsNoTracking()
+        .Where(p => p.StartDate <= today && p.EndDate >= today)
+        .OrderBy(p => p.EndDate)
+        .ThenBy(p => p.Title)
+        .ToListAsync();
+}
+
+@if (promotions.Count > 0)
+{
+    <link rel="stylesheet" href="~/css/promotion_popup.css" asp-append-version="true" />
+
+    <div class="promo-popup" id="promo-popup" hidden>
+        @* One window for all the posters: they swap inside it, while the close button and the arrows stay put. *@
+        <div class="promo-stage" role="dialog" aria-modal="true">
+            <button type="button" class="promo-close-all" aria-label="Close promotions">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <div class="promo-slides">
+                @foreach (var promotion in promotions)
+                {
+                    <partial name="_PromotionCard" model="promotion" />
+                }
+            </div>
+            <div class="promo-pager" hidden>
+                <button type="button" class="promo-nav promo-prev" aria-label="Previous promotion">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <span class="promo-position" aria-live="polite"></span>
+                <button type="button" class="promo-nav promo-next" aria-label="Next promotion">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/promotionPopup.js" asp-append-version="true"></script>
+}

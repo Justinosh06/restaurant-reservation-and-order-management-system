@@ -1,0 +1,2778 @@
+/* The grey fills the whole page on pages that use the landing style, instead of sitting in a box. */
+body:has(.landing) {
+    background: #F2F2F3;
+}
+
+/* These pages use the full width of the screen, so the layout's centred container is released. */
+.container:has(.landing) {
+    max-width: none;
+    padding-left: clamp(16px, 4vw, 64px);
+    padding-right: clamp(16px, 4vw, 64px);
+}
+
+.landing {
+    padding: 24px 0;
+    color: black;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+
+    .pill-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 24px;
+        border: none;
+        border-radius: 100px;
+        background: black;
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 300ms ease-in-out;
+    }
+
+    .pill-btn:hover {
+        background: #444444;
+        color: white;
+    }
+
+    /* Outlined button for the second choice next to a black one (Cancel, Log in instead, ...). */
+    .pill-btn.ghost {
+        background: transparent;
+        color: black;
+        outline: 1px solid black;
+    }
+
+    .pill-btn.ghost:hover {
+        background: #F2F2F3;
+        color: black;
+    }
+
+    .pill-btn.small-btn {
+        padding: 6px 14px;
+        font-size: 0.85rem;
+    }
+
+    .section-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        font-family: "Bricolage Grotesque", sans-serif;
+        margin-bottom: 12px;
+    }
+
+    .empty-note,
+    .hint {
+        color: #666666;
+    }
+
+    .hint {
+        font-size: 0.85rem;
+    }
+
+    .menu-price {
+        color: #666666;
+        font-weight: 500;
+        font-family: "Bricolage Grotesque", sans-serif;
+        white-space: nowrap;
+    }
+
+    .field {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #F2F2F3;
+
+        .field-label {
+            width: 52px;
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+
+        input,
+        select {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            color: #444444;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+        }
+    }
+
+    .field:focus-within {
+        outline: 2px solid black;
+    }
+
+    .landing-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .brand {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+            letter-spacing: -2px;
+            color: black;
+            text-decoration: none;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .greeting {
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .nav-link-plain {
+            color: #444444;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .nav-link-plain:hover {
+            color: black;
+        }
+    }
+
+    .hero {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        gap: 24px;
+        align-items: center;
+
+        .hero-title {
+            font-size: clamp(4.2rem, 5.5vw, 6.5rem);
+            line-height: 1;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: #DFDFE1;
+            color: #444444;
+            font-weight: 500;
+        }
+
+        .hero-img {
+            width: 100%;
+            height: clamp(360px, 62vh, 620px);
+            object-fit: cover;
+            border-radius: 16px;
+        }
+    }
+
+    .booking-row {
+        display: grid;
+        grid-template-columns: 360px minmax(0, 1fr);
+        gap: 40px;
+        align-items: start;
+
+        /* Book a table: title, then one labelled block per choice (Date, Time, Guests), then the button. */
+        .reservation-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 20px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+            .card-title {
+                margin-bottom: 4px;
+                font-size: 1.5rem;
+                font-weight: 600;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            .pill-btn {
+                margin-top: 4px;
+            }
+        }
+
+        .booking-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .booking-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            color: #666666;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        /* The Date button and the Time list look the same: a grey box with a chevron. */
+        .booking-select {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            min-height: 46px;
+            padding: 10px 14px;
+            border: 1px solid #DFDFE1;
+            border-radius: 10px;
+            background: #F2F2F3;
+            color: #888888;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .booking-select.chosen,
+        select.booking-select:not(:disabled) {
+            color: black;
+        }
+
+        .booking-select:focus-visible,
+        .booking-select[aria-expanded="true"] {
+            outline: 2px solid black;
+            border-color: transparent;
+        }
+
+        .booking-select-wrap {
+            position: relative;
+
+            select {
+                appearance: none;
+                padding-right: 40px;
+            }
+
+            i {
+                position: absolute;
+                top: 50%;
+                right: 14px;
+                transform: translateY(-50%);
+                color: #888888;
+                pointer-events: none;
+            }
+        }
+
+        /* Calendar dropdown, like the admin dashboard's date picker. */
+        .booking-calendar {
+            width: 19rem;
+            max-width: calc(100vw - 32px);
+            padding: 12px;
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+
+            .calendar-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            .calendar-nav {
+                width: 32px;
+                height: 32px;
+                border-radius: 100%;
+            }
+
+            .calendar-nav:hover:not(:disabled) {
+                background: #F2F2F3;
+            }
+
+            .calendar-nav:disabled {
+                color: #CCCCCC;
+            }
+
+            .calendar-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 2px;
+            }
+
+            .calendar-weekday {
+                padding: 4px 0;
+                color: #888888;
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-align: center;
+            }
+
+            .calendar-day {
+                aspect-ratio: 1 / 1;
+                border-radius: 100%;
+                font-weight: 600;
+            }
+
+            .calendar-day:hover:not(:disabled) {
+                background: #F2F2F3;
+            }
+
+            .calendar-day:disabled {
+                color: #CCCCCC;
+                text-decoration: line-through;
+            }
+
+            .calendar-day.selected {
+                background: black;
+                color: white;
+            }
+        }
+
+        .guest-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 4px;
+            border: 1px solid #DFDFE1;
+            border-radius: 100px;
+            background: #F2F2F3;
+
+            button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 38px;
+                height: 38px;
+                border-radius: 100%;
+                background: white;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            }
+
+            button:disabled {
+                color: #CCCCCC;
+                box-shadow: none;
+            }
+
+            input {
+                width: 4ch;
+                border: 0;
+                background: transparent;
+                font-size: 1.2rem;
+                font-weight: 700;
+                text-align: center;
+                appearance: textfield;
+                -moz-appearance: textfield;
+            }
+
+            input::-webkit-outer-spin-button,
+            input::-webkit-inner-spin-button {
+                appearance: none;
+                margin: 0;
+            }
+        }
+
+        /* Top Rating: rank, then the dish with its category and rating underneath, then the price. */
+        .list-head {
+            margin-bottom: 12px;
+
+            .section-title {
+                margin-bottom: 4px;
+            }
+        }
+
+        .rank-list {
+            margin: 0 0 16px;
+            padding: 0;
+            list-style: none;
+
+            li + li {
+                border-top: 1px solid #DFDFE1;
+            }
+        }
+
+        .rank-row {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 8px;
+            border-radius: 12px;
+            color: black;
+            text-decoration: none;
+            transition: background 200ms ease-in-out;
+        }
+
+        .rank-row:hover {
+            background: white;
+            color: black;
+        }
+
+        .rank-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #DFDFE1;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        li:first-child .rank-number {
+            background: black;
+            color: white;
+        }
+
+        .rank-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .rank-name {
+            overflow: hidden;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rank-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 2px 6px;
+            color: #666666;
+            font-size: 0.85rem;
+        }
+
+        .rank-stars {
+            color: black;
+            font-weight: 600;
+
+            i {
+                color: #F5B301;
+            }
+        }
+
+        .hint {
+            margin: 8px 0 0;
+        }
+    }
+
+    /* One booking on the Reservations page. */
+    .upcoming-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            margin-bottom: 0;
+        }
+
+        .empty-note {
+            margin: 0;
+        }
+
+        .status-pill {
+            margin-left: auto;
+            background: black;
+            color: white;
+        }
+
+        .status-pill.muted {
+            background: #DFDFE1;
+            color: #444444;
+        }
+
+        .status-pill.cancelled {
+            background: #FDE8E8;
+            color: #B42318;
+        }
+    }
+
+    /* A cancelled booking is greyed out so the live ones stand out. */
+    .upcoming-card.cancelled {
+        .upcoming-head > div,
+        .upcoming-details {
+            opacity: 0.55;
+        }
+
+        .upcoming-time {
+            text-decoration: line-through;
+        }
+    }
+
+    /* Cancel button (or why it is gone) under an upcoming booking. */
+    .res-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px 12px;
+        padding-top: 12px;
+        border-top: 1px solid #ECECEC;
+
+        .hint {
+            margin: 0;
+        }
+
+        form {
+            margin-left: auto;
+        }
+
+        .pill-btn.danger-btn {
+            color: #B42318;
+            outline-color: #B42318;
+        }
+
+        .pill-btn.danger-btn:hover {
+            background: #B42318;
+            color: white;
+        }
+    }
+
+    /* Reservations page tabs: Upcoming, Done and Cancelled, each with its count. */
+    .res-tabs {
+        display: flex;
+        gap: 6px;
+        width: fit-content;
+        max-width: 100%;
+        margin-bottom: 16px;
+        padding: 5px;
+        overflow-x: auto;
+        border-radius: 100px;
+        background: #DFDFE1;
+        scrollbar-width: none;
+    }
+
+    .res-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px;
+        border-radius: 100px;
+        color: #444444;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .res-tab:hover {
+        color: black;
+    }
+
+    .res-tab.active {
+        background: white;
+        color: black;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .res-tab-count {
+        min-width: 22px;
+        padding: 0 7px;
+        border-radius: 100px;
+        background: rgba(0, 0, 0, 0.08);
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    .res-tab.active .res-tab-count {
+        background: black;
+        color: white;
+    }
+
+    .upcoming-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .upcoming-date {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: #F2F2F3;
+            line-height: 1.1;
+
+            strong {
+                font-size: 1.4rem;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            span {
+                color: #666666;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+        }
+
+        .upcoming-day {
+            display: block;
+            color: #666666;
+            font-size: 0.85rem;
+        }
+
+        .upcoming-time {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+    }
+
+    .upcoming-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 16px;
+        margin: 0;
+
+        .wide {
+            grid-column: 1 / -1;
+        }
+
+        dt {
+            color: #666666;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        dd {
+            margin: 0;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    /* A payment (Pages/Shared/_PaymentDetails), laid out like the payment result page: a grey frame round a
+       white card with the amount, then one row per detail. */
+    .pay-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+        border: 8px solid #F2F2F3;
+        border-radius: 24px;
+        background: white;
+
+        .pay-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .pay-label {
+            color: #888888;
+            font-weight: 600;
+        }
+
+        .pay-amount {
+            font-size: 2.6rem;
+            font-weight: 600;
+            line-height: 1;
+            letter-spacing: -1px;
+            font-family: "Bricolage Grotesque", sans-serif;
+
+            span {
+                color: #888888;
+                font-size: 1.2rem;
+                letter-spacing: 0;
+            }
+        }
+
+        .pay-refund-note {
+            display: flex;
+            gap: 8px;
+            margin: 0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: #E8F5EC;
+            color: #1E6B3A;
+            font-size: 0.85rem;
+
+            i {
+                margin-top: 3px;
+            }
+        }
+
+        .pay-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 0;
+
+            div {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 16px;
+                min-width: 0;
+            }
+
+            dt {
+                flex-shrink: 0;
+                color: #888888;
+                font-weight: 500;
+
+                i {
+                    width: 16px;
+                    text-align: center;
+                }
+            }
+
+            dd {
+                min-width: 0;
+                margin: 0;
+                overflow: hidden;
+                font-weight: 600;
+                text-align: right;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+
+        .status-pill.paid {
+            background: #E8F5EC;
+            color: #1E6B3A;
+        }
+
+        .status-pill.refunded {
+            background: #E8EEFC;
+            color: #2446A8;
+        }
+    }
+
+    /* Dining visit: order history on the left, the payment on the right. */
+    .visit-body {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .visit-payments {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* The deposit on a reservation: one line with its state. The arrow opens the full payment details as a panel
+       floating over the boxes below (the page doesn't move); clicking anywhere else closes it (Reservations.cshtml). */
+    .upcoming-card {
+        position: relative;
+    }
+
+    .upcoming-card:has(.res-payment[open]) {
+        z-index: 30;
+    }
+
+    .res-payment {
+        position: relative;
+        border-top: 1px solid #ECECEC;
+        padding-top: 12px;
+
+        summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+
+            .status-pill {
+                margin-left: auto;
+            }
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .res-payment-arrow {
+            color: #888888;
+            font-size: 0.8rem;
+            transition: transform 200ms ease;
+        }
+
+        .pay-card {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: -8px;
+            left: -8px;
+            z-index: 30;
+            border-width: 6px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+        }
+
+        .status-pill.paid {
+            background: #E8F5EC;
+            color: #1E6B3A;
+        }
+
+        .status-pill.refunded {
+            background: #E8EEFC;
+            color: #2446A8;
+        }
+    }
+
+    .res-payment[open] .res-payment-arrow {
+        transform: rotate(180deg);
+    }
+
+    /* Reservations page: title with the booking button beside it, then one card per booking. */
+    .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .section-title {
+            margin-bottom: 0;
+        }
+    }
+
+    /* Promotions page: one box per promotion, poster on top, then how long is left, the title and end date. */
+    .promo-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+        gap: 16px;
+    }
+
+    .promo-box {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0;
+        border: 1px solid #ECECEC;
+        border-radius: 20px;
+        background: white;
+        color: black;
+        text-align: left;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+        transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .promo-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
+    }
+
+    .promo-box:focus-visible {
+        outline: 2px solid black;
+        outline-offset: 3px;
+    }
+
+    .promo-box-image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 16 / 10;
+        background: #F2F2F3;
+        color: #CCCCCC;
+        font-size: 2.5rem;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    .promo-box-body {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 14px 16px 16px;
+    }
+
+    .promo-box-badge {
+        padding: 2px 10px;
+        border-radius: 100px;
+        background: var(--secondary-color);
+        color: var(--primary-color);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .promo-box-badge.soon {
+        background: #FDE7E7;
+        color: #B3261E;
+    }
+
+    .promo-box-title {
+        font-size: 1.15rem;
+        font-family: "Bricolage Grotesque", sans-serif;
+        overflow-wrap: anywhere;
+    }
+
+    .promo-box-date {
+        color: #666666;
+        font-size: 0.85rem;
+    }
+
+    .reservation-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+        gap: 16px;
+    }
+
+    .specials > .hint {
+        margin: 12px 0 0;
+    }
+
+    .specials-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+
+        .special-link {
+            color: black;
+            text-decoration: none;
+        }
+
+        .special-link:focus-visible {
+            outline: 2px solid black;
+            outline-offset: 4px;
+            border-radius: 30px;
+        }
+
+        /* Same card as a dish on the menu pages (table_page.css .item-card): a rounded square with the picture,
+           the name and category at the bottom left and the price at the bottom right. White here, because this
+           page's background is already the menu card's grey. */
+        .special-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            aspect-ratio: 1 / 1;
+            padding: 12px;
+            border-radius: 30px;
+            background: white;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .special-thumb {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                transition: transform 220ms ease;
+            }
+        }
+
+        .special-placeholder {
+            color: #CCCCCC;
+            font-size: 2.2rem;
+        }
+
+        .special-info {
+            position: absolute;
+            right: 24px;
+            bottom: 24px;
+            left: 24px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .special-name {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+
+            /* Long names wrap onto a second line, then end in "…". */
+            h3 {
+                display: -webkit-box;
+                margin-bottom: 0;
+                overflow: hidden;
+                font-size: 1.2rem;
+                font-weight: 500;
+                letter-spacing: -0.5px;
+                overflow-wrap: anywhere;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                font-family: "Bricolage Grotesque", sans-serif;
+            }
+
+            span {
+                color: #888888;
+                font-size: 0.85rem;
+                font-weight: 500;
+                font-family: "Bricolage Grotesque", sans-serif;
+
+                i {
+                    font-size: 0.75rem;
+                }
+            }
+        }
+
+        .special-price {
+            flex-shrink: 0;
+            font-size: 2rem;
+            font-weight: 500;
+            line-height: 1;
+            letter-spacing: -1px;
+            white-space: nowrap;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .special-link:hover .special-card {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .special-link:hover .special-card img {
+            transform: scale(1.04);
+        }
+    }
+
+    /* Reviews on the landing page: a summary card, then up to three reviews, each a small name card and a tall
+       quote card; the middle one is upside down so the row looks staggered. */
+    .review-wall {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .rw-summary,
+    .rw-person,
+    .rw-quote {
+        border-radius: 20px;
+        background: white;
+    }
+
+    .rw-summary {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 32px;
+        min-height: 420px;
+        padding: 28px;
+    }
+
+    .rw-score {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .rw-score-value {
+        font-size: 4rem;
+        font-weight: 600;
+        line-height: 0.9;
+        font-family: "Bricolage Grotesque", sans-serif;
+        letter-spacing: -2px;
+        white-space: nowrap;
+
+        small {
+            margin-left: 2px;
+            color: #888888;
+            font-size: 1rem;
+            letter-spacing: 0;
+        }
+    }
+
+    .rw-score-text {
+        margin: 0;
+        color: #888888;
+        font-weight: 500;
+
+        strong {
+            color: black;
+        }
+    }
+
+    .rw-trust {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .rw-brand {
+        font-size: 1.3rem;
+        font-weight: 700;
+        font-family: "Bricolage Grotesque", sans-serif;
+        letter-spacing: -1px;
+    }
+
+    .rw-trust-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .rw-avatars {
+        display: flex;
+
+        .rw-avatar + .rw-avatar {
+            margin-left: -10px;
+        }
+    }
+
+    .rw-avatar {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border: 2px solid white;
+        border-radius: 12px;
+        background: var(--secondary-color);
+        color: var(--primary-color);
+        font-weight: 700;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .rw-avatar.more {
+        background: black;
+        color: white;
+        font-size: 0.8rem;
+    }
+
+    .rw-trust-text {
+        display: flex;
+        flex-direction: column;
+        color: #888888;
+        font-size: 0.85rem;
+
+        strong {
+            color: black;
+        }
+    }
+
+    .rw-stars {
+        display: inline-flex;
+        gap: 2px;
+        color: black;
+        font-size: 0.85rem;
+
+        .fa-regular {
+            color: #CCCCCC;
+        }
+    }
+
+    .rw-column {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 420px;
+    }
+
+    .rw-column.flipped {
+        flex-direction: column-reverse;
+
+        .rw-quote {
+            flex-direction: column-reverse;
+        }
+    }
+
+    .rw-person {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px;
+
+        strong {
+            min-width: 0;
+            overflow: hidden;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .rw-quote {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 24px;
+    }
+
+    /* The rating, then the dish it was for; the dish opens its page. */
+    .rw-quote-top {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .rw-dish-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 100%;
+        padding: 6px 8px 6px 14px;
+        border-radius: 100px;
+        background: #F2F2F3;
+        color: black;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+
+        span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        i {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 100%;
+            background: white;
+            font-size: 0.7rem;
+            /* The right arrow tilted to point up-right; it straightens on hover. */
+            transform: rotate(-45deg);
+            transition: transform 180ms ease;
+        }
+    }
+
+    .rw-dish-link:hover {
+        background: black;
+        color: white;
+
+        i {
+            color: black;
+            transform: rotate(0deg);
+        }
+    }
+
+    .rw-quote-text {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 500;
+        line-height: 1.3;
+        text-indent: 2em;
+        overflow-wrap: anywhere;
+    }
+
+    /* Login and Register: one column in the middle of the page on every screen size,
+       a short welcome headline above the form card. */
+    .auth-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+
+        .auth-card {
+            width: 100%;
+            max-width: 520px;
+        }
+    }
+
+    /* The headline may run wider than the card so it does not wrap onto a short last line. */
+    .auth-intro {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        max-width: 760px;
+        text-align: center;
+
+        .auth-headline {
+            margin: 0;
+            font-size: clamp(2.4rem, 4vw, 3.6rem);
+            line-height: 1.05;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            letter-spacing: -2px;
+        }
+
+        .auth-tagline {
+            margin: 0;
+            color: #444444;
+            font-size: 1.05rem;
+        }
+    }
+
+    .auth-card {
+        padding: 28px;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+        .card-title {
+            margin-bottom: 4px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        a:not(.pill-btn) {
+            color: black;
+            font-weight: 600;
+        }
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .pill-btn {
+            margin-top: 4px;
+        }
+    }
+
+    .auth-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    /* Field name above the box, like My profile. Also used in the CAPTCHA step. */
+    .auth-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+
+        label {
+            color: #666666;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #CCCCCC;
+            border-radius: 8px;
+            background: #F2F2F3;
+            color: #444444;
+        }
+
+        input:focus {
+            outline: 2px solid black;
+            border-color: transparent;
+            background: white;
+        }
+    }
+
+    .auth-page .field-error:empty,
+    .auth-page .validation-summary-valid {
+        display: none;
+    }
+
+    /* Login steps 2a/2b: the email being used, with a link back to step 1. */
+    .auth-email-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #F2F2F3;
+        font-weight: 600;
+
+        span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        a {
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* The 6-digit login code: large and spaced out so it is easy to check against the email. */
+    .auth-field .code-input {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: 0.5em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* "Forgot password? Log in with a code instead" under the password form. */
+    .auth-forgot {
+        margin-top: 12px;
+        text-align: center;
+
+        .link-btn {
+            padding: 0;
+            border: none;
+            background: none;
+            color: black;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    }
+
+    .auth-switch {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #ECECEC;
+    }
+
+    .status-pill {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 100px;
+        background: white;
+        font-size: 0.85rem;
+    }
+
+    .status-pill.muted {
+        background: #DFDFE1;
+        color: #666666;
+    }
+
+    .notice {
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: white;
+        font-weight: 500;
+    }
+
+    .field-error {
+        color: #B3261E;
+        font-size: 0.85rem;
+    }
+
+    .order-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .order-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            background: #DFDFE1;
+            color: black;
+            text-decoration: none;
+        }
+
+        a.order-card:hover,
+        a.order-card:focus-visible {
+            outline: 2px solid black;
+        }
+
+        .order-card .status-pill.muted {
+            background: #F2F2F3;
+        }
+
+        /* The long order number wraps so the total and status always stay inside the card. */
+        .order-card > div:first-child {
+            min-width: 0;
+        }
+
+        .order-code {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+            overflow-wrap: anywhere;
+        }
+
+        .order-side {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .order-total-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .order-total {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: "Bricolage Grotesque", sans-serif;
+            white-space: nowrap;
+        }
+    }
+
+    /* Dining visit and order pages use the full width beside the account sidebar. */
+    .detail-page {
+        .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: #444444;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: black;
+        }
+
+        .order-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+
+            .section-title {
+                margin-bottom: 0;
+            }
+        }
+
+        .sub-title {
+            margin: 24px 0 12px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .order-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 40px;
+            margin-bottom: 16px;
+
+            dt {
+                color: #666666;
+                font-size: 0.85rem;
+                font-weight: 500;
+            }
+
+            dd {
+                margin: 0;
+                font-weight: 600;
+            }
+        }
+
+        .order-card-box {
+            padding: 4px 16px 16px;
+            border-radius: 16px;
+            background: #DFDFE1;
+        }
+
+        .order-card-box .status-pill.muted {
+            background: #F2F2F3;
+        }
+
+        .order-items {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .order-item {
+            display: grid;
+            grid-template-columns: 64px 1fr auto;
+            gap: 12px 16px;
+            align-items: start;
+            padding: 16px 0;
+            border-bottom: 1px solid #CCCCCC;
+
+            img,
+            .item-img-blank {
+                width: 64px;
+                height: 64px;
+                border-radius: 12px;
+                object-fit: cover;
+                background: #F2F2F3;
+            }
+
+            .item-name {
+                display: block;
+            }
+
+            .item-total {
+                white-space: nowrap;
+            }
+        }
+
+        .item-feedback {
+            grid-column: 2 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            textarea {
+                width: 100%;
+                padding: 8px 12px;
+                border: none;
+                border-radius: 8px;
+                background: #F2F2F3;
+                color: #444444;
+                resize: vertical;
+            }
+
+            textarea:focus {
+                outline: 2px solid black;
+            }
+        }
+
+        .review-stars {
+            display: inline-flex;
+            gap: 2px;
+            color: black;
+            white-space: nowrap;
+        }
+
+        /* Feedback already given: shown read-only. */
+        .feedback-given {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #F2F2F3;
+            gap: 4px;
+
+            .feedback-given-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 4px 12px;
+            }
+
+            p {
+                color: #444444;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        /* Reminder before replacing earlier feedback: earlier and new feedback side by side, then the choice. */
+        .overwrite-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+
+            li {
+                padding: 12px 0;
+                border-top: 1px solid #ECECEC;
+            }
+        }
+
+        .overwrite-compare {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+
+            p {
+                margin-top: 4px;
+                color: #444444;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        /* Each feedback box is a choice: click it to pick it. The picked box gets a black border and a tick. */
+        .overwrite-option {
+            display: block;
+            padding: 10px 12px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: #F2F2F3;
+            cursor: pointer;
+            transition: 200ms ease-in-out;
+
+            input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .overwrite-option-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                i {
+                    visibility: hidden;
+                }
+            }
+        }
+
+        .overwrite-option:hover {
+            border-color: #CCCCCC;
+        }
+
+        .overwrite-option:has(input:checked) {
+            border-color: black;
+            background: white;
+
+            .overwrite-option-head i {
+                visibility: visible;
+            }
+        }
+
+        .overwrite-option:has(input:focus-visible) {
+            outline: 2px solid black;
+            outline-offset: 2px;
+        }
+
+
+        /* Stars are radio buttons listed 5 to 1 and shown reversed, so a checked star also fills the ones before it. */
+        .star-input {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 4px;
+
+            input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .star {
+                color: #AAAAAA;
+                font-size: 1.25rem;
+                cursor: pointer;
+            }
+
+            .star-radio:checked ~ .star,
+            .star:hover,
+            .star:hover ~ .star {
+                color: black;
+            }
+
+            input:focus-visible + label {
+                outline: 2px solid black;
+                outline-offset: 2px;
+            }
+
+            .star-clear {
+                order: -1;
+                margin-left: 8px;
+                color: #666666;
+                font-size: 0.85rem;
+                text-decoration: underline;
+                cursor: pointer;
+                visibility: hidden;
+            }
+        }
+
+        .star-input:has(.star-radio:checked) .star-clear {
+            visibility: visible;
+        }
+
+        .order-total-line {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 16px;
+            font-size: 1.25rem;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .order-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+    }
+
+    .profile {
+        /* My profile: no box behind the fields; each field name sits above its value. */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px 32px;
+            align-items: start;
+            max-width: 960px;
+        }
+
+        .profile-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+            margin: 0;
+
+            .field-label {
+                color: #666666;
+                font-size: 0.85rem;
+                font-weight: 500;
+            }
+
+            .field-value {
+                padding-bottom: 8px;
+                border-bottom: 1px solid #CCCCCC;
+                font-size: 1.05rem;
+                font-weight: 600;
+                overflow-wrap: anywhere;
+            }
+
+            input,
+            select {
+                width: 100%;
+                padding: 10px 12px;
+                border: 1px solid #CCCCCC;
+                border-radius: 8px;
+                background: white;
+                color: #444444;
+            }
+
+            input:focus,
+            select:focus {
+                outline: 2px solid black;
+                border-color: transparent;
+            }
+        }
+
+        .profile-field.locked input {
+            background: transparent;
+            color: #666666;
+        }
+
+        .profile-field.wide {
+            grid-column: 1 / -1;
+        }
+
+        /* One field per line, e.g. the Password page. */
+        .profile-grid.single {
+            grid-template-columns: minmax(0, 1fr);
+            max-width: 520px;
+        }
+
+        /* Password box with the show/hide eye button inside it on the right. */
+        .password-input {
+            position: relative;
+
+            input {
+                padding-right: 44px;
+            }
+
+            .password-toggle {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 44px;
+                height: 100%;
+                border-radius: 0 8px 8px 0;
+                color: #666666;
+            }
+
+            .password-toggle:hover {
+                color: black;
+            }
+
+            .password-toggle:focus-visible {
+                outline: 2px solid black;
+            }
+        }
+
+        .field-error:empty,
+        .validation-summary-valid {
+            display: none;
+        }
+
+        .profile-actions,
+        .validation-summary-errors {
+            grid-column: 1 / -1;
+        }
+
+        .profile-actions {
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+        }
+    }
+
+
+    .location {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: end;
+
+        .map {
+            grid-row: span 2;
+            width: 100%;
+            height: 100%;
+            min-height: 220px;
+            border: none;
+            border-radius: 16px;
+            align-self: stretch;
+        }
+
+        .location-info {
+            align-self: start;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+
+            .section-title {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Address, Phone and Opening hours: icon on the left, small grey label, then the value in bold. */
+        .info-block {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .info-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #DFDFE1;
+            font-size: 1.05rem;
+        }
+
+        .info-label {
+            margin: 0 0 4px;
+            color: #666666;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            margin: 0;
+            color: black;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            overflow-wrap: anywhere;
+        }
+
+        a.info-value:hover {
+            text-decoration: underline;
+        }
+
+        .address {
+            white-space: pre-line;
+        }
+
+        .hours-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px 12px;
+            margin-bottom: 8px;
+
+            .info-label {
+                margin: 0;
+            }
+        }
+
+        .open-status {
+            padding: 2px 10px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .open-status.open {
+            color: var(--primary-color);
+            background: var(--secondary-color);
+        }
+
+        .open-status.closed {
+            color: #666666;
+            background: #DFDFE1;
+        }
+
+        /* Monday to Sunday; today's row is white and bold. */
+        .hours-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+
+            /* On narrow screens the time drops under the day instead of running off the edge. */
+            li {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                gap: 2px 16px;
+                padding: 7px 10px;
+                border-radius: 8px;
+                color: #444444;
+            }
+
+            li + li {
+                border-top: 1px solid #DFDFE1;
+            }
+
+            li.today {
+                border-color: transparent;
+                background: white;
+                color: black;
+                font-weight: 600;
+            }
+
+            li.today + li {
+                border-top-color: transparent;
+            }
+
+            .day {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .today-tag {
+                padding: 0 8px;
+                border-radius: 100px;
+                background: black;
+                color: white;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+
+            .time {
+                margin-left: auto;
+                white-space: nowrap;
+            }
+
+            .time.closed {
+                color: #B3261E;
+            }
+        }
+
+        .location-btn {
+            justify-self: end;
+        }
+    }
+}
+
+/* Customer account pages: sidebar on the left, the chosen page on the right (see _AccountLayout).
+   On phones the sidebar moves to a navigation bar at the bottom of the screen (see the 768px rules below). */
+.account {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 32px;
+    align-items: start;
+
+    .account-content {
+        min-width: 0;
+    }
+}
+
+.account-sidebar {
+    position: sticky;
+    top: 24px;
+    padding: 16px 12px;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+    .sidebar-title {
+        padding: 0 12px;
+        margin-bottom: 12px;
+        font-size: 1.4rem;
+        font-weight: 600;
+        font-family: "Bricolage Grotesque", sans-serif;
+        letter-spacing: -1px;
+    }
+
+    .sidebar-links {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: #888888;
+        font-weight: 500;
+        text-align: left;
+        text-decoration: none;
+        transition: 300ms ease-in-out;
+
+        i {
+            width: 18px;
+            text-align: center;
+        }
+    }
+
+    .sidebar-link:hover,
+    .sidebar-link.active {
+        background: #F2F2F3;
+        color: black;
+    }
+
+    .sidebar-link.active {
+        font-weight: 600;
+    }
+
+    /* The short label is only for the phone tab bar. */
+    .label-short {
+        display: none;
+    }
+
+    .sidebar-logout {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #ECECEC;
+    }
+}
+
+@media only screen and (max-width: 1200px) {
+    .landing .review-wall,
+    .landing .specials-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .landing .rw-summary,
+    .landing .rw-column {
+        min-height: 340px;
+    }
+}
+
+@media only screen and (max-width: 576px) {
+    .landing .review-wall {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .landing .rw-summary,
+    .landing .rw-column {
+        min-height: 0;
+    }
+
+    .landing .rw-summary {
+        padding: 22px;
+    }
+
+    .landing .rw-score-value {
+        font-size: 3.2rem;
+    }
+
+    /* On one column the upside-down card would only look odd. */
+    .landing .rw-column.flipped,
+    .landing .rw-column.flipped .rw-quote {
+        flex-direction: column;
+    }
+
+    .landing .rw-quote-text {
+        font-size: 1.15rem;
+    }
+}
+
+/* Phones: one New Arrival per row as a short card, picture on the left and the name and price beside it,
+   like the dish cards on the online menu (menu_layout.css). */
+@media only screen and (max-width: 480px) {
+    .landing .specials-grid {
+        grid-template-columns: minmax(0, 1fr);
+
+        .special-card {
+            flex-direction: row;
+            align-items: center;
+            gap: 14px;
+            min-height: 120px;
+            aspect-ratio: auto;
+            border-radius: 24px;
+        }
+
+        .special-thumb {
+            width: 96px;
+            height: 96px;
+        }
+
+        .special-info {
+            position: static;
+            flex: 1;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .special-name h3 {
+            font-size: 1.15rem;
+        }
+
+        .special-price {
+            font-size: 1.35rem;
+        }
+    }
+}
+
+@media only screen and (max-width: 1200px) {
+    .landing .visit-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media only screen and (max-width: 576px) {
+    .landing .pay-card {
+        padding: 16px;
+
+        .pay-amount {
+            font-size: 2.2rem;
+        }
+
+        .pay-rows {
+            font-size: 0.9rem;
+        }
+    }
+}
+
+/* Smaller laptops and tablets: the sidebar stays on the left but takes less room. */
+@media only screen and (max-width: 992px) {
+    .account {
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 24px;
+    }
+}
+
+/* Phones: the sidebar becomes a navigation bar fixed to the bottom of the screen,
+   with seven tabs that each show an icon above a short label. */
+@media only screen and (max-width: 768px) {
+    /* minmax(0, 1fr) keeps the column at the screen width; a plain 1fr would grow to fit the widest content.
+       The bottom padding keeps the end of the page clear of the navigation bar. */
+    .account {
+        grid-template-columns: minmax(0, 1fr);
+        padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    }
+
+    .account-sidebar {
+        position: fixed;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+
+        .sidebar-title {
+            display: none;
+        }
+
+        .sidebar-links {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 4px;
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .sidebar-link {
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            height: 100%;
+            padding: 8px 4px;
+            font-size: 0.75rem;
+            line-height: 1.2;
+            text-align: center;
+
+            i {
+                width: auto;
+                font-size: 1.15rem;
+            }
+        }
+
+        .label-long {
+            display: none;
+        }
+
+        .label-short {
+            display: inline;
+        }
+
+        .sidebar-logout {
+            margin: 0;
+            padding: 0;
+            border: none;
+
+            form {
+                height: 100%;
+            }
+        }
+    }
+}
+
+/* The greeting is dropped so the brand and the dashboard button fit on one line. */
+@media only screen and (max-width: 576px) {
+    .landing .landing-nav .greeting {
+        display: none;
+    }
+
+    .landing .auth-card {
+        padding: 20px 16px;
+    }
+
+    .landing .auth-intro .auth-headline {
+        font-size: 2rem;
+        letter-spacing: -1px;
+    }
+
+    .landing .auth-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Earlier and new feedback stack in the reminder. */
+    .landing .detail-page .overwrite-compare {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    .landing {
+        padding: 16px 0;
+        gap: 32px;
+
+        .hero {
+            grid-template-columns: 1fr;
+
+            .hero-title {
+                font-size: 3rem;
+            }
+
+            .hero-img {
+                height: auto;
+                aspect-ratio: 4/3;
+            }
+        }
+
+        .booking-row,
+        .location {
+            grid-template-columns: 1fr;
+        }
+
+
+        .section-title {
+            font-size: 1.8rem;
+        }
+
+        .landing-nav {
+            .brand {
+                font-size: 1.6rem;
+            }
+
+            .nav-actions {
+                gap: 12px;
+            }
+
+            .pill-btn {
+                padding: 8px 16px;
+            }
+        }
+
+        .profile .profile-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .profile .profile-grid {
+            gap: 16px;
+        }
+
+        /* Buttons fill the width so they are easy to tap. */
+        .profile .profile-actions {
+            .pill-btn {
+                flex: 1;
+            }
+        }
+
+        .location {
+            .map {
+                grid-row: auto;
+            }
+
+            .location-btn {
+                justify-self: stretch;
+            }
+        }
+    }
+}
+
+/* Home page only (Pages/Index): more room between the sections and inside them, so the page breathes instead
+   of looking packed. The other pages that share .landing keep their tighter spacing. */
+.landing.home {
+    gap: clamp(64px, 8vw, 120px);
+    padding-bottom: 72px;
+
+    .hero {
+        gap: 48px;
+    }
+
+    /* Headings over a row of cards get a little space before the cards. */
+    .specials .section-title,
+    .reviews-section .section-title {
+        margin-bottom: 28px;
+    }
+
+    .booking-row {
+        grid-template-columns: minmax(380px, 5fr) minmax(0, 7fr);
+        gap: 64px;
+
+        .reservation-card {
+            gap: 18px;
+            padding: 28px;
+            border-radius: 20px;
+        }
+
+        .list-head {
+            margin-bottom: 20px;
+        }
+
+        .rank-list {
+            margin-bottom: 24px;
+        }
+
+        .rank-row {
+            gap: 18px;
+            padding: 16px 12px;
+        }
+
+        .rank-name {
+            font-size: 1.15rem;
+        }
+
+        .rank-meta {
+            font-size: 0.9rem;
+        }
+    }
+
+    .specials-grid,
+    .review-wall {
+        gap: 20px;
+    }
+
+    .location {
+        gap: 56px;
+
+        .map {
+            min-height: 420px;
+        }
+
+        .location-info {
+            gap: 28px;
+        }
+    }
+}
+
+@media only screen and (max-width: 992px) {
+    .landing.home .booking-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 48px;
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    .landing.home {
+        gap: 64px;
+        padding-bottom: 48px;
+
+        .hero {
+            gap: 28px;
+        }
+
+        .location {
+            gap: 32px;
+
+            .map {
+                min-height: 280px;
+            }
+        }
+    }
+}
+
+@media only screen and (max-width: 576px) {
+    .landing.home {
+        gap: 56px;
+
+        .booking-row .reservation-card {
+            padding: 22px;
+        }
+
+        .booking-row .rank-row {
+            gap: 14px;
+            padding: 14px 6px;
+        }
+
+        .specials .section-title,
+        .reviews-section .section-title {
+            margin-bottom: 20px;
+        }
+
+        .specials-grid,
+        .review-wall {
+            gap: 14px;
+        }
+    }
+}
+
+/* Notification bell in the customer navigation bar (Pages/Shared/_LandingNav.cshtml). */
+.landing .customer-bell {
+    .bell-btn {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        border: none;
+        border-radius: 100px;
+        background: white;
+        color: black;
+        font-size: 1.1rem;
+        transition: 300ms ease-in-out;
+    }
+
+    .bell-btn:hover,
+    .bell-btn[aria-expanded="true"] {
+        background: #e4e4e7;
+    }
+
+    .bell-count {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 10px;
+        background: #d63939;
+        color: white;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 20px;
+    }
+
+    .bell-menu {
+        width: min(340px, calc(100vw - 32px));
+        padding: 8px;
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .bell-head {
+        padding: 8px 12px;
+        font-weight: 700;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .bell-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 360px;
+        overflow-y: auto;
+
+        a {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 10px 12px 10px 26px;
+            border-radius: 14px;
+            color: black;
+            text-decoration: none;
+            transition: 300ms ease-in-out;
+        }
+
+        a:hover {
+            background: #f2f2f3;
+        }
+
+        .unread a::before {
+            content: "";
+            position: absolute;
+            left: 10px;
+            top: 17px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d63939;
+        }
+
+        .bell-title {
+            font-weight: 600;
+        }
+
+        .bell-text {
+            color: #555555;
+            font-size: 0.88rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .bell-meta {
+            color: #888888;
+            font-size: 0.78rem;
+        }
+    }
+
+    .bell-empty {
+        color: #666666;
+        padding: 4px 12px 12px;
+        margin: 0;
+    }
+
+    .bell-all {
+        display: block;
+        text-align: center;
+        padding: 10px;
+        margin-top: 4px;
+        border-top: 1px solid #f2f2f3;
+        color: #444444;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+    }
+
+    .bell-all:hover {
+        color: black;
+    }
+}
+
+/* Customer Notifications page (Pages/Customer/Notifications.cshtml). */
+.landing .notification-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .notice-card {
+        background: white;
+        border-radius: 20px;
+        padding: 20px 24px;
+        border-left: 4px solid transparent;
+    }
+
+    .notice-card.unread {
+        border-left-color: #d63939;
+    }
+
+    .notice-card:target {
+        outline: 2px solid black;
+    }
+
+    .notice-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+    }
+
+    .notice-category {
+        padding: 2px 12px;
+        border-radius: 100px;
+        background: #f2f2f3;
+        font-weight: 600;
+    }
+
+    .notice-new {
+        padding: 2px 10px;
+        border-radius: 100px;
+        background: #fde8e8;
+        color: #b42318;
+        font-weight: 700;
+    }
+
+    .notice-time {
+        margin-left: auto;
+        color: #888888;
+    }
+
+    .notice-title {
+        margin: 12px 0 6px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .notice-text {
+        margin: 0;
+        color: #333333;
+        white-space: pre-line;
+    }
+}
+
+/* Bottom of the home, login/register and account pages: the policy links (Pages/Shared/_PolicyLinks.cshtml). */
+.landing-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding: 20px 0 0;
+    border-top: 1px solid #e9ecef;
+    color: #6c757d;
+    font-size: .875rem;
+}
+
+.landing-footer:has(> .policy-links:only-child) {
+    justify-content: center;
+}
+
+.auth-legal {
+    margin: 4px 0 12px;
+    color: #6c757d;
+    font-size: .8125rem;
+    text-align: center;
+}
+
+.auth-legal a {
+    color: inherit;
+}

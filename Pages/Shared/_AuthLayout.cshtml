@@ -1,0 +1,34 @@
+@using Microsoft.EntityFrameworkCore
+@using RestaurantReservation.Data
+@inject ApplicationDbContext Db
+@{
+    // Login and Register: the landing page's navigation bar (restaurant name on top), then a short welcome
+    // headline and the form card, both centred on every screen size.
+    Layout = "_Layout";
+
+    var restaurantName = await Db.RestaurantSettings.AsNoTracking().Select(s => s.Name).FirstOrDefaultAsync() ?? "Resto";
+}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" />
+<link rel="stylesheet" href="~/css/landing_page.css" asp-append-version="true" />
+
+<div class="landing">
+    <partial name="_LandingNav" model="restaurantName" />
+
+    <section class="auth-page">
+        <div class="auth-intro">
+            <h1 class="auth-headline">@ViewData["Headline"]</h1>
+            <p class="auth-tagline">@ViewData["Tagline"]</p>
+        </div>
+
+        <div class="auth-card">
+            @RenderBody()
+        </div>
+    </section>
+
+    <footer class="landing-footer"><partial name="_PolicyLinks" /></footer>
+</div>
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

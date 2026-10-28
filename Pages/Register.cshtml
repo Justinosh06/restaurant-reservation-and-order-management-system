@@ -1,0 +1,69 @@
+@page
+@model RegisterModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Register";
+    ViewData["Headline"] = "A table is waiting for you.";
+    ViewData["Tagline"] = "Create a customer account to book tables, keep your dining history and share feedback on our dishes.";
+}
+
+<h2 class="card-title">Create an account</h2>
+<p class="hint mb-3">Register as a customer to make reservations and orders.</p>
+
+<form method="post" class="auth-form">
+    <div asp-validation-summary="ModelOnly" class="field-error" role="alert"></div>
+
+    <div class="auth-row">
+        <div class="auth-field">
+            <label asp-for="Input.FirstName"></label>
+            <input asp-for="Input.FirstName" autocomplete="given-name" />
+            <span asp-validation-for="Input.FirstName" class="field-error"></span>
+        </div>
+
+        <div class="auth-field">
+            <label asp-for="Input.LastName"></label>
+            <input asp-for="Input.LastName" autocomplete="family-name" />
+            <span asp-validation-for="Input.LastName" class="field-error"></span>
+        </div>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.Email"></label>
+        <input asp-for="Input.Email" autocomplete="email" placeholder="name@example.com" />
+        <span asp-validation-for="Input.Email" class="field-error"></span>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.PhoneNumber"></label>
+        <input asp-for="Input.PhoneNumber" type="tel" autocomplete="tel" placeholder="012-3456789" />
+        <span asp-validation-for="Input.PhoneNumber" class="field-error"></span>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.Password"></label>
+        <input asp-for="Input.Password" autocomplete="new-password" />
+        <span class="hint">At least 8 characters, with an uppercase letter, a lowercase letter and a number.</span>
+        <span asp-validation-for="Input.Password" class="field-error"></span>
+    </div>
+
+    <div class="auth-field">
+        <label asp-for="Input.ConfirmPassword"></label>
+        <input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+        <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+    </div>
+
+    <p class="auth-legal">
+        By creating an account you agree to our <a href="/Policies/terms" target="_blank">Terms of use</a>
+        and <a href="/Policies/privacy" target="_blank">Privacy policy</a>.
+    </p>
+    <button type="submit" class="pill-btn w-100">Register</button>
+</form>
+
+<div class="auth-switch">
+    <span class="hint">Already have an account?</span>
+    <a asp-page="/Login" class="pill-btn ghost w-100">Log in</a>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

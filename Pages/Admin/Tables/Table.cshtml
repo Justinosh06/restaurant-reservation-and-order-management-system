@@ -1,0 +1,398 @@
+@page "/Admin/Tables"
+@namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin
+@model TableManagementModel
+@using System.Globalization
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Table Management";
+    var now = DateTime.Now;
+    // A booking holds its table from its start time until its slot ends.
+    // The floor plan only colours tables for today's bookings (and guests still seated from before);
+    // later days stay white here and are on Reservation Management.
+    var upcomingReservations = Model.Reservations
+        .Where(reservation => reservation.IsActive(now)
+            && (reservation.ReservationAt.Date == now.Date || reservation.IsSeated))
+        .OrderBy(reservation => reservation.ReservationAt)
+        .ToList();
+
+    // Draws a row of chairs; a table's chairs are split between the rows above and below it.
+    void Chairs(int count)
+    {
+        <span class="chair-row" aria-hidden="true">
+            @for (var i = 0; i < count; i++)
+            {
+                <span class="chair"></span>
+            }
+        </span>
+    }
+
+    // A round table's chairs, spaced evenly around it (placed by .chair-ring in table-management.css).
+    void ChairRing(int count)
+    {
+        <span class="chair-ring" aria-hidden="true">
+            @for (var i = 0; i < count; i++)
+            {
+                <span class="chair" style="--angle: @((360.0 * i / count).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))deg"></span>
+            }
+        </span>
+    }
+}
+
+<link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
+
+<div class="service-app" data-selected-table="@Model.SelectedTableId">
+    <div class="service-main">
+        <div class="floor-toolbar">
+            <div>
+                <p class="eyebrow">DINING ROOM</p>
+                <h1>Table Management</h1>
+                <p class="subheading">See which tables are booked and check guests in when they arrive.</p>
+            </div>
+            <div class="floor-toolbar-actions">
+                <div class="floor-toolbar-buttons">
+                    <button type="button" class="add-table-button" id="addTableButton">
+                        <span aria-hidden="true">+</span> Add table
+                    </button>
+                </div>
+                <div class="legend" aria-label="Table availability">
+                    <span><i class="legend-dot available"></i>Available</span>
+                    <span><span class="legend-icon reserved" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>Reserved</span>
+                    <span><span class="legend-icon soon" aria-hidden="true"><i class="fa-solid fa-clock"></i></span>Starting soon</span>
+                    <span><span class="legend-icon occupied" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span>Checked in</span>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="status-message" role="status">@Model.StatusMessage</div>
+        }
+        @if (Model.EndSessionBlockedTable is not null)
+        {
+            @* Shown as a pop-up by table-management.js: why the session couldn't be ended. *@
+            <div id="endSessionRefused" hidden
+                 data-table="@Model.EndSessionBlockedTable"
+                 data-orders="@Model.EndSessionBlockedOrders"></div>
+        }
+
+        <div class="table-workspace">
+        <section class="floorplan-shell" id="floorplan" aria-label="Restaurant floor plan">
+            <div class="floorplan-label">
+                <span><i class="floor-indicator"></i> Main floor</span>
+                <span>@Model.Tables.Count tables</span>
+            </div>
+            @if (Model.Tables.Count == 0)
+            {
+                <div class="empty-floorplan">
+                    <strong>No tables yet</strong>
+                    <p>Use <b>Add table</b> to put your first table on the floor plan.</p>
+                </div>
+            }
+            <div class="floorplan" hidden="@(Model.Tables.Count == 0)">
+                @foreach (var table in Model.Tables)
+                {
+                    var nextReservation = upcomingReservations
+                        .FirstOrDefault(reservation => reservation.TableIds.Contains(table.Id));
+                    var activeSession = Model.ActiveSessions.GetValueOrDefault(table.Id);
+                    var hasActiveSession = activeSession is not null;
+                    var startsSoon = nextReservation is not null
+                        && nextReservation.ReservationAt <= now.AddMinutes(60);
+                    // Checked-in guests sit at the table until their slot ends.
+                    var seatedNow = nextReservation is { Status: RestaurantReservation.Models.ReservationStatus.CheckedIn }
+                        && nextReservation.ReservationAt - TableManagementModel.CheckInOpensBefore <= now;
+                    // The icon in the middle of the table: checked in, starting soon, or reserved.
+                    var statusIcon = hasActiveSession ? "fa-utensils"
+                        : nextReservation is null ? null
+                        : seatedNow ? "fa-utensils"
+                        : startsSoon ? "fa-clock"
+                        : "fa-calendar-check";
+
+                    <button type="button"
+                            class="floor-table @(hasActiveSession ? "occupied" : nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "") @(table.Shape == RestaurantReservation.Models.TableShape.Round ? "round" : "")"
+                            data-table-id="@table.Id"
+                            data-capacity="@table.Capacity"
+                            data-menu-url="@Model.MenuUrl(table.Id)"
+                            data-active-session="@(hasActiveSession ? "true" : "false")"
+                            data-open-orders="@System.Text.Json.JsonSerializer.Serialize(Model.OpenOrderLines.GetValueOrDefault(table.Id) ?? [])"
+                            data-unseat-count="@Model.UnseatCounts.GetValueOrDefault(table.Id)"
+                            data-shared-count="@Model.SharedCounts.GetValueOrDefault(table.Id)"
+                            data-seated-now="@(Model.SeatedNowTableIds.Contains(table.Id) ? "true" : "false")"
+                            aria-label="Table @table.Id, @table.Capacity seats, @(hasActiveSession ? "dining session active" : nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
+                        @{ Chairs((table.Capacity + 1) / 2); }
+                        <span class="table-top">
+                            @if (table.Shape == RestaurantReservation.Models.TableShape.Round) { ChairRing(table.Capacity); }
+                            <span class="table-name">@table.Id</span>
+                            @if (statusIcon is not null)
+                            {
+                                <span class="table-icon" aria-hidden="true"><i class="fa-solid @statusIcon"></i></span>
+                            }
+                            @if (hasActiveSession)
+                            {
+                                var sessionName = activeSession!.Customer is null
+                                    ? "Walk-in dining"
+                                    : string.IsNullOrWhiteSpace(activeSession.Customer.FullName)
+                                        ? "Reserved dining"
+                                        : activeSession.Customer.FullName;
+                                <span class="table-booking">
+                                    <span>@sessionName</span>
+                                    <span class="seated-timer" data-since="@DateTime.SpecifyKind(activeSession.StartingTime, DateTimeKind.Utc).ToString("o")" title="Dining session duration">0:00</span>
+                                </span>
+                            }
+                            else if (nextReservation is not null)
+                            {
+                                <span class="table-booking">
+                                    <span>@nextReservation.PartySize guests</span>
+                                    @if (seatedNow && nextReservation.CheckedInAt is { } seatedSince)
+                                    {
+                                        <span class="seated-timer" data-since="@DateTime.SpecifyKind(seatedSince, DateTimeKind.Utc).ToString("o")" title="Time since check-in">0:00</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@(seatedNow ? "Checked in" : nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture))</span>
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="table-seats">@table.Capacity seats</span>
+                            }
+                        </span>
+                        @{ Chairs(table.Capacity / 2); }
+                    </button>
+                }
+            </div>
+            <div class="floorplan-footer">
+                <span>Tap a table to see its reservations.</span>
+                @{ var withoutTable = upcomingReservations.Count(reservation => !reservation.HasTable); }
+                @if (withoutTable > 0)
+                {
+                    <a class="floor-status-count" href="/Admin/Reservations?tab=pending">
+                        @withoutTable @(withoutTable == 1 ? "booking" : "bookings") without a table →
+                    </a>
+                }
+                else
+                {
+                    <span class="floor-status-count">Every booking has a table</span>
+                }
+            </div>
+        </section>
+
+        <aside class="reservation-queue" aria-labelledby="queueTitle">
+            <div class="queue-heading">
+                <h2 id="queueTitle">Today</h2>
+                <span>@Model.Queue.Count booked</span>
+            </div>
+            @if (Model.Queue.Count == 0)
+            {
+                <div class="queue-empty">
+                    <strong>No more bookings with a table today</strong>
+                    <p>Later days and bookings waiting for a table are on <a asp-page="/Admin/Reservations/Reservation">Reservation Management</a>.</p>
+                </div>
+            }
+            else
+            {
+                <p class="queue-hint">Check guests in when they arrive. Check-in opens 1 hour before the booking.</p>
+                <div class="queue-list">
+                    @foreach (var reservation in Model.Queue)
+                    {
+                            var checkedIn = reservation.Status == RestaurantReservation.Models.ReservationStatus.CheckedIn;
+                            var canCheckIn = TableManagementModel.CanCheckIn(reservation, now);
+                            <div class="queue-item checkin-item @(checkedIn ? "checked-in" : "")" data-tables="@string.Join(' ', reservation.TableIds)">
+                                <span class="queue-time">@reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
+                                <strong class="queue-name">@reservation.CustomerName</strong>
+                                <span class="queue-meta">
+                                    @reservation.PartySize guests
+                                    <span class="queue-table">@reservation.TableLabel</span>
+                                </span>
+                                <div class="checkin-actions">
+                                    @if (checkedIn)
+                                    {
+                                        <span class="checkin-done">
+                                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Checked in
+                                            @if (reservation.CheckedInAt is { } since)
+                                            {
+                                                <span>·</span>
+                                                <span class="seated-timer" data-since="@DateTime.SpecifyKind(since, DateTimeKind.Utc).ToString("o")" title="Time since check-in">0:00</span>
+                                            }
+                                        </span>
+                                        <form method="post" asp-page-handler="UndoCheckIn" class="undo-checkin-form">
+                                            <input type="hidden" name="reservationId" value="@reservation.Id" />
+                                            <button type="submit" class="checkin-undo">Undo</button>
+                                        </form>
+                                    }
+                                    else if (canCheckIn)
+                                    {
+                                        <form method="post" asp-page-handler="CheckIn">
+                                            <input type="hidden" name="reservationId" value="@reservation.Id" />
+                                            <button type="submit" class="checkin-button"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Check in</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="checkin-later">Check-in from @((reservation.ReservationAt - TableManagementModel.CheckInOpensBefore).ToString("h:mm tt", CultureInfo.CurrentCulture))</span>
+                                    }
+                                </div>
+                            </div>
+                    }
+                </div>
+            }
+        </aside>
+        </div>
+    </div>
+</div>
+
+<div class="panel-backdrop" id="panelBackdrop"></div>
+<aside class="reservation-panel table-details-panel"
+       id="tableDetailsPanel"
+       aria-labelledby="panelTitle"
+       aria-hidden="true">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">TABLE DETAILS</p>
+            <h2 id="panelTitle">Table</h2>
+            <span class="panel-capacity" id="panelCapacity"></span>
+        </div>
+        <button type="button" class="panel-close" id="closePanelButton" aria-label="Close panel">×</button>
+    </div>
+
+    <div class="panel-body">
+        <section>
+            <div class="panel-section-heading">
+                <h3>Upcoming reservations</h3>
+                <span id="tableReservationCount"></span>
+            </div>
+            <div id="tableReservationList" class="table-reservation-list">
+                @foreach (var reservation in upcomingReservations)
+                {
+                    <article class="table-reservation" data-table-reservation="@string.Join(' ', reservation.TableIds)">
+                        <div class="reservation-card-heading">
+                            <div>
+                                <strong>@reservation.CustomerName</strong>
+                                <span>@reservation.PartySize guests · @reservation.ReservationAt.ToString("ddd, MMM d · h:mm tt", CultureInfo.CurrentCulture)</span>
+                                @if (reservation.TableIds.Count > 1)
+                                {
+                                    <span>Shares tables @reservation.TableLabel</span>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+            <p class="no-table-reservations" id="noTableReservations">No upcoming reservations for this table.</p>
+        </section>
+
+        <section class="active-session-management" id="activeSessionManagement" hidden>
+            <div class="panel-section-heading">
+                <h3>Dining session</h3>
+                <span>Active</span>
+            </div>
+            <p>End this session when the guests have left. Every order has to be paid for (or cancelled) first.</p>
+            <div class="end-session-blocked" id="endSessionBlocked" hidden>
+                <strong><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> <span id="endSessionBlockedTitle"></span></strong>
+                <ul id="endSessionBlockedList"></ul>
+                <span>Serve each order and take payment at the table's checkout, then end the session.</span>
+            </div>
+            <form method="post" asp-page-handler="EndSession" class="end-session-form" id="endSessionForm">
+                <input type="hidden" name="tableId" id="endSessionTableId" />
+                <button type="submit" class="remove-table-button" id="endSessionButton">End dining session</button>
+            </form>
+        </section>
+
+        <section class="table-qr">
+            <div class="panel-section-heading">
+                <h3>Order QR code</h3>
+                <span>Guests scan it to order</span>
+            </div>
+            <div class="table-qr-card">
+                <div id="tableQrCode" class="table-qr-code" role="img"></div>
+                <a id="tableQrLink" class="table-qr-link" target="_blank" rel="noopener"></a>
+            </div>
+            <div class="table-qr-actions">
+                <button type="button" id="tableQrDownload" class="table-qr-button">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i> Download
+                </button>
+                <button type="button" id="tableQrPrint" class="table-qr-button">
+                    <i class="fa-solid fa-print" aria-hidden="true"></i> Print
+                </button>
+                <a id="tableQrOpen" class="table-qr-button" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Open menu
+                </a>
+            </div>
+        </section>
+
+        <a class="submit-reservation-button manage-table-reservations"
+           id="manageTableReservations"
+           href="/Admin/Reservations">
+            Manage reservations
+        </a>
+
+        <form method="post" asp-page-handler="RemoveTable" class="remove-table-form" id="removeTableForm">
+            <input type="hidden" name="tableId" id="removeTableId" />
+            <button type="submit" class="remove-table-button">Remove table</button>
+        </form>
+    </div>
+</aside>
+
+<aside class="reservation-panel add-table-panel"
+       id="addTablePanel"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="addTableTitle"
+       aria-hidden="true">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">NEW TABLE</p>
+            <h2 id="addTableTitle">Add a table</h2>
+            <span class="panel-capacity">Pick a shape and how many people it seats.</span>
+        </div>
+        <button type="button" class="panel-close" id="closeAddTableButton" aria-label="Close panel">×</button>
+    </div>
+
+    <div class="panel-body">
+        <form method="post" asp-page-handler="AddTable" class="reservation-form">
+            @* A table preview with − / + either side; the buttons step through SeatOptions (2, 4, 6). *@
+            <div class="seat-stepper" data-seat-options="@string.Join(',', TableManagementModel.SeatOptions)">
+                <div class="seat-stepper-head">
+                    <span class="seat-stepper-label" id="seatStepperLabel">Seats</span>
+                    <fieldset class="shape-toggle">
+                        <legend class="visually-hidden">Table shape</legend>
+                        <label>
+                            <input type="radio" name="shape" value="Rectangle" checked />
+                            <span><i class="shape-swatch rectangle" aria-hidden="true"></i>Rectangle</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="shape" value="Round" />
+                            <span><i class="shape-swatch round" aria-hidden="true"></i>Round</span>
+                        </label>
+                    </fieldset>
+                </div>
+                <input type="hidden" name="seats" id="seatCount" value="4" />
+                <div class="seat-stepper-row">
+                    <button type="button" class="seat-step" data-step="-1" aria-label="Fewer seats">
+                        <i class="fa-solid fa-minus" aria-hidden="true"></i>
+                    </button>
+                    <div class="seat-stepper-preview" aria-hidden="true">
+                        <span class="chair-row" data-chairs="top">@for (var i = 0; i < 2; i++) { <span class="chair"></span> }</span>
+                        <span class="table-top"><span class="chair-ring" data-chairs="ring"></span><span class="seat-stepper-number" id="seatStepperNumber">4</span></span>
+                        <span class="chair-row" data-chairs="bottom">@for (var i = 0; i < 2; i++) { <span class="chair"></span> }</span>
+                    </div>
+                    <button type="button" class="seat-step" data-step="1" aria-label="More seats">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <output class="seat-stepper-value" for="seatCount" aria-live="polite" aria-labelledby="seatStepperLabel">4 seats</output>
+                <span class="seat-stepper-dots" aria-hidden="true">
+                    @foreach (var seats in TableManagementModel.SeatOptions)
+                    {
+                        <span data-seats="@seats" class="@(seats == 4 ? "active" : "")"></span>
+                    }
+                </span>
+            </div>
+            <button type="submit" class="submit-reservation-button">Add table</button>
+        </form>
+    </div>
+</aside>
+
+<script src="~/lib/qrcodejs/qrcode.min.js"></script>
+<script src="~/js/table-management.js" asp-append-version="true"></script>

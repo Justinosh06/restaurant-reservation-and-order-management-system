@@ -1,0 +1,101 @@
+.page-content {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    padding: 8px;
+    z-index: 10000;
+
+    .nav-group {
+        display: flex;
+        background: #F2F2F3;
+        padding: 8px;
+        border-radius: 100px;
+
+        .nav-item {
+            position: relative;
+            display: flex;
+            font-size: 1.8rem;
+            aspect-ratio: 1/1;
+            width: 50px;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #888888;
+            cursor: pointer;
+            transition: 300ms ease-in-out;
+
+            .content-number {
+                padding: 4px 6px;
+                position: absolute;
+                color: var(--secondary-color);
+                background: var(--primary-color);
+                font-weight: 700;
+                font-size: 1rem;
+                border-radius: 16px;
+                right: -5px;
+                top: -8px;
+            }
+        }
+
+        .nav-item:hover {
+            color: black;
+        }
+
+        .nav-item.active {
+            background: white;
+            border-radius: 100%;
+            color: black;
+        }
+    }
+
+    .checkout-btn {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        height: 66px;
+        padding: 0 40px;
+        color: #888888;
+        font-size: 1.4rem;
+        font-weight: 600;
+        text-decoration: none;
+        background: #F2F2F3;
+        border-radius: 100px;
+        font-family: "Bricolage Grotesque", sans-serif;
+        transition: 300ms ease-in-out;
+    }
+
+    .checkout-btn:hover,
+    .checkout-btn.active {
+        color: black;
+    }
+}
+
+.content-container {
+    height: 100%;
+    margin-bottom: auto;
+}
+
+.footer {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .title {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -2px;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+
+    .copyright {
+        font-weight: 600;
+        font-family: "Bricolage Grotesque", sans-serif;
+    }
+}

@@ -5,6 +5,7 @@
 
 # dotenv files
 .env
+Data/reservations.json
 
 # User-specific files
 *.rsuser
@@ -480,3 +481,5 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+wwwroot/uploads/

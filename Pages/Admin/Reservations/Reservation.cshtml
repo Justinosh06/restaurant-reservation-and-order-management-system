@@ -1,0 +1,484 @@
+@page "/Admin/Reservations"
+@namespace Restaurant_Reservation_and_Order_Management_System.Pages.Admin
+@model ReservationManagementModel
+@using System.Globalization
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Reservation Management";
+    var now = DateTime.Now;
+    var emptyText = Model.Tab switch
+    {
+        "upcoming" => "No upcoming reservations with a table yet. Seat bookings from the Pending tab.",
+        "pending" => "Every upcoming reservation has a table.",
+        "past" => "No past reservations yet.",
+        _ => "No cancelled reservations."
+    };
+    string? lastMonth = null;
+
+    // For the Pending floor plan: each table shows its next seated booking, like Table Management.
+    var upcomingSeated = Model.Reservations
+        .Where(reservation => reservation.HasTable
+            && reservation.IsActive(now)
+            && reservation.Status != RestaurantReservation.Models.ReservationStatus.Cancelled
+            && reservation.Status != RestaurantReservation.Models.ReservationStatus.Completed)
+        .OrderBy(reservation => reservation.ReservationAt)
+        .ToList();
+
+    // Draws a row of chairs; a table's chairs are split between the rows above and below it.
+    void Chairs(int count)
+    {
+        <span class="chair-row" aria-hidden="true">
+            @for (var i = 0; i < count; i++)
+            {
+                <span class="chair"></span>
+            }
+        </span>
+    }
+
+    // A round table's chairs, spaced evenly around it (placed by .chair-ring in table-management.css).
+    void ChairRing(int count)
+    {
+        <span class="chair-ring" aria-hidden="true">
+            @for (var i = 0; i < count; i++)
+            {
+                <span class="chair" style="--angle: @((360.0 * i / count).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))deg"></span>
+            }
+        </span>
+    }
+}
+
+<link rel="stylesheet" href="~/css/table-management.css" asp-append-version="true" />
+
+<div class="service-app reservation-management-page"
+     data-reopen-form="@(Model.IsFormOpen ? "true" : "false")"
+     data-form-mode="@Model.FormMode">
+    <div class="service-main">
+        <div class="floor-toolbar">
+            <div>
+                <p class="eyebrow">YOUR SERVICE</p>
+                <h1>Reservation Management</h1>
+                <p class="subheading">Create, update, and cancel guest reservations.</p>
+            </div>
+            <div class="reservation-list-toolbar">
+                @* Pending bookings have no table yet, so filtering them by table would always show none. *@
+                <form method="get" class="reservation-filter" hidden="@(Model.Tab == "pending")">
+                    <input type="hidden" name="tab" value="@Model.Tab" />
+                    <label for="tableFilter">Table</label>
+                    <select id="tableFilter" name="tableId" onchange="this.form.submit()">
+                        <option value="">All tables</option>
+                        @foreach (var table in Model.Tables)
+                        {
+                            <option value="@table.Id" selected="@(Model.FilterTableId == table.Id)">
+                                Table @table.Id
+                            </option>
+                        }
+                    </select>
+                </form>
+                <a class="new-reservation-button"
+                   asp-page="/Admin/Reservations/Reservation"
+                   asp-route-newReservation="true"
+                   asp-route-tableId="@Model.FilterTableId"
+                   id="newReservationButton">
+                    <span aria-hidden="true">+</span> New reservation
+                </a>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="status-message" role="status">@Model.StatusMessage</div>
+        }
+
+        <nav class="reservation-tabs" aria-label="Reservation lists">
+            @foreach (var tab in ReservationManagementModel.Tabs)
+            {
+                <a class="reservation-tab @(Model.Tab == tab.Key ? "active" : "")"
+                   asp-page="/Admin/Reservations/Reservation"
+                   asp-route-tab="@tab.Key"
+                   asp-route-tableId="@Model.FilterTableId"
+                   aria-current="@(Model.Tab == tab.Key ? "page" : null)">
+                    @tab.Label <span class="tab-count">@Model.TabCounts.GetValueOrDefault(tab.Key)</span>
+                </a>
+            }
+        </nav>
+
+        @if (Model.TabReservations.Count == 0)
+        {
+            <div class="empty-reservations">
+                <span class="empty-icon" aria-hidden="true"><i class="fa-regular fa-calendar"></i></span>
+                <strong>Nothing here</strong>
+                <p>@emptyText</p>
+            </div>
+        }
+        else
+        {
+            <div class="booking-rows">
+                @foreach (var reservation in Model.TabReservations)
+                {
+                    var month = reservation.ReservationAt.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
+                    if (month != lastMonth)
+                    {
+                        lastMonth = month;
+                        <h2 class="booking-month">@month</h2>
+                    }
+
+                    var isToday = reservation.ReservationAt.Date == now.Date;
+                    var isOpen = Model.Tab is "upcoming" or "pending";
+                    <article class="booking-row @(Model.Tab == "cancelled" ? "cancelled" : "")">
+                        <div class="booking-date @(isToday ? "today" : "")">
+                            <span>@reservation.ReservationAt.ToString("ddd", CultureInfo.CurrentCulture)</span>
+                            <strong>@reservation.ReservationAt.ToString("dd", CultureInfo.CurrentCulture)</strong>
+                        </div>
+                        <div class="booking-when">
+                            <span>
+                                <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                                @reservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)
+                            </span>
+                            <span class="@(reservation.HasTable ? "" : "no-table")">
+                                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                                @(!reservation.HasTable ? "No table yet" : reservation.TableIds.Count == 1 ? $"Table {reservation.TableLabel}" : $"Tables {reservation.TableLabel}")
+                            </span>
+                        </div>
+                        <div class="booking-guest">
+                            <strong>@reservation.CustomerName</strong>
+                            <span>
+                                <span class="guest-chip"><i class="fa-solid fa-user-group" aria-hidden="true"></i> @reservation.PartySize</span>
+                                @if (!string.IsNullOrWhiteSpace(reservation.ContactNumber))
+                                {
+                                    <span>@reservation.ContactNumber</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(reservation.Notes))
+                                {
+                                    <span class="booking-notes" title="@reservation.Notes">@reservation.Notes</span>
+                                }
+                            </span>
+                        </div>
+                        @if (Model.Tab == "past")
+                        {
+                            // Completed = checked in and out; anything else that ended was never checked in.
+                            var came = reservation.Status == RestaurantReservation.Models.ReservationStatus.Completed;
+                            <span class="booking-badge @(came ? "confirmed" : "noshow")">@(came ? "Completed" : "No-show")</span>
+                        }
+                        @if (reservation.DepositLabel is not null)
+                        {
+                            <span class="booking-badge @(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "refunded")">@reservation.DepositLabel</span>
+                        }
+                        else if (reservation.Status == RestaurantReservation.Models.ReservationStatus.CheckedIn && isOpen)
+                    {
+                        <span class="booking-badge confirmed">Checked in</span>
+                    }
+                    else if (reservation.Status == RestaurantReservation.Models.ReservationStatus.Confirmed && isOpen)
+                        {
+                            <span class="booking-badge confirmed">Confirmed</span>
+                        }
+
+                        <details class="booking-menu">
+                            <summary>Edit <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+                            <div class="booking-menu-list">
+                                <a asp-page="/Admin/Reservations/Reservation"
+                                   asp-route-edit="@reservation.Id"
+                                   asp-route-tableId="@Model.FilterTableId"
+                                   asp-route-tab="@Model.Tab">
+                                    <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit booking
+                                </a>
+                                @if (isOpen)
+                                {
+                                    <button type="button" class="@(reservation.HasTable ? "assign-open" : "floor-assign-open")"
+                                            data-reservation-id="@reservation.Id"
+                                            data-name="@reservation.CustomerName"
+                                            data-party="@reservation.PartySize"
+                                            data-time="@reservation.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)"
+                                            data-tables="@string.Join(' ', reservation.TableIds)"
+                                            data-free="@string.Join(' ', Model.FreeTables.GetValueOrDefault(reservation.Id) ?? [])"
+                                            data-suggested="@string.Join(' ', Model.SuggestedTables.GetValueOrDefault(reservation.Id) ?? [])">
+                                        <i class="fa-solid fa-chair" aria-hidden="true"></i> @(reservation.HasTable ? "Move table" : "Assign table")
+                                    </button>
+                                    <form method="post" asp-page-handler="Cancel" class="cancel-reservation-form"
+                                          data-deposit="@(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "")">
+                                        <input type="hidden" name="ReservationId" value="@reservation.Id" />
+                                        <input type="hidden" name="FilterTableId" value="@Model.FilterTableId" />
+                                        <input type="hidden" name="Tab" value="@Model.Tab" />
+                                        <button type="submit"><i class="fa-solid fa-ban" aria-hidden="true"></i> Cancel reservation</button>
+                                    </form>
+                                }
+                                <form method="post" asp-page-handler="Delete" class="delete-reservation-form">
+                                    <input type="hidden" name="ReservationId" value="@reservation.Id" />
+                                    <input type="hidden" name="FilterTableId" value="@Model.FilterTableId" />
+                                    <input type="hidden" name="Tab" value="@Model.Tab" />
+                                    @if (reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid)
+                                    {
+                                        <button type="button" class="danger" disabled title="This booking has a paid deposit. Cancel it to refund the deposit.">
+                                            <i class="fa-solid fa-trash" aria-hidden="true"></i> Delete
+                                            <small class="menu-hint">Cancel first to refund the deposit</small>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="danger"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+                                    }
+                                </form>
+                            </div>
+                        </details>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="panel-backdrop @(Model.IsFormOpen ? "open" : "")" id="reservationFormBackdrop"></div>
+<aside class="reservation-panel reservation-editor-panel @(Model.IsFormOpen ? "open" : "")"
+       id="reservationEditorPanel"
+       aria-labelledby="reservationEditorTitle"
+       aria-hidden="@(!Model.IsFormOpen ? "true" : "false")">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">GUEST BOOKING</p>
+            <h2 id="reservationEditorTitle">@(Model.FormMode == "edit" ? "Edit reservation" : "New reservation")</h2>
+        </div>
+        <button type="button" class="panel-close" id="closeReservationForm" aria-label="Close form">×</button>
+    </div>
+
+    <div class="panel-body">
+        <form method="post"
+              asp-page-handler="Create"
+              id="createReservationForm"
+              class="reservation-form"
+              hidden="@(Model.FormMode == "edit")">
+            <input type="hidden" asp-for="FilterTableId" />
+            <input type="hidden" asp-for="Tab" />
+            <input type="hidden" asp-for="OutsideHoursOkFor" />
+            <div asp-validation-summary="All" class="validation-summary"></div>
+
+            <fieldset class="table-choices">
+                <legend>Tables <span class="optional-label">pick several for a large party, or none to assign later</span></legend>
+                <div class="table-choice-grid">
+                    @foreach (var table in Model.Tables)
+                    {
+                        <label class="table-choice">
+                            <input type="checkbox" name="Input.TableIds" value="@table.Id" checked="@Model.Input.TableIds.Contains(table.Id)" />
+                            <span>@table.Id · @table.Capacity seats</span>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+            <span asp-validation-for="Input.TableIds" class="field-error"></span>
+
+            <label for="createCustomerName">Customer name</label>
+            <input asp-for="Input.CustomerName" id="createCustomerName" autocomplete="name" maxlength="80" placeholder="Name for the booking" />
+            <span asp-validation-for="Input.CustomerName" class="field-error"></span>
+
+            <div class="form-row">
+                <div>
+                    <label for="createPartySize">Guests</label>
+                    <input asp-for="Input.PartySize" id="createPartySize" type="number" min="1" max="20" />
+                    <span asp-validation-for="Input.PartySize" class="field-error"></span>
+                </div>
+                <div>
+                    <label for="createReservationAtButton">Date and time</label>
+                    <div class="dropdown date-time-field" data-date-time>
+                        <input asp-for="Input.ReservationAt" id="createReservationAt" type="hidden" data-date-time-value asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                        <button type="button" id="createReservationAtButton" class="btn btn-light border date-time-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i><span data-date-time-label></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
+                    </div>
+                    <span asp-validation-for="Input.ReservationAt" class="field-error"></span>
+                </div>
+            </div>
+
+            <label for="createContactNumber">Phone <span class="optional-label">optional</span></label>
+            <input asp-for="Input.ContactNumber" id="createContactNumber" autocomplete="tel" maxlength="30" placeholder="Contact number" />
+
+            <label for="createNotes">Notes <span class="optional-label">optional</span></label>
+            <textarea asp-for="Input.Notes" id="createNotes" rows="3" maxlength="500" placeholder="Allergies, occasion, or other notes"></textarea>
+
+            <button type="submit" class="submit-reservation-button">Create reservation</button>
+        </form>
+
+        <form method="post"
+              asp-page-handler="Update"
+              id="editReservationForm"
+              class="reservation-form"
+              hidden="@(Model.FormMode != "edit")">
+            <input type="hidden" asp-for="ReservationId" />
+            <input type="hidden" asp-for="FilterTableId" />
+            <input type="hidden" asp-for="Tab" />
+            <input type="hidden" asp-for="OutsideHoursOkFor" />
+            <div asp-validation-summary="All" class="validation-summary"></div>
+
+            <fieldset class="table-choices">
+                <legend>Tables <span class="optional-label">pick several for a large party, or none to assign later</span></legend>
+                <div class="table-choice-grid">
+                    @foreach (var table in Model.Tables)
+                    {
+                        <label class="table-choice">
+                            <input type="checkbox" name="Input.TableIds" value="@table.Id" checked="@Model.Input.TableIds.Contains(table.Id)" />
+                            <span>@table.Id · @table.Capacity seats</span>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+            <span asp-validation-for="Input.TableIds" class="field-error"></span>
+
+            <label for="editCustomerName">Customer name</label>
+            <input asp-for="Input.CustomerName" id="editCustomerName" autocomplete="name" maxlength="80" placeholder="Name for the booking" />
+            <span asp-validation-for="Input.CustomerName" class="field-error"></span>
+
+            <div class="form-row">
+                <div>
+                    <label for="editPartySize">Guests</label>
+                    <input asp-for="Input.PartySize" id="editPartySize" type="number" min="1" max="20" />
+                    <span asp-validation-for="Input.PartySize" class="field-error"></span>
+                </div>
+                <div>
+                    <label for="editReservationAtButton">Date and time</label>
+                    <div class="dropdown date-time-field" data-date-time>
+                        <input asp-for="Input.ReservationAt" id="editReservationAt" type="hidden" data-date-time-value asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                        <button type="button" id="editReservationAtButton" class="btn btn-light border date-time-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i><span data-date-time-label></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end date-range-calendar"></div>
+                    </div>
+                    <span asp-validation-for="Input.ReservationAt" class="field-error"></span>
+                </div>
+            </div>
+
+            <label for="editContactNumber">Phone <span class="optional-label">optional</span></label>
+            <input asp-for="Input.ContactNumber" id="editContactNumber" autocomplete="tel" maxlength="30" placeholder="Contact number" />
+
+            <label for="editNotes">Notes <span class="optional-label">optional</span></label>
+            <textarea asp-for="Input.Notes" id="editNotes" rows="3" maxlength="500" placeholder="Allergies, occasion, or other notes"></textarea>
+
+            <button type="submit" class="submit-reservation-button">Save changes</button>
+        </form>
+    </div>
+</aside>
+
+<aside class="reservation-panel assign-panel"
+       id="assignPanel"
+       aria-labelledby="assignTitle"
+       aria-hidden="true">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">ASSIGN TABLE</p>
+            <h2 id="assignTitle">Guest</h2>
+            <span class="panel-capacity" id="assignInfo"></span>
+        </div>
+        <button type="button" class="panel-close" id="closeAssignPanel" aria-label="Close panel">×</button>
+    </div>
+
+    <div class="panel-body">
+        <p class="assign-help">Tap the tables to seat them at. Pick more than one for a big party.</p>
+        <div class="assign-grid" id="assignGrid">
+            @foreach (var table in Model.Tables)
+            {
+                <button type="button" class="assign-table" data-table-id="@table.Id" data-capacity="@table.Capacity" aria-pressed="false">
+                    <strong>@table.Id</strong>
+                    <span>@table.Capacity seats</span>
+                    <em class="assign-flag"></em>
+                </button>
+            }
+        </div>
+        @if (Model.Tables.Count == 0)
+        {
+            <p class="assign-help">There are no tables yet. Add them on Table Management.</p>
+        }
+
+        <div class="assign-summary" id="assignSummary" role="status"></div>
+
+        <form method="post" asp-page-handler="Assign" id="assignForm" class="assign-actions-row">
+            <input type="hidden" name="ReservationId" id="assignReservationId" />
+            <input type="hidden" name="FilterTableId" value="@Model.FilterTableId" />
+            <input type="hidden" name="Tab" value="@Model.Tab" />
+            <span id="assignTableIds"></span>
+            <button type="button" class="assign-clear" id="assignClear" hidden>Remove from tables</button>
+            <button type="submit" class="submit-reservation-button" id="assignSave" disabled>Save</button>
+        </form>
+    </div>
+</aside>
+
+<div class="floor-assign-dialog" id="floorAssign" role="dialog" aria-modal="true" aria-labelledby="floorAssignTitle" aria-hidden="true">
+    <section class="floorplan-shell assigning" aria-label="Restaurant floor plan">
+        <div class="floor-assign-head">
+            <div>
+                <p class="eyebrow">ASSIGN TABLE</p>
+                <h2 id="floorAssignTitle">Guest</h2>
+                <span class="panel-capacity" id="floorAssignInfo"></span>
+            </div>
+            <button type="button" class="panel-close" id="closeFloorAssign" aria-label="Close floor plan">×</button>
+        </div>
+        <div class="assign-banner" id="pendingBanner" role="status">
+            <span id="pendingText"></span>
+            <span class="assign-actions">
+                <button type="button" class="assign-save" id="pendingSave" disabled>Save</button>
+                <button type="button" class="assign-cancel" id="pendingCancel">Cancel</button>
+            </span>
+        </div>
+        <div class="floorplan-label">
+            <span><i class="floor-indicator"></i> Main floor</span>
+            <span>@Model.Tables.Count tables</span>
+        </div>
+        @if (Model.Tables.Count == 0)
+        {
+            <div class="empty-floorplan">
+                <strong>No tables yet</strong>
+                <p>Add tables on <a asp-page="/Admin/Tables/Table">Table Management</a> first.</p>
+            </div>
+        }
+        <div class="floorplan" hidden="@(Model.Tables.Count == 0)">
+            @foreach (var table in Model.Tables)
+            {
+                var nextReservation = upcomingSeated.FirstOrDefault(reservation => reservation.TableIds.Contains(table.Id));
+                var startsSoon = nextReservation is not null && nextReservation.ReservationAt <= now.AddMinutes(60);
+                // Same status icons as Table Management: checked in, starting soon, or reserved.
+                var seatedNow = nextReservation is { Status: RestaurantReservation.Models.ReservationStatus.CheckedIn }
+                    && nextReservation.ReservationAt - TableManagementModel.CheckInOpensBefore <= now;
+                var statusIcon = nextReservation is null ? null
+                    : seatedNow ? "fa-utensils"
+                    : startsSoon ? "fa-clock"
+                    : "fa-calendar-check";
+                <button type="button"
+                        class="floor-table @(nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "") @(table.Shape == RestaurantReservation.Models.TableShape.Round ? "round" : "")"
+                        data-table-id="@table.Id"
+                        data-capacity="@table.Capacity"
+                        aria-label="Table @table.Id, @table.Capacity seats, @(nextReservation is null ? "available" : "reserved")">
+                    @{ Chairs((table.Capacity + 1) / 2); }
+                    <span class="table-top">
+                        @if (table.Shape == RestaurantReservation.Models.TableShape.Round) { ChairRing(table.Capacity); }
+                        <span class="table-name">@table.Id</span>
+                        @if (statusIcon is not null)
+                        {
+                            <span class="table-icon" aria-hidden="true"><i class="fa-solid @statusIcon"></i></span>
+                        }
+                        @if (nextReservation is not null)
+                        {
+                            <span class="table-booking">
+                                <span>@nextReservation.PartySize guests</span>
+                                <span>@nextReservation.ReservationAt.ToString("h:mm tt", CultureInfo.CurrentCulture)</span>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="table-seats">@table.Capacity seats</span>
+                        }
+                    </span>
+                    @{ Chairs(table.Capacity / 2); }
+                </button>
+            }
+        </div>
+        <div class="floorplan-footer">
+            <span>
+                <span class="legend-inline"><i class="legend-dot available"></i>Available</span>
+                <span class="legend-inline"><span class="legend-icon reserved" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>Reserved</span>
+                <span class="legend-inline"><span class="legend-icon soon" aria-hidden="true"><i class="fa-solid fa-clock"></i></span>Starting soon</span>
+                <span class="legend-inline"><span class="legend-icon occupied" aria-hidden="true"><i class="fa-solid fa-utensils"></i></span>Checked in</span>
+            </span>
+            <a class="floor-status-count" asp-page="/Admin/Tables/Table">Manage tables</a>
+        </div>
+    </section>
+</div>
+
+<script src="~/js/reservation-management.js" asp-append-version="true"></script>
+<script src="~/js/admin/date-time-picker.js" asp-append-version="true" defer></script>

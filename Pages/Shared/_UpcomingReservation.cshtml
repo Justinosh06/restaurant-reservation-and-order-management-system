@@ -1,0 +1,55 @@
+@using RestaurantReservation.Models
+@model RestaurantReservation.Models.Reservation
+
+@* One booking: date, time and status on top, the booking details below. Used by the Reservations page. *@
+@{
+    var statusText = Model.Status switch
+    {
+        ReservationStatus.Pending => "Waiting for confirmation",
+        ReservationStatus.CheckedIn => "Checked in",
+        _ => Model.Status.ToString()
+    };
+    var statusClass = Model.Status switch
+    {
+        ReservationStatus.Pending => "muted",
+        ReservationStatus.Cancelled => "cancelled",
+        ReservationStatus.Completed => "muted",
+        _ => ""
+    };
+}
+
+<div class="upcoming-head">
+    <div class="upcoming-date">
+        <strong>@Model.Date.ToString("dd")</strong>
+        <span>@Model.Date.ToString("MMM")</span>
+    </div>
+    <div>
+        <span class="upcoming-day">@Model.Date.ToString("dddd")</span>
+        <span class="upcoming-time">@Model.TimeSlot.ToString("h:mm tt")</span>
+    </div>
+    <span class="status-pill @statusClass">@statusText</span>
+</div>
+
+<dl class="upcoming-details">
+    <div>
+        <dt>Name</dt>
+        <dd>@(Model.Customer?.FullName ?? User.Identity?.Name)</dd>
+    </div>
+    <div>
+        <dt>Guests</dt>
+        <dd>@Model.Pax @(Model.Pax == 1 ? "guest" : "guests")</dd>
+    </div>
+    <div>
+        <dt>Table</dt>
+        @{ var tableIds = Model.ReservationTables.Select(link => link.TableId).OrderBy(id => id.Length).ThenBy(id => id).ToList(); }
+        <dd>@(tableIds.Count == 0 ? "Not assigned yet" : (tableIds.Count == 1 ? "Table " : "Tables ") + string.Join(" + ", tableIds))</dd>
+    </div>
+    <div>
+        <dt>Contact</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Model.Customer?.PhoneNumber) ? "-" : Model.Customer!.PhoneNumber)</dd>
+    </div>
+    <div class="wide">
+        <dt>Booking ID</dt>
+        <dd>@Model.Id</dd>
+    </div>
+</dl>
