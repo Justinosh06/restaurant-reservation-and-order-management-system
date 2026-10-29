@@ -385,6 +385,7 @@ public class CheckoutModel : PageModel
             return BadRequest(new { error = "A dining session is required." });
         }
 
+        var requestedPaymentIds = paymentIds ?? [];
         var session = await _db.Sessions
             .AsNoTracking()
             .Include(diningSession => diningSession.Orders)
@@ -400,23 +401,30 @@ public class CheckoutModel : PageModel
             {
                 id = order.Id,
                 status = order.Status.ToString(),
-                canCancel = order.Status == OrderStatus.InQueue
+                canCancel = order.Status == OrderStatus.InQueue,
+                isPayable = order.Status is not (OrderStatus.Cancelled or OrderStatus.Completed)
             })
+            .ToList();
+        var payableOrders = session.Orders
+            .Where(order => order.Status is not (OrderStatus.Cancelled or OrderStatus.Completed))
             .ToList();
         var cashPayments = await _db.Transactions.AsNoTracking()
             .Where(transaction =>
-                paymentIds.Contains(transaction.Id) &&
+                requestedPaymentIds.Contains(transaction.Id) &&
                 transaction.Order!.SessionId == sessionId &&
                 transaction.PaymentMethod == PaymentMethod.Cash)
             .Select(transaction => new { transaction.Id, transaction.Status })
             .ToListAsync();
-        var cashPaid = cashPayments.Count == paymentIds.Distinct(StringComparer.Ordinal).Count() &&
+        var cashPaid = cashPayments.Count == requestedPaymentIds.Distinct(StringComparer.Ordinal).Count() &&
                        cashPayments.Count > 0 &&
                        cashPayments.All(payment => payment.Status == TransactionStatus.Succeeded);
 
         return new JsonResult(new
         {
             orders,
+            canPay = payableOrders.Count > 0 && payableOrders.All(order => order.Status == OrderStatus.Served),
+            hasPayableOrders = payableOrders.Count > 0,
+            sessionClosed = session.EndingTime is not null,
             cashPaymentPending = cashPayments.Any(payment => payment.Status is TransactionStatus.Pending or TransactionStatus.Processing),
             cashPaid,
             paymentStatusUrl = cashPaid

@@ -34,18 +34,27 @@
 
 <div class="checkout-container">
     <h2 class="section-title">Your Orders</h2>
-    <div id="checkout-live-status"
-         class="alert-text"
-         role="status"
-         aria-live="polite"
-         data-session-id="@Model.SessionId"
-         data-payment-ids="@System.Text.Json.JsonSerializer.Serialize(Model.CashPaymentTransactionIds)"
-         data-status-url="@Url.Page("/Table/Checkout", "Status")"
-         hidden></div>
-    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-    {
-        <p class="alert-text" role="status">@Model.StatusMessage</p>
-    }
+    <div class="checkout-alerts">
+        <div id="checkout-live-status"
+             class="alert-text"
+             role="status"
+             aria-live="polite"
+             data-session-id="@Model.SessionId"
+             data-payment-ids="@System.Text.Json.JsonSerializer.Serialize(Model.CashPaymentTransactionIds)"
+             data-status-url="@Url.Page("/Table/Checkout", "Status")"
+             hidden></div>
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <p class="alert-text" role="status">@Model.StatusMessage</p>
+        }
+        @if (!Model.IsSessionClosed)
+        {
+            <p id="checkout-cash-pending" class="alert-text" role="status" hidden>
+                Cash payment is waiting for an admin to confirm payment at the counter.
+                The order statuses will update here automatically.
+            </p>
+        }
+    </div>
     <div class="order-list">
         @foreach (var order in Model.SessionOrders)
         {
@@ -86,16 +95,14 @@
                         </div>
                     }
 
-                    @if (order.CanCancel)
-                    {
-                        <form method="post"
-                              asp-page-handler="CancelOrder"
-                              asp-route-tableId="@Model.TableId"
-                              asp-route-orderId="@order.OrderId"
-                              class="cancel-order-form">
-                            <button type="submit" class="cancel-order-btn">Cancel order</button>
-                        </form>
-                    }
+                    <form method="post"
+                          asp-page-handler="CancelOrder"
+                          asp-route-tableId="@Model.TableId"
+                          asp-route-orderId="@order.OrderId"
+                          class="cancel-order-form"
+                          hidden="@(!order.CanCancel)">
+                        <button type="submit" class="cancel-order-btn">Cancel order</button>
+                    </form>
                 </div>
             </details>
         }
@@ -180,37 +187,23 @@
 
         @if (!Model.IsSessionClosed)
         {
-            @if (Model.HasCashPaymentPending)
-            {
-                <p class="alert-text">
-                    Cash payment is waiting for an admin to confirm payment at the counter.
-                    The order statuses will update here automatically.
-                </p>
-            }
-
             <form method="post" asp-page-handler="Pay" asp-route-tableId="@Model.TableId" id="checkout-payment-form">
-                @if (Model.AmountDue > 0)
-                {
-                    <fieldset class="payment-option-wrapper">
-                        <legend class="visually-hidden">Choose a payment method</legend>
-                        <label class="option">
-                            <input name="paymentMethod" class="d-none" type="radio" value="stripe" checked />
-                            <i class="fa-brands fa-stripe-s"></i>
-                            Stripe
-                        </label>
-                        <label class="option">
-                            <input name="paymentMethod" class="d-none" type="radio" value="cash" />
-                            <i class="fa-solid fa-cash-register"></i>
-                            Pay at Counter
-                        </label>
-                    </fieldset>
-                }
-                else
-                {
-                    <input type="hidden" name="paymentMethod" value="stripe" />
-                }
+                <fieldset class="payment-option-wrapper" hidden="@(Model.AmountDue == 0)">
+                    <legend class="visually-hidden">Choose a payment method</legend>
+                    <label class="option">
+                        <input name="paymentMethod" class="d-none" type="radio" value="stripe" checked disabled="@(Model.AmountDue == 0)" />
+                        <i class="fa-brands fa-stripe-s"></i>
+                        Stripe
+                    </label>
+                    <label class="option">
+                        <input name="paymentMethod" class="d-none" type="radio" value="cash" disabled="@(Model.AmountDue == 0)" />
+                        <i class="fa-solid fa-cash-register"></i>
+                        Pay at Counter
+                    </label>
+                </fieldset>
+                <input type="hidden" id="checkout-payment-method-fallback" name="paymentMethod" value="stripe" disabled="@(Model.AmountDue > 0)" />
                 <button type="submit" class="pay-btn w-100" disabled="@(!Model.CanPay)" id="checkout-pay-button">
-                    <h4 class="total-price">@Model.CurrencySymbol @Model.AmountDue.ToString("F2")</h4>
+                    <h4 class="total-price" id="checkout-total-price">@Model.CurrencySymbol @Model.AmountDue.ToString("F2")</h4>
                     <span id="checkout-pay-label">
                         @if (Model.AmountDue == 0)
                         {
@@ -226,10 +219,9 @@
                 </button>
             </form>
 
-            @if (Model.HasCashPaymentPending)
-            {
-                <p class="promo-feedback">Need to change the payment method? Select Stripe and continue checkout.</p>
-            }
+            <p id="checkout-payment-pending-hint" class="promo-feedback" hidden="@( !Model.HasCashPaymentPending )">
+                Need to change the payment method? Select Stripe and continue checkout.
+            </p>
         }
     }
 </div>
