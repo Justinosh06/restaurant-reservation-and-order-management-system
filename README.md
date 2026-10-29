@@ -1,6 +1,6 @@
 # Restaurant Reservation and Order Management System
 
-[![Version 1.0.1](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/Justinosh06/restaurant-reservation-and-order-management-system/releases)
+[![Version 1.0.2](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/Justinosh06/restaurant-reservation-and-order-management-system/releases)
 
 A full-stack restaurant management application built with ASP.NET Core Razor Pages, Entity Framework Core, and SQL Server. The system supports customer-facing reservation and ordering workflows, staff/admin operations, Stripe-integrated deposits and payments, and a complete restaurant administration dashboard for managing tables, menus, promotions, announcements, and reporting.
 
