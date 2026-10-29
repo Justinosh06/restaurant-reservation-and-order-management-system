@@ -13,6 +13,111 @@
 
     const boardEl = document.getElementById("order-board");
     const refreshButton = document.getElementById("order-refresh");
+    const cashModalEl = document.getElementById("cash-modal");
+    const cashModal = new bootstrap.Modal(cashModalEl);
+    const cashForm = document.getElementById("cash-payment-form");
+    const cashTenderedInput = document.getElementById("cash-tendered");
+    const cashEmailInput = document.getElementById("cash-customer-email");
+    const cashEmailOptions = document.getElementById("cash-customer-emails");
+    const cashPaymentEntry = document.getElementById("cash-payment-entry");
+    const cashPaymentResult = document.getElementById("cash-payment-result");
+    const cashPaymentSubmit = document.getElementById("cash-payment-submit");
+    const cashPaymentDone = document.getElementById("cash-payment-done");
+
+    const renderCashOrders = (orders) => {
+        document.getElementById("cash-order-breakdown").innerHTML = orders.map(order => `
+            <section class="border rounded-3 p-2 mb-2">
+                <div class="d-flex justify-content-between gap-2 fw-semibold small mb-2">
+                    <span>Order #${AdminUI.escapeHtml(order.displayId)} · Due</span>
+                    <span>${AdminUI.formatCurrency(order.amountDueCents)}</span>
+                </div>
+                <ul class="list-unstyled small mb-0">
+                    ${order.items.map(item => `
+                        <li class="d-flex justify-content-between gap-2">
+                            <span>${item.quantity}&times; ${AdminUI.escapeHtml(item.itemName)}</span>
+                            <span>${AdminUI.formatCurrency(item.unitPrice * item.quantity)}</span>
+                        </li>`).join("")}
+                </ul>
+            </section>`).join("");
+    };
+
+    const updateCashChange = () => {
+        const dueCents = Number(document.getElementById("cash-amount-due").dataset.cents);
+        const tenderedCents = Math.round(Number(cashTenderedInput.value || 0) * 100);
+        document.getElementById("cash-change-due").textContent =
+            AdminUI.formatCurrency(Math.max(0, tenderedCents - dueCents));
+    };
+
+    cashTenderedInput.addEventListener("input", updateCashChange);
+
+    const openCashPayment = async (sessionId, button) => {
+        AdminUI.setBusy(button, true);
+        try {
+            const options = await AdminUI.get("CashOptions", { sessionId });
+            cashPaymentEntry.classList.remove("d-none");
+            cashPaymentResult.classList.add("d-none");
+            cashPaymentResult.replaceChildren();
+            cashPaymentSubmit.classList.remove("d-none");
+            cashPaymentDone.classList.add("d-none");
+            document.getElementById("cash-session-id").value = options.sessionId;
+            document.getElementById("cash-modal-title").textContent = `Record cash · Table ${options.tableId}`;
+            renderCashOrders(options.orders);
+
+            const due = document.getElementById("cash-amount-due");
+            due.dataset.cents = options.amountDueCents;
+            due.textContent = AdminUI.formatCurrency(options.amountDueCents);
+
+            cashTenderedInput.min = (options.amountDueCents / 100).toFixed(2);
+            cashTenderedInput.value = (options.amountDueCents / 100).toFixed(2);
+            cashEmailInput.value = options.customerEmail ?? "";
+            cashEmailOptions.replaceChildren();
+            options.customerEmails.forEach(email => {
+                const option = document.createElement("option");
+                option.value = email;
+                cashEmailOptions.appendChild(option);
+            });
+            updateCashChange();
+            cashModal.show();
+        } catch (error) {
+            AdminUI.showError(error);
+        } finally {
+            AdminUI.setBusy(button, false);
+        }
+    };
+
+    cashForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        const submitButton = document.getElementById("cash-payment-submit");
+        AdminUI.setBusy(submitButton, true);
+        try {
+            const result = await AdminUI.post("RecordCash", {
+                sessionId: document.getElementById("cash-session-id").value,
+                cashTendered: Number(cashTenderedInput.value),
+                customerEmail: cashEmailInput.value.trim()
+            });
+            cashPaymentEntry.classList.add("d-none");
+            cashPaymentResult.innerHTML = `
+                <h6 class="fw-semibold mb-3">Cash payment recorded</h6>
+                <div class="d-flex justify-content-between border-top py-2">
+                    <span>Paid amount</span><strong>${AdminUI.formatCurrency(result.amountDueCents)}</strong>
+                </div>
+                <div class="d-flex justify-content-between border-top py-2">
+                    <span>Cash received</span><strong>${AdminUI.formatCurrency(result.cashTenderedCents)}</strong>
+                </div>
+                <div class="d-flex justify-content-between border-top border-bottom py-2">
+                    <span>Change returned</span><strong>${AdminUI.formatCurrency(result.changeCents)}</strong>
+                </div>`;
+            cashPaymentResult.classList.remove("d-none");
+            cashPaymentSubmit.classList.add("d-none");
+            cashPaymentDone.classList.remove("d-none");
+            AdminUI.showToast("Cash payment recorded.");
+            load();
+        } catch (error) {
+            AdminUI.showError(error);
+        } finally {
+            AdminUI.setBusy(submitButton, false);
+        }
+    });
 
     const minutesSince = (date) => Math.max(0, Math.floor((Date.now() - new Date(date)) / 60000));
 
@@ -92,10 +197,25 @@
             return;
         }
 
+        const cashSessions = new Map();
+        visible.filter(order => order.cashPaymentPending).forEach(order => {
+            if (!cashSessions.has(order.sessionId)) cashSessions.set(order.sessionId, order);
+        });
+        const cashActions = [...cashSessions.values()].map(order => `
+            <div class="card border-success-subtle bg-success-subtle rounded-4">
+                <div class="card-body d-flex flex-wrap align-items-center gap-2 py-2">
+                    <span class="small fw-medium">Cash payment waiting · Table ${AdminUI.escapeHtml(order.table ?? "-")}</span>
+                    <span class="small fw-semibold ms-auto">${AdminUI.formatCurrency(order.cashSessionAmountCents)}</span>
+                    <button type="button" class="btn btn-sm btn-success" data-record-cash="${AdminUI.escapeHtml(order.sessionId)}">
+                        Record cash received
+                    </button>
+                </div>
+            </div>`).join("");
+        const rows = visible.slice(0, SERVED_SHOWN).map(servedRow).join("");
         const more = visible.length > SERVED_SHOWN
             ? `<p class="small text-body-secondary text-center mb-0 py-1">and ${visible.length - SERVED_SHOWN} more</p>`
             : "";
-        columnEl.innerHTML = visible.slice(0, SERVED_SHOWN).map(servedRow).join("") + more;
+        columnEl.innerHTML = cashActions + rows + more;
     };
 
     const render = () => {
@@ -141,6 +261,12 @@
     };
 
     boardEl.addEventListener("click", async (e) => {
+        const cashButton = e.target.closest("[data-record-cash]");
+        if (cashButton) {
+            await openCashPayment(cashButton.dataset.recordCash, cashButton);
+            return;
+        }
+
         const btn = e.target.closest("[data-advance]");
         if (!btn) return;
 

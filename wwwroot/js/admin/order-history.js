@@ -156,6 +156,8 @@
             payment.checkoutSessionId && ["fa-solid fa-receipt", "Stripe Checkout ID", payment.checkoutSessionId],
             payment.paymentIntentId && ["fa-solid fa-credit-card", "Payment intent", payment.paymentIntentId],
             payment.paidAtUtc && ["fa-regular fa-calendar", "Paid on", new Date(payment.paidAtUtc).toLocaleString("en-MY")],
+            payment.cashTenderedCents != null && ["fa-solid fa-money-bill-wave", "Cash received", AdminUI.formatCurrency(payment.cashTenderedCents)],
+            payment.changeCents != null && ["fa-solid fa-coins", "Change returned", AdminUI.formatCurrency(payment.changeCents)],
             payment.refundedAtUtc && ["fa-solid fa-arrow-rotate-left", "Refunded on", new Date(payment.refundedAtUtc).toLocaleString("en-MY")]
         ].filter(Boolean);
 
@@ -175,7 +177,9 @@
         paymentModalBody.innerHTML = payments.map(payment => {
             const isRefunded = payment.state === "Refunded";
             let receiptLink = "";
-            if (typeof payment.receiptUrl === "string" && payment.receiptUrl.startsWith("https://")) {
+            if (typeof payment.receiptUrl === "string" &&
+                (payment.receiptUrl.startsWith("https://") ||
+                 payment.receiptUrl.startsWith("/Admin/Orders?handler=CashReceipt&sessionId="))) {
                 receiptLink = `<a class="btn btn-sm btn-light border w-100 mt-3" href="${AdminUI.escapeHtml(payment.receiptUrl)}" target="_blank" rel="noopener noreferrer">
                     View receipt <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i>
                 </a>`;

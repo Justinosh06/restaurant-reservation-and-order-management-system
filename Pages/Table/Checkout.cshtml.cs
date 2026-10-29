@@ -31,6 +31,7 @@ public class SessionOrderViewModel
     public bool CanCancel { get; init; }
     public bool IsPayable { get; init; }
     public bool IsServed { get; init; }
+    public bool IsCashPaymentPending { get; init; }
     public List<CheckoutOrderItem> Items { get; init; } = [];
 }
 
@@ -60,10 +61,13 @@ public class CheckoutModel : PageModel
     }
 
     public string TableId { get; private set; } = string.Empty;
+    public string SessionId { get; private set; } = string.Empty;
     public CurrencyType Currency { get; private set; } = CurrencyType.MYR;
     public string CurrencySymbol => Currency.GetSymbol();
     public bool IsCustomerBound { get; private set; }
     public bool IsSessionClosed { get; private set; }
+    public bool HasCashPaymentPending { get; private set; }
+    public List<string> CashPaymentTransactionIds { get; private set; } = [];
     public List<SessionOrderViewModel> SessionOrders { get; private set; } = [];
     public decimal TotalAmount => SessionOrders
         .Where(order => order.IsPayable)
@@ -99,12 +103,28 @@ public class CheckoutModel : PageModel
         }
 
         Currency = await _restaurantCurrency.GetAsync();
+        SessionId = session.Session!.Id;
         IsCustomerBound = session.Session!.CustomerId is not null;
         await LoadSessionOrdersAsync(session.Session!.Id);
         PromoRemovedNotice = await LoadPromotionAsync(session.Session);
         await LoadReservationDepositCreditAsync(session.Session);
         ViewData["CartItemCount"] = await _diningSessions.GetCartItemCountAsync(session.Session.Id);
         return Page();
+    }
+
+    public Task<IActionResult> OnPostPay(string tableId, string paymentMethod)
+    {
+        if (string.Equals(paymentMethod, "stripe", StringComparison.OrdinalIgnoreCase))
+        {
+            return OnPostPayWithStripeAsync(tableId);
+        }
+
+        if (string.Equals(paymentMethod, "cash", StringComparison.OrdinalIgnoreCase))
+        {
+            return OnPostPayAtCounterAsync(tableId);
+        }
+
+        return Task.FromResult<IActionResult>(BadRequest());
     }
 
     public async Task<IActionResult> OnPostPayWithStripeAsync(string tableId)
@@ -192,6 +212,17 @@ public class CheckoutModel : PageModel
                 .Where(item => item.SessionId == activeSession.Id)
                 .ToListAsync();
             _db.CartItems.RemoveRange(cartItems);
+            var completedOrderIds = activeSession.Orders
+                .Where(order => order.Status != OrderStatus.Cancelled)
+                .Select(order => order.Id)
+                .ToArray();
+            await _db.Transactions
+                .Where(transaction =>
+                    completedOrderIds.Contains(transaction.OrderId) &&
+                    transaction.PaymentMethod == PaymentMethod.Cash &&
+                    transaction.Status == TransactionStatus.Pending)
+                .ExecuteUpdateAsync(updates => updates
+                    .SetProperty(transaction => transaction.Status, TransactionStatus.Failed));
             await _diningSessions.CompleteCheckedInReservationsAsync(activeSession);
             await _db.SaveChangesAsync();
 
@@ -243,7 +274,155 @@ public class CheckoutModel : PageModel
             return RedirectToPage("/Table/Checkout", new { tableId = TableId });
         }
 
+        var payableOrderIds = payableOrders.Select(order => order.OrderId).ToArray();
+        await _db.Transactions
+            .Where(transaction =>
+                payableOrderIds.Contains(transaction.OrderId) &&
+                transaction.Status == TransactionStatus.Pending &&
+                transaction.PaymentMethod == PaymentMethod.Cash)
+            .ExecuteUpdateAsync(updates => updates
+                .SetProperty(transaction => transaction.Status, TransactionStatus.Failed));
+
         return Redirect(stripeSession.Url);
+    }
+
+    public async Task<IActionResult> OnPostPayAtCounterAsync(string tableId)
+    {
+        var session = await GetActiveSessionAsync(tableId);
+        if (session.Result is not null)
+        {
+            return session.Result;
+        }
+
+        Currency = await _restaurantCurrency.GetAsync();
+        IsCustomerBound = session.Session!.CustomerId is not null;
+        await LoadSessionOrdersAsync(session.Session.Id);
+        var promoRemoved = await LoadPromotionAsync(session.Session);
+        if (promoRemoved is not null)
+        {
+            PromoError = promoRemoved;
+            return RedirectToPage("/Table/Checkout", new { tableId = TableId });
+        }
+
+        await LoadReservationDepositCreditAsync(session.Session);
+        var payableOrders = SessionOrders.Where(order => order.IsPayable).ToList();
+        if (payableOrders.Count == 0)
+        {
+            StatusMessage = "There are no placed orders to pay for yet.";
+            return RedirectToPage("/Table/Checkout", new { tableId = TableId });
+        }
+
+        if (payableOrders.Any(order => !order.IsServed))
+        {
+            StatusMessage = "Payment is available after all orders have been served.";
+            return RedirectToPage("/Table/Checkout", new { tableId = TableId });
+        }
+
+        if (AmountDue <= 0)
+        {
+            StatusMessage = "No cash payment is due. Complete checkout to apply your discounts.";
+            return RedirectToPage("/Table/Checkout", new { tableId = TableId });
+        }
+
+        var orderIds = payableOrders.Select(order => order.OrderId).ToArray();
+        var existingCashTransactions = await _db.Transactions
+            .Where(transaction =>
+                orderIds.Contains(transaction.OrderId) &&
+                transaction.Status == TransactionStatus.Pending &&
+                transaction.PaymentMethod == PaymentMethod.Cash)
+            .ToDictionaryAsync(transaction => transaction.OrderId, StringComparer.Ordinal);
+
+        var promoRemaining = (int)(PromoDiscount * 100m);
+        var depositCreditRemaining = (int)(ReservationDepositCredit * 100m);
+        var createdAt = DateTime.UtcNow;
+        foreach (var order in payableOrders.OrderBy(order => order.OrderId, StringComparer.Ordinal))
+        {
+            var orderTotal = (int)(order.TotalAmount * 100m);
+            var orderPromo = Math.Min(orderTotal, promoRemaining);
+            var orderDepositCredit = Math.Min(orderTotal - orderPromo, depositCreditRemaining);
+            var metadata = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                reservationDepositCredit = orderDepositCredit,
+                promoDiscount = orderPromo,
+                promotionCode = orderPromo > 0 ? AppliedPromotion?.Code : null
+            });
+
+            if (existingCashTransactions.TryGetValue(order.OrderId, out var transaction))
+            {
+                transaction.Amount = orderTotal - orderPromo - orderDepositCredit;
+                transaction.Currency = Currency;
+                transaction.CreatedAt = createdAt;
+                transaction.MetadataJson = metadata;
+            }
+            else
+            {
+                _db.Transactions.Add(new Transaction
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    OrderId = order.OrderId,
+                    Amount = orderTotal - orderPromo - orderDepositCredit,
+                    Currency = Currency,
+                    Status = TransactionStatus.Pending,
+                    PaymentMethod = PaymentMethod.Cash,
+                    CreatedAt = createdAt,
+                    MetadataJson = metadata
+                });
+            }
+
+            promoRemaining -= orderPromo;
+            depositCreditRemaining -= orderDepositCredit;
+        }
+
+        await _db.SaveChangesAsync();
+        StatusMessage = "Cash payment selected. Please pay at the counter; an admin will confirm it.";
+        return RedirectToPage("/Table/Checkout", new { tableId = TableId });
+    }
+
+    public async Task<IActionResult> OnGetStatusAsync(string sessionId, string[] paymentIds)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            return BadRequest(new { error = "A dining session is required." });
+        }
+
+        var session = await _db.Sessions
+            .AsNoTracking()
+            .Include(diningSession => diningSession.Orders)
+            .SingleOrDefaultAsync(diningSession => diningSession.Id == sessionId);
+        if (session is null)
+        {
+            return NotFound();
+        }
+
+        var orders = session.Orders
+            .OrderBy(order => order.CreatedAt)
+            .Select(order => new
+            {
+                id = order.Id,
+                status = order.Status.ToString(),
+                canCancel = order.Status == OrderStatus.InQueue
+            })
+            .ToList();
+        var cashPayments = await _db.Transactions.AsNoTracking()
+            .Where(transaction =>
+                paymentIds.Contains(transaction.Id) &&
+                transaction.Order!.SessionId == sessionId &&
+                transaction.PaymentMethod == PaymentMethod.Cash)
+            .Select(transaction => new { transaction.Id, transaction.Status })
+            .ToListAsync();
+        var cashPaid = cashPayments.Count == paymentIds.Distinct(StringComparer.Ordinal).Count() &&
+                       cashPayments.Count > 0 &&
+                       cashPayments.All(payment => payment.Status == TransactionStatus.Succeeded);
+
+        return new JsonResult(new
+        {
+            orders,
+            cashPaymentPending = cashPayments.Any(payment => payment.Status is TransactionStatus.Pending or TransactionStatus.Processing),
+            cashPaid,
+            paymentStatusUrl = cashPaid
+                ? $"/Payment/{Uri.EscapeDataString(cashPayments[0].Id)}"
+                : null
+        });
     }
 
     public async Task<IActionResult> OnPostCancelOrderAsync(string tableId, string orderId)
@@ -416,6 +595,21 @@ public class CheckoutModel : PageModel
             .OrderByDescending(order => order.CreatedAt)
             .ToListAsync();
 
+        var orderIds = orders.Select(order => order.Id).ToArray();
+        var cashPayments = await _db.Transactions
+            .AsNoTracking()
+            .Where(transaction =>
+                orderIds.Contains(transaction.OrderId) &&
+                transaction.Status == TransactionStatus.Pending &&
+                transaction.PaymentMethod == PaymentMethod.Cash)
+            .Select(transaction => new { transaction.Id, transaction.OrderId })
+            .ToListAsync();
+        var cashPendingOrderIds = cashPayments
+            .Select(transaction => transaction.OrderId)
+            .ToHashSet(StringComparer.Ordinal);
+        CashPaymentTransactionIds = cashPayments.Select(transaction => transaction.Id).ToList();
+        HasCashPaymentPending = cashPendingOrderIds.Count > 0;
+
         SessionOrders = orders.Select(order => new SessionOrderViewModel
         {
             OrderId = order.Id,
@@ -424,8 +618,9 @@ public class CheckoutModel : PageModel
             Status = order.Status.ToString(),
             TotalAmount = order.TotalAmount / 100m,
             CanCancel = order.Status == OrderStatus.InQueue,
-            IsPayable = order.Status != OrderStatus.Cancelled,
+            IsPayable = order.Status is not (OrderStatus.Cancelled or OrderStatus.Completed),
             IsServed = order.Status == OrderStatus.Served,
+            IsCashPaymentPending = cashPendingOrderIds.Contains(order.Id),
             Items = order.OrderItems.Select(item => new CheckoutOrderItem
             {
                 Name = item.ItemName,

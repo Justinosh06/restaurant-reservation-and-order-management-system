@@ -186,6 +186,43 @@
     </div>
 </div>
 
+<div class="modal fade" id="cash-modal" tabindex="-1" aria-labelledby="cash-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="cash-payment-form">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cash-modal-title">Record counter cash payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="cash-session-id" />
+                    <div id="cash-payment-entry">
+                        <div id="cash-order-breakdown" class="mb-3"></div>
+                        <p class="mb-3">Amount due: <strong id="cash-amount-due"></strong></p>
+                        <label class="form-label" for="cash-tendered">Cash received</label>
+                        <input class="form-control mb-3" id="cash-tendered" type="number" min="0.01" step="0.01" required />
+                        <div class="d-flex justify-content-between small mb-3">
+                            <span>Change to return</span>
+                            <strong id="cash-change-due"></strong>
+                        </div>
+                        <label class="form-label" for="cash-customer-email">Customer email</label>
+                        <input class="form-control" id="cash-customer-email" type="email" list="cash-customer-emails"
+                               autocomplete="email" required placeholder="Choose an existing customer or enter a new email" />
+                        <datalist id="cash-customer-emails"></datalist>
+                        <p class="form-text mb-0">A customer record will be created automatically for a new email address.</p>
+                    </div>
+                    <div id="cash-payment-result" class="d-none" role="status"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="cash-payment-submit">Record payment</button>
+                    <button type="button" class="btn btn-success d-none" id="cash-payment-done" data-bs-dismiss="modal">Done</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/js/admin/admin-common.js" asp-append-version="true"></script>
     <script src="~/js/admin/date-range-picker.js" asp-append-version="true"></script>
