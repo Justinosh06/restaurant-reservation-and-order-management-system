@@ -63,10 +63,25 @@
         font-family: "Bricolage Grotesque", sans-serif;
     }
 
+    .checkout-alerts {
+        display: grid;
+        gap: 12px;
+    }
+
+    .checkout-alerts:has(> :not([hidden])) {
+        margin-bottom: 16px;
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
     .alert-text {
         color: var(--primary-color);
         background: #edfdca;
         padding: 24px;
+        margin: 0;
+        line-height: 1.45;
         font-weight: 600;
         border-radius: 30px;
         font-family: "Bricolage Grotesque", sans-serif;
