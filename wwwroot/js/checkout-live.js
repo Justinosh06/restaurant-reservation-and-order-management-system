@@ -7,6 +7,8 @@
     const paymentForm = document.getElementById("checkout-payment-form");
     const paymentLabel = document.getElementById("checkout-payment-label");
     const payButton = document.getElementById("checkout-pay-button");
+    const pendingCashAlert = document.getElementById("checkout-cash-pending");
+    const pendingCashHint = document.getElementById("checkout-payment-pending-hint");
     const updatePaymentLabel = () => {
         const selectedMethod = paymentForm?.querySelector('input[name="paymentMethod"]:checked')?.value;
         if (!paymentLabel || !selectedMethod) return;
@@ -47,6 +49,10 @@
                 if (cancelForm) cancelForm.hidden = !order.canCancel;
             }
 
+            if (payButton) payButton.disabled = !data.canPay || data.sessionClosed;
+            if (pendingCashAlert) pendingCashAlert.hidden = !data.cashPaymentPending;
+            if (pendingCashHint) pendingCashHint.hidden = !data.cashPaymentPending;
+
             if (data.cashPaid && data.paymentStatusUrl) {
                 stopped = true;
                 liveStatus.hidden = false;
@@ -58,7 +64,11 @@
             liveStatus.hidden = false;
             liveStatus.textContent = data.cashPaymentPending
                 ? "Order statuses are up to date. Waiting for the counter to confirm cash payment."
-                : "Order statuses are up to date.";
+                : data.canPay
+                    ? "All payable orders have been served. Checkout is ready."
+                    : data.hasPayableOrders
+                        ? "Order statuses are up to date. Payment becomes available once all orders have been served."
+                        : "Order statuses are up to date. There are no unpaid orders to check out.";
         } catch {
             liveStatus.hidden = false;
             liveStatus.textContent = "Unable to refresh order status right now. Retrying…";
