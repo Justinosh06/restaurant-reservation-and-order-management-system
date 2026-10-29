@@ -287,6 +287,30 @@
         }
     }
 
+    .payment-option-wrapper {
+        gap: 8px;
+        display: flex;
+        margin-bottom: 16px;
+
+        .option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f2f2f3;
+            padding: 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: "Bricolage Grotesque", sans-serif;
+        }
+
+        .option:has(input[type=radio]:checked) {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+        }
+    }
+
     .pay-btn {
         gap: 4px;
         display: flex;
@@ -313,6 +337,10 @@
             font-size: 2.5rem;
             color: #635BFF;
         }
+    }
+
+    .pay-btn.pay-at-counter {
+        padding: 16px 24px;
     }
 
     .pay-btn:disabled {

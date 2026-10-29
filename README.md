@@ -258,6 +258,8 @@ These credentials are intended for development and demonstration use.
 
 The app reads Stripe configuration from the `Stripe` section of the app settings file. Update the values to your own test or production keys before using live payment flows.
 
+For table orders, customers use one checkout button after selecting Stripe or cash at the counter. Cash requests remain pending until an administrator records the payment from the Admin Orders page. The administrator enters the amount received and selects an existing customer email or enters a new one; new email addresses are registered automatically, and any change due is calculated and shown. After confirmation, the customer's checkout page updates order states live and redirects to the payment status page, where a QuestPDF receipt can be downloaded. Administrators can also download the receipt from order history.
+
 ### Email
 
 Email settings are configured under the `Email` section in configuration. For local development, Mailpit is a common option.

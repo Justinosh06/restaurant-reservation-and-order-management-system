@@ -34,6 +34,14 @@
 
 <div class="checkout-container">
     <h2 class="section-title">Your Orders</h2>
+    <div id="checkout-live-status"
+         class="alert-text"
+         role="status"
+         aria-live="polite"
+         data-session-id="@Model.SessionId"
+         data-payment-ids="@System.Text.Json.JsonSerializer.Serialize(Model.CashPaymentTransactionIds)"
+         data-status-url="@Url.Page("/Table/Checkout", "Status")"
+         hidden></div>
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
     {
         <p class="alert-text" role="status">@Model.StatusMessage</p>
@@ -49,7 +57,7 @@
                             <h4 class="title-id">#@order.OrderCode</h4>
                         </div>
 
-                        <div class="status">@order.Status</div>
+                        <div class="status" data-order-status="@order.OrderId">@order.Status</div>
                     </div>
                     <span class="detail">@order.FormattedTime</span>
                 </summary>
@@ -172,26 +180,64 @@
 
         @if (!Model.IsSessionClosed)
         {
-            <form method="post" asp-page-handler="PayWithStripe" asp-route-tableId="@Model.TableId">
-                <button type="submit" class="pay-btn w-100" disabled="@(!Model.CanPay)">
+            @if (Model.HasCashPaymentPending)
+            {
+                <p class="alert-text">
+                    Cash payment is waiting for an admin to confirm payment at the counter.
+                    The order statuses will update here automatically.
+                </p>
+            }
+
+            <form method="post" asp-page-handler="Pay" asp-route-tableId="@Model.TableId" id="checkout-payment-form">
+                @if (Model.AmountDue > 0)
+                {
+                    <fieldset class="payment-option-wrapper">
+                        <legend class="visually-hidden">Choose a payment method</legend>
+                        <label class="option">
+                            <input name="paymentMethod" class="d-none" type="radio" value="stripe" checked />
+                            <i class="fa-brands fa-stripe-s"></i>
+                            Stripe
+                        </label>
+                        <label class="option">
+                            <input name="paymentMethod" class="d-none" type="radio" value="cash" />
+                            <i class="fa-solid fa-cash-register"></i>
+                            Pay at Counter
+                        </label>
+                    </fieldset>
+                }
+                else
+                {
+                    <input type="hidden" name="paymentMethod" value="stripe" />
+                }
+                <button type="submit" class="pay-btn w-100" disabled="@(!Model.CanPay)" id="checkout-pay-button">
                     <h4 class="total-price">@Model.CurrencySymbol @Model.AmountDue.ToString("F2")</h4>
-                    @if (Model.AmountDue == 0)
-                    {
-                        <span>@(Model.ReservationDepositCredit > 0 ? "Complete checkout with deposit" : "Complete checkout")</span>
-                    }
-                    else
-                    {
-                        <span class="d-flex align-items-center gap-1">Pay with <span class="fa-brands fa-stripe icon"></span></span>
-                    }
+                    <span id="checkout-pay-label">
+                        @if (Model.AmountDue == 0)
+                        {
+                            @(Model.ReservationDepositCredit > 0 ? "Complete checkout with deposit" : "Complete checkout")
+                        }
+                        else
+                        {
+                            <span id="checkout-payment-label" class="d-flex align-items-center gap-1">
+                                Pay with <span class="fa-brands fa-stripe icon"></span>
+                            </span>
+                        }
+                    </span>
                 </button>
             </form>
+
+            @if (Model.HasCashPaymentPending)
+            {
+                <p class="promo-feedback">Need to change the payment method? Select Stripe and continue checkout.</p>
+            }
         }
     }
 </div>
 
-@if (User.Identity?.IsAuthenticated != true && !Model.IsCustomerBound)
-{
-    @section Scripts {
+@section Scripts {
+    <script src="~/js/checkout-live.js" asp-append-version="true"></script>
+    @if (User.Identity?.IsAuthenticated != true && !Model.IsCustomerBound)
+    {
         <script>
             bootstrap.Modal.getOrCreateInstance(document.getElementById("checkoutChoiceModal")).show();
         </script>

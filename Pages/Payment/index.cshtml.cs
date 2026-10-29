@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
 using RestaurantReservation.Extensions;
+using RestaurantReservation.Infrastructure.Payments;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
@@ -41,6 +42,7 @@ public class IndexModel : PageModel
     }
 
     public string PaymentId { get; private set; } = string.Empty;
+    public string PaymentReferenceLabel { get; private set; } = "Stripe Checkout ID";
     public string PaymentIntentId { get; private set; } = string.Empty;
     public string StatusLabel { get; private set; } = string.Empty;
     public string StatusMessage { get; private set; } = string.Empty;
@@ -54,6 +56,9 @@ public class IndexModel : PageModel
     public string CustomerEmail { get; private set; } = "Not provided";
     public string CreatedAtDisplay { get; private set; } = string.Empty;
     public string ReceiptUrl { get; private set; } = string.Empty;
+    public bool IsCashPayment { get; private set; }
+    public string CashTenderedDisplay { get; private set; } = string.Empty;
+    public string ChangeDueDisplay { get; private set; } = string.Empty;
     public string TableId { get; private set; } = string.Empty;
     public List<PaymentOrderRecord> OrderRecords { get; private set; } = [];
     public bool HasPaymentError { get; private set; }
@@ -78,6 +83,22 @@ public class IndexModel : PageModel
         }
 
         PaymentId = paymentId;
+
+        var cashPaymentExists = await _db.Transactions.AsNoTracking()
+            .AnyAsync(transaction =>
+                transaction.Id == paymentId &&
+                transaction.PaymentMethod == RestaurantReservation.Models.PaymentMethod.Cash);
+        if (cashPaymentExists)
+        {
+            var cashPayments = await LoadSucceededCashPaymentsAsync(paymentId);
+            if (cashPayments is null)
+            {
+                return NotFound();
+            }
+
+            LoadCashPayment(cashPayments);
+            return Page();
+        }
 
         // A table reservation deposit paid on Stripe Checkout (the payment ID is the checkout session ID).
         // Checked first: the table settlement code below only accepts payments made at a table.
@@ -210,6 +231,153 @@ public class IndexModel : PageModel
             Response.StatusCode = StatusCodes.Status502BadGateway;
             return Page();
         }
+    }
+
+    public async Task<IActionResult> OnGetCashReceiptAsync(string paymentId)
+    {
+        var payments = await LoadSucceededCashPaymentsAsync(paymentId);
+        if (payments is null)
+        {
+            return NotFound();
+        }
+
+        var receipt = await BuildCashReceiptAsync(payments);
+        return File(
+            CashReceiptPdf.Write(receipt),
+            "application/pdf",
+            $"cash-receipt-{receipt.ReceiptNumber}.pdf");
+    }
+
+    private async Task<List<Transaction>?> LoadSucceededCashPaymentsAsync(string paymentId)
+    {
+        var anchor = await _db.Transactions.AsNoTracking()
+            .Where(transaction =>
+                transaction.Id == paymentId &&
+                transaction.PaymentMethod == RestaurantReservation.Models.PaymentMethod.Cash &&
+                transaction.Status == TransactionStatus.Succeeded &&
+                transaction.StripeCheckoutSessionId == null)
+            .Select(transaction => new { transaction.Order!.SessionId, transaction.MetadataJson })
+            .SingleOrDefaultAsync();
+        if (anchor is null)
+        {
+            return null;
+        }
+
+        var payments = await _db.Transactions.AsNoTracking()
+            .Include(transaction => transaction.Order!.OrderItems)
+            .Include(transaction => transaction.Order!.Customer)
+            .Include(transaction => transaction.Order!.Session!.Customer)
+            .Where(transaction =>
+                transaction.Order!.SessionId == anchor.SessionId &&
+                transaction.PaymentMethod == RestaurantReservation.Models.PaymentMethod.Cash &&
+                transaction.Status == TransactionStatus.Succeeded &&
+                transaction.StripeCheckoutSessionId == null)
+            .OrderBy(transaction => transaction.OrderId)
+            .ToListAsync();
+
+        var paymentGroupId = ReadMetadataText(anchor.MetadataJson, "cashPaymentGroupId");
+        if (!string.IsNullOrWhiteSpace(paymentGroupId))
+        {
+            payments = payments
+                .Where(transaction => ReadMetadataText(transaction.MetadataJson, "cashPaymentGroupId") == paymentGroupId)
+                .ToList();
+        }
+
+        return payments.Any(transaction => transaction.Id == paymentId) ? payments : null;
+    }
+
+    private void LoadCashPayment(IReadOnlyList<Transaction> payments)
+    {
+        var firstPayment = payments[0];
+        var firstOrder = firstPayment.Order!;
+        var session = firstOrder.Session!;
+        var customer = firstOrder.Customer ?? session.Customer;
+        var tenderedCents = ReadMetadataCents(firstPayment.MetadataJson, "cashTendered");
+        var changeCents = ReadMetadataCents(firstPayment.MetadataJson, "changeDue");
+
+        IsCashPayment = true;
+        PaymentReferenceLabel = "Cash receipt reference";
+        Status = TransactionStatus.Succeeded;
+        StatusLabel = "Cash Payment Received";
+        StatusMessage = $"Your cash payment at the counter was recorded. Change returned: {firstPayment.Currency.FormatCents(changeCents)}.";
+        StatusIcon = "fa-solid fa-circle-check";
+        StatusIconClass = "success";
+        CurrencySymbol = firstPayment.Currency.GetSymbol();
+        var amount = payments.Sum(payment => payment.Amount) / 100m;
+        AmountWhole = decimal.Truncate(amount).ToString("N0");
+        AmountFraction = ((amount - decimal.Truncate(amount)) * 100).ToString("00");
+        PaymentMethodLabel = "Cash";
+        CustomerName = customer?.FullName is { Length: > 0 } fullName ? fullName : "Walk-in guest";
+        CustomerEmail = customer?.Email ?? "Not provided";
+        CreatedAtDisplay = payments.Max(payment => payment.CreatedAt).ToLocalTime().ToString("dd MMM, yyyy HH:mm");
+        TableId = session.TableId;
+        CashTenderedDisplay = firstPayment.Currency.FormatCents(tenderedCents);
+        ChangeDueDisplay = firstPayment.Currency.FormatCents(changeCents);
+        ReceiptUrl = $"/Payment/{Uri.EscapeDataString(PaymentId)}?handler=CashReceipt";
+    }
+
+    private async Task<CashReceiptData> BuildCashReceiptAsync(IReadOnlyList<Transaction> payments)
+    {
+        var firstPayment = payments[0];
+        var diningSession = firstPayment.Order!.Session!;
+        var settings = await _db.RestaurantSettings.AsNoTracking().FirstOrDefaultAsync();
+        var customer = firstPayment.Order.Customer ?? diningSession.Customer;
+        var customerName = string.IsNullOrWhiteSpace(customer?.FullName)
+            ? "Walk-in guest"
+            : customer.FullName;
+
+        return new CashReceiptData(
+            settings?.Name ?? "Restaurant",
+            settings?.Address ?? string.Empty,
+            $"CASH-{(ReadMetadataText(firstPayment.MetadataJson, "cashPaymentGroupId") ?? firstPayment.Id)[..8].ToUpperInvariant()}",
+            diningSession.TableId,
+            customerName,
+            customer?.Email ?? "Not provided",
+            firstPayment.Currency,
+            payments.Max(payment => payment.CreatedAt),
+            ReadMetadataCents(firstPayment.MetadataJson, "cashTendered"),
+            ReadMetadataCents(firstPayment.MetadataJson, "changeDue"),
+            payments.Select(payment => new CashReceiptOrder(
+                payment.Order!.Id,
+                payment.Order.CreatedAt,
+                payment.Order.TotalAmount,
+                ReadMetadataCents(payment.MetadataJson, "promoDiscount"),
+                ReadMetadataCents(payment.MetadataJson, "reservationDepositCredit"),
+                ReadMetadataText(payment.MetadataJson, "promotionCode"),
+                payment.Amount,
+                payment.Order.OrderItems
+                    .Select(item => new CashReceiptItem(item.ItemName, item.Quantity, item.UnitPrice))
+                    .ToList()))
+                .ToList());
+    }
+
+    private static int ReadMetadataCents(string? metadataJson, string name)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson))
+        {
+            return 0;
+        }
+
+        using var document = JsonDocument.Parse(metadataJson);
+        return document.RootElement.TryGetProperty(name, out var value) &&
+               value.ValueKind == JsonValueKind.Number &&
+               value.TryGetInt32(out var cents)
+            ? cents
+            : 0;
+    }
+
+    private static string? ReadMetadataText(string? metadataJson, string name)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(metadataJson);
+        return document.RootElement.TryGetProperty(name, out var value) &&
+               value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
     }
 
     private async Task LoadReservationDepositAsync(Reservation reservation)
@@ -466,6 +634,15 @@ public class IndexModel : PageModel
 
         if (status == TransactionStatus.Succeeded)
         {
+            var paidOrderIds = distinctOrders.Select(order => order.Id).ToArray();
+            await _db.Transactions
+                .Where(transaction =>
+                    paidOrderIds.Contains(transaction.OrderId) &&
+                    transaction.PaymentMethod == RestaurantReservation.Models.PaymentMethod.Cash &&
+                    transaction.Status == TransactionStatus.Pending)
+                .ExecuteUpdateAsync(updates => updates
+                    .SetProperty(transaction => transaction.Status, TransactionStatus.Failed));
+
             var session = distinctOrders.First().Session
                 ?? throw new InvalidOperationException("A paid order is not associated with a dining session.");
 
