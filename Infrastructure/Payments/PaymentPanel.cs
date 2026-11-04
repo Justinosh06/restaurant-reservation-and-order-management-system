@@ -16,6 +16,7 @@ public sealed class PaymentPanel
     public PaymentState State { get; init; }
     public string? CheckoutSessionId { get; init; }
     public StripePaymentInfo? Stripe { get; init; }
+    public string? CashReceiptUrl { get; init; }
 
     // Used when Stripe's details are not available.
     public string? FallbackMethod { get; init; }

@@ -36,6 +36,7 @@ public class IndexModel : PageModel
     public bool IsRestaurantClosed { get; private set; }
     public List<RestaurantReservation.Models.MenuItem> MenuItems { get; private set; } = [];
     public List<string> TopRatedMenuItemIds { get; private set; } = [];
+    public Dictionary<string, double> TopRatedMenuItemAverageRatings { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(string tableId)
     {
@@ -77,7 +78,7 @@ public class IndexModel : PageModel
             .OrderBy(item => item.Name)
             .ToListAsync();
 
-        TopRatedMenuItemIds = await _db.Feedbacks
+        var topRatedItems = await _db.Feedbacks
             .AsNoTracking()
             .Where(feedback => _db.MenuItems.Any(item =>
                 item.Id == feedback.MenuItemId && item.Availability))
@@ -92,8 +93,12 @@ public class IndexModel : PageModel
             .ThenByDescending(rating => rating.RatingCount)
             .ThenBy(rating => rating.MenuItemId)
             .Take(5)
-            .Select(rating => rating.MenuItemId)
             .ToListAsync();
+
+        TopRatedMenuItemIds = topRatedItems.Select(rating => rating.MenuItemId).ToList();
+        TopRatedMenuItemAverageRatings = topRatedItems.ToDictionary(
+            rating => rating.MenuItemId,
+            rating => rating.AverageRating);
 
         return Page();
     }

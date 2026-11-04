@@ -99,4 +99,10 @@
             View receipt <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i>
         </a>
     }
+    @if (!string.IsNullOrWhiteSpace(Model.CashReceiptUrl))
+    {
+        <a class="pill-btn w-100" href="@Model.CashReceiptUrl">
+            Download receipt <i class="fa-solid fa-download ms-1" aria-hidden="true"></i>
+        </a>
+    }
 </div>
