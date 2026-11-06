@@ -71,7 +71,8 @@
                class="item-card-link text-decoration-none text-reset"
                data-category="@item.MenuItemType.ToString().ToLower()"
                data-search-name="@item.Name"
-               data-top-rated-order="@Model.TopRatedMenuItemIds.IndexOf(item.Id)">
+               data-top-rated-order="@Model.TopRatedMenuItemIds.IndexOf(item.Id)"
+               data-average-rating="@Model.TopRatedMenuItemAverageRatings.GetValueOrDefault(item.Id).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)">
 
                 <div class="item-card">
                     <div class="thumbnail-container">

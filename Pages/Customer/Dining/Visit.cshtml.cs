@@ -104,6 +104,10 @@ public class VisitModel : PageModel
                 CheckoutSessionId = first.StripeCheckoutSessionId,
                 Stripe = info,
                 FallbackMethod = first.PaymentMethod.ToString(),
+                CashReceiptUrl = first.PaymentMethod == RestaurantReservation.Models.PaymentMethod.Cash &&
+                                 group.All(t => t.Status == TransactionStatus.Succeeded)
+                    ? $"/Payment/{Uri.EscapeDataString(first.Id)}?handler=CashReceipt"
+                    : null,
                 FallbackName = first.Order?.Customer?.FullName,
                 FallbackEmail = first.Order?.Customer?.Email,
                 FallbackPaidAtUtc = first.CreatedAt,

@@ -109,7 +109,21 @@
                         : "fa-calendar-check";
 
                     <button type="button"
-                            class="floor-table @(hasActiveSession ? "occupied" : nextReservation is null ? "available" : seatedNow ? "occupied" : startsSoon ? "soon" : "reserved") @(table.Capacity > 6 ? "wide" : "") @(table.Shape == RestaurantReservation.Models.TableShape.Round ? "round" : "")"
+                            class="floor-table @(hasActiveSession ? 
+                                                    "occupied" :
+                                                    nextReservation is null ?
+                                                    "available" :
+                                                    seatedNow ?
+                                                    "occupied" :
+                                                    startsSoon ?
+                                                    "soon" :
+                                                    "reserved") 
+                                                @(table.Capacity > 6 ?
+                                                    "wide" :
+                                                    "") 
+                                                @(table.Shape == RestaurantReservation.Models.TableShape.Round ?
+                                                    "round" :
+                                                    "")"
                             data-table-id="@table.Id"
                             data-capacity="@table.Capacity"
                             data-menu-url="@Model.MenuUrl(table.Id)"
@@ -118,7 +132,13 @@
                             data-unseat-count="@Model.UnseatCounts.GetValueOrDefault(table.Id)"
                             data-shared-count="@Model.SharedCounts.GetValueOrDefault(table.Id)"
                             data-seated-now="@(Model.SeatedNowTableIds.Contains(table.Id) ? "true" : "false")"
-                            aria-label="Table @table.Id, @table.Capacity seats, @(hasActiveSession ? "dining session active" : nextReservation is null ? "available" : seatedNow ? "checked in" : "reserved")">
+                            aria-label="Table @table.Id, @table.Capacity seats, @(hasActiveSession ? 
+                                                                                    "dining session active" :
+                                                                                    nextReservation is null ?
+                                                                                    "available" :
+                                                                                    seatedNow ?
+                                                                                    "checked in" :
+                                                                                    "reserved")">
                         @{ Chairs((table.Capacity + 1) / 2); }
                         <span class="table-top">
                             @if (table.Shape == RestaurantReservation.Models.TableShape.Round) { ChairRing(table.Capacity); }
