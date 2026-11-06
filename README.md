@@ -241,6 +241,33 @@ If your local machine does not resolve `admin.localhost`, add the following entr
 On Linux or macOS, this is typically in `/etc/hosts`.
 On Windows, use the host file under `C:\Windows\System32\drivers\etc\hosts`.
 
+### Host on Your Local Network
+
+To open the app from phones and other computers on the same network, start Mailpit and then run this on Windows:
+
+```powershell
+.\scripts\start-lan.ps1
+```
+
+The script prints the addresses to open and points table QR codes and email links at this computer:
+
+- Main storefront: `http://<your-ip>:5105/`
+- Admin portal: `http://admin.<your-ip>.nip.io:5105/`
+- Mailpit inbox, for login codes: `http://<your-ip>:8025/`
+
+The first time, allow the ports through Windows Firewall from an Administrator PowerShell. The script prints this command with the right ports:
+
+```powershell
+New-NetFirewallRule -DisplayName 'RROMS LAN' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5105,8025 -RemoteAddress LocalSubnet -Profile Any
+```
+
+Things to know:
+
+- The admin portal needs internet access for DNS, because an IP address can't have a subdomain and `nip.io` provides one.
+- LAN hosting uses plain HTTP and the development settings. Anyone on the network can read every login code in Mailpit, and the seeded accounts below use public passwords, so use it only on networks you trust and for demos.
+- Some public and campus Wi-Fi networks stop devices reaching each other. If other devices can't connect, try a phone hotspot.
+- To close the ports again, run `Remove-NetFirewallRule -DisplayName 'RROMS LAN'` from an Administrator PowerShell.
+
 ## Seeded Default Accounts
 
 The app auto-seeds default admin accounts when the database is created or migrated.

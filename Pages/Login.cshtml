@@ -127,7 +127,7 @@ else if (Model.Step == LoginModel.CodeStep)
         @if (Environment.IsDevelopment())
         {
             <p class="hint text-center mb-0">
-                Testing: the email is in Mailpit at <a href="http://localhost:8025" target="_blank" rel="noopener">localhost:8025</a>.
+                Testing: the email is in Mailpit at <a href="http://@(HttpContext.Request.Host.Host):8025" target="_blank" rel="noopener">@(HttpContext.Request.Host.Host):8025</a>.
             </p>
         }
     </form>
