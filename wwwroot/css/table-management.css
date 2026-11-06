@@ -572,13 +572,14 @@ body:has(.service-app) {
     flex-direction: column;
     transform: translateX(102%);
     background: #fff;
-    box-shadow: -12px 0 40px rgb(24 30 24 / 14%);
-    transition: transform .24s ease;
+    transition: transform .24s ease, box-shadow .24s ease;
 }
 
 .reservation-panel.open {
     /* none, not translateX(0): a transform would trap the date picker's pop-up inside the panel. */
     transform: none;
+    /* Only while open: a closed panel waits just off-screen, and its shadow would show along the edge. */
+    box-shadow: -12px 0 40px rgb(24 30 24 / 14%);
 }
 
 .panel-heading {
@@ -2851,3 +2852,26 @@ body:has(.service-app) {
 .floor-table.round .table-booking {
     gap: 1px;
 }
+
+/* Phones: these come after the admin-style block above, which they adjust. */
+@media (max-width: 760px) {
+    /* The header stacks; stretch keeps the title on the left (flex-end pushed it right). */
+    .service-app .floor-toolbar {
+        align-items: stretch;
+    }
+
+    /* The tabs stay on one line and scroll sideways when they don't fit. */
+    .reservation-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .reservation-tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+}
+

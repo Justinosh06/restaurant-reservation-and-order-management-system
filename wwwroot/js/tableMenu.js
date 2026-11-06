@@ -55,13 +55,32 @@
             }
         };
 
-        const appendSuggestion = (list, text, onSelect) => {
+        const appendSuggestion = (list, text, onSelect, averageRating = null) => {
             const listItem = document.createElement("li");
             const suggestion = document.createElement("button");
 
             suggestion.type = "button";
             suggestion.className = "search-recommendation";
-            suggestion.textContent = text;
+            if (averageRating !== null && Number.isFinite(Number(averageRating))) {
+                suggestion.classList.add("search-recommendation-rated");
+
+                const name = document.createElement("span");
+                name.className = "search-recommendation-name";
+                name.textContent = text;
+
+                const rating = document.createElement("span");
+                rating.className = "search-recommendation-rating";
+                rating.textContent = Number(averageRating).toFixed(1);
+
+                const star = document.createElement("i");
+                star.className = "fa-solid fa-star";
+                star.setAttribute("aria-hidden", "true");
+                rating.append(" ", star);
+
+                suggestion.append(name, rating);
+            } else {
+                suggestion.textContent = text;
+            }
             suggestion.addEventListener("click", onSelect);
             list.append(listItem);
             listItem.append(suggestion);
@@ -100,7 +119,7 @@
                             searchInput.value = name;
                         }
                         searchForm?.requestSubmit();
-                    });
+                    }, item.getAttribute("data-average-rating"));
                 });
                 topRated.hidden = ratedItems.length === 0;
                 searchMatches.hidden = true;
