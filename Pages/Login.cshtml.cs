@@ -57,6 +57,9 @@ public class LoginModel : PageModel
     // Shown on the code step, e.g. "We sent a code to ...".
     public string? CodeNotice { get; private set; }
 
+    // Seconds until "Send a new code" can be used again; the page counts down from it.
+    public int ResendWaitSeconds { get; private set; }
+
     [TempData]
     public string? SuccessMessage { get; set; }
 
@@ -255,7 +258,8 @@ public class LoginModel : PageModel
         var code = _loginCodes.Issue(email, out var wait);
         if (code is null)
         {
-            CodeNotice = $"A code was sent to {email} a moment ago. You can ask for a new one in {Math.Ceiling(wait.TotalSeconds)} seconds.";
+            CodeNotice = $"A code was already sent to {email}.";
+            ResendWaitSeconds = (int)Math.Ceiling(wait.TotalSeconds);
             return Page();
         }
 
@@ -296,7 +300,8 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        CodeNotice = $"We sent a 6-digit code to {email}. It works for {minutes} minutes.";
+        CodeNotice = $"We sent a 6-digit code to {email}.";
+        ResendWaitSeconds = (int)LoginCodeService.ResendWait.TotalSeconds;
         return Page();
     }
 
