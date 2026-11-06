@@ -9,6 +9,7 @@ using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
 using RestaurantReservation.Models.Enums;
 using RestaurantReservation.Services;
+using static RestaurantReservation.Infrastructure.Payments.DepositPayment;
 
 namespace Restaurant_Reservation_and_Order_Management_System.Pages.Customer;
 
