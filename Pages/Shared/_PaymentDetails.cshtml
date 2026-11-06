@@ -33,9 +33,9 @@
         <p class="pay-refund-note">
             <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
             <span>
-                @Model.CurrencySymbol @Model.Amount.ToString("0.00") was refunded to your
+                @Model.CurrencySymbol @Model.Amount.ToString("0.00") was refunded to @(Model.ForStaff ? "the customer's" : "your")
                 @(Model.Stripe?.MethodLabel is { } method ? method.Replace(" ending in", " card ending in") : "card")@(Model.RefundedAtUtc is { } refundedAt ? $" on {Local(refundedAt)}" : "").
-                It usually shows in your account within 5–10 working days.
+                It usually shows in @(Model.ForStaff ? "their" : "your") account within 5–10 working days.
             </span>
         </p>
     }

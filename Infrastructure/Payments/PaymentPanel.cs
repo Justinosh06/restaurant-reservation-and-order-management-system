@@ -18,6 +18,9 @@ public sealed class PaymentPanel
     public StripePaymentInfo? Stripe { get; init; }
     public string? CashReceiptUrl { get; init; }
 
+    // Shown to staff rather than the customer: notes say "the customer's card" instead of "your card".
+    public bool ForStaff { get; init; }
+
     // Used when Stripe's details are not available.
     public string? FallbackMethod { get; init; }
     public string? FallbackName { get; init; }

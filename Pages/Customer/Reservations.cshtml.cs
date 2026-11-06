@@ -81,33 +81,10 @@ public class ReservationsModel(
 
     private async Task LoadDepositsAsync()
     {
-        var paid = Shown
-            .Where(r => r.StripeSessionId != null && r.DepositStatus is DepositStatus.Paid or DepositStatus.Refunded or DepositStatus.Unpaid)
-            .ToList();
-        var details = await Task.WhenAll(paid.Select(r => r.DepositStatus == DepositStatus.Unpaid
-            ? Task.FromResult<StripePaymentInfo?>(null)
-            : stripe.GetAsync(r.StripeSessionId, expectRefunded: r.DepositStatus == DepositStatus.Refunded)));
-
-        Deposits = paid.Select((reservation, index) => (reservation, info: details[index])).ToDictionary(
-            pair => pair.reservation.Id,
-            pair => new PaymentPanel
-            {
-                AmountCents = pair.reservation.DepositAmount ?? 0,
-                // The currency it was paid in, not today's setting.
-                CurrencySymbol = (pair.reservation.DepositCurrency ?? CurrencyType.MYR).GetSymbol(),
-                State = pair.reservation.DepositStatus switch
-                {
-                    DepositStatus.Refunded => PaymentState.Refunded,
-                    DepositStatus.Paid => PaymentState.Paid,
-                    _ => PaymentState.Pending
-                },
-                CheckoutSessionId = pair.reservation.StripeSessionId,
-                Stripe = pair.info,
-                FallbackMethod = "Stripe Checkout",
-                FallbackName = pair.reservation.Customer?.FullName,
-                FallbackEmail = pair.reservation.Customer?.Email,
-                FallbackPaidAtUtc = pair.reservation.CreatedAt
-            });
+        var paid = Shown.Where(DepositPayment.HasPayment).ToList();
+        var details = await Task.WhenAll(paid.Select(r => DepositPayment.ReadStripeAsync(r, stripe)));
+        Deposits = paid.Select((reservation, index) => (reservation, info: details[index]))
+            .ToDictionary(pair => pair.reservation.Id, pair => DepositPayment.Panel(pair.reservation, pair.info));
     }
 
     // Cancel button on an upcoming booking.
