@@ -339,13 +339,22 @@
                         height: 160px;
 
                         .right-container {
+                            min-width: 0;
                             flex-direction: column;
                         }
 
                         .info-container {
+                            min-width: 0;
+
                             .top-section {
+                                width: 100%;
+                                min-width: 0;
+
                                 .item-title {
-                                    font-size: 2rem;
+                                    font-size: 1.75rem;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                    white-space: nowrap;
                                 }
 
                                 .category {
