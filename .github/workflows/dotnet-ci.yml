@@ -20,13 +20,13 @@ jobs:
         dotnet-version: '10.0.112'
 
     - name: Restore Dependencies
-      run: dotnet restore
+      run: dotnet restore tests/RROMS.Tests/RROMS.Tests.csproj
 
     - name: Build Project
       run: dotnet build --configuration Release --no-restore
 
     - name: Run Unit Tests
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test tests/RROMS.Tests/RROMS.Tests.csproj --configuration Release --no-restore --verbosity normal
 
     - name: Publish Artifact
       run: dotnet publish --configuration Release --no-build --output ./publish-output
