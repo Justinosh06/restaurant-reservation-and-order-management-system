@@ -206,9 +206,19 @@
                             <strong id="cash-change-due"></strong>
                         </div>
                         <label class="form-label" for="cash-customer-email">Customer email</label>
-                        <input class="form-control" id="cash-customer-email" type="email" list="cash-customer-emails"
-                               autocomplete="email" required placeholder="Choose an existing customer or enter a new email" />
-                        <datalist id="cash-customer-emails"></datalist>
+                        <div class="position-relative">
+                            <div class="input-group">
+                                <input class="form-control" id="cash-customer-email" type="email" role="combobox"
+                                       aria-autocomplete="list" aria-expanded="false" aria-controls="cash-customer-options"
+                                       autocomplete="email" required placeholder="Choose an existing customer or enter a new email" />
+                                <button class="btn btn-outline-secondary" type="button" id="cash-customer-toggle"
+                                        aria-label="Show existing customers" aria-expanded="false" aria-controls="cash-customer-options">
+                                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <div class="list-group position-absolute top-100 start-0 w-100 shadow d-none"
+                                 id="cash-customer-options" role="listbox" style="z-index: 1080"></div>
+                        </div>
                         <p class="form-text mb-0">A customer record will be created automatically for a new email address.</p>
                     </div>
                     <div id="cash-payment-result" class="d-none" role="status"></div>

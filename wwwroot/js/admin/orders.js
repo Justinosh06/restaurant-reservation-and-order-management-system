@@ -18,11 +18,114 @@
     const cashForm = document.getElementById("cash-payment-form");
     const cashTenderedInput = document.getElementById("cash-tendered");
     const cashEmailInput = document.getElementById("cash-customer-email");
-    const cashEmailOptions = document.getElementById("cash-customer-emails");
+    const cashEmailPicker = cashEmailInput.closest(".position-relative");
+    const cashEmailToggle = document.getElementById("cash-customer-toggle");
+    const cashEmailOptions = document.getElementById("cash-customer-options");
     const cashPaymentEntry = document.getElementById("cash-payment-entry");
     const cashPaymentResult = document.getElementById("cash-payment-result");
     const cashPaymentSubmit = document.getElementById("cash-payment-submit");
     const cashPaymentDone = document.getElementById("cash-payment-done");
+    let customerEmails = [];
+    let activeCustomerOption = -1;
+
+    const setCustomerOptionsExpanded = expanded => {
+        cashEmailOptions.classList.toggle("d-none", !expanded);
+        cashEmailInput.setAttribute("aria-expanded", String(expanded));
+        cashEmailToggle.setAttribute("aria-expanded", String(expanded));
+        if (!expanded) {
+            activeCustomerOption = -1;
+            cashEmailInput.removeAttribute("aria-activedescendant");
+        }
+    };
+
+    const renderCustomerOptions = () => {
+        activeCustomerOption = -1;
+        const search = cashEmailInput.value.trim().toLocaleLowerCase();
+        const matchingEmails = customerEmails.filter(email => email.toLocaleLowerCase().includes(search));
+        cashEmailOptions.replaceChildren();
+
+        if (matchingEmails.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "list-group-item small text-body-secondary";
+            empty.textContent = "No existing customers found. You can enter a new email.";
+            cashEmailOptions.appendChild(empty);
+            activeCustomerOption = -1;
+            return;
+        }
+
+        matchingEmails.forEach((email, index) => {
+            const option = document.createElement("button");
+            option.type = "button";
+            option.className = "list-group-item list-group-item-action";
+            option.id = `cash-customer-option-${index}`;
+            option.setAttribute("role", "option");
+            option.setAttribute("aria-selected", String(index === activeCustomerOption));
+            option.textContent = email;
+            option.addEventListener("mousedown", event => event.preventDefault());
+            option.addEventListener("click", () => {
+                cashEmailInput.value = email;
+                setCustomerOptionsExpanded(false);
+                cashEmailInput.focus();
+            });
+            cashEmailOptions.appendChild(option);
+        });
+    };
+
+    const showCustomerOptions = () => {
+        renderCustomerOptions();
+        setCustomerOptionsExpanded(true);
+    };
+
+    cashEmailInput.addEventListener("focus", showCustomerOptions);
+    cashEmailInput.addEventListener("input", showCustomerOptions);
+    cashEmailToggle.addEventListener("click", () => {
+        if (cashEmailOptions.classList.contains("d-none")) {
+            cashEmailInput.focus();
+            showCustomerOptions();
+        } else {
+            setCustomerOptionsExpanded(false);
+        }
+    });
+    document.addEventListener("pointerdown", event => {
+        if (!cashEmailPicker.contains(event.target)) {
+            setCustomerOptionsExpanded(false);
+        }
+    });
+    cashEmailInput.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            setCustomerOptionsExpanded(false);
+            return;
+        }
+
+        if (event.key === "Enter" && activeCustomerOption >= 0) {
+            const options = cashEmailOptions.querySelectorAll('[role="option"]');
+            event.preventDefault();
+            options[activeCustomerOption]?.click();
+            return;
+        }
+
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+            return;
+        }
+
+        event.preventDefault();
+        if (cashEmailOptions.classList.contains("d-none")) {
+            showCustomerOptions();
+        }
+        const options = cashEmailOptions.querySelectorAll('[role="option"]');
+        if (options.length === 0) {
+            return;
+        }
+
+        activeCustomerOption = event.key === "ArrowDown"
+            ? (activeCustomerOption + 1) % options.length
+            : (activeCustomerOption <= 0 ? options.length - 1 : activeCustomerOption - 1);
+        options.forEach((option, index) => {
+            option.setAttribute("aria-selected", String(index === activeCustomerOption));
+        });
+        cashEmailInput.setAttribute("aria-activedescendant", options[activeCustomerOption].id);
+        options[activeCustomerOption].scrollIntoView({ block: "nearest" });
+    });
 
     const renderCashOrders = (orders) => {
         document.getElementById("cash-order-breakdown").innerHTML = orders.map(order => `
@@ -70,12 +173,8 @@
             cashTenderedInput.min = (options.amountDueCents / 100).toFixed(2);
             cashTenderedInput.value = (options.amountDueCents / 100).toFixed(2);
             cashEmailInput.value = options.customerEmail ?? "";
-            cashEmailOptions.replaceChildren();
-            options.customerEmails.forEach(email => {
-                const option = document.createElement("option");
-                option.value = email;
-                cashEmailOptions.appendChild(option);
-            });
+            customerEmails = options.customerEmails;
+            setCustomerOptionsExpanded(false);
             updateCashChange();
             cashModal.show();
         } catch (error) {
