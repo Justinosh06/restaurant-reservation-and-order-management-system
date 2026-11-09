@@ -70,3 +70,23 @@
 .policy-content em {
     color: #6c757d;
 }
+
+/* Phones: the three tabs don't fit in one pill, so each becomes its own chip and they wrap neatly. */
+@media (max-width: 600px) {
+    .policy-tabs {
+        width: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    .policy-tabs a {
+        border: 1px solid #dee2e6;
+        background: #fff;
+    }
+
+    .policy-tabs a.active {
+        border-color: #212529;
+    }
+}

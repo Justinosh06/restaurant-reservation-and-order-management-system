@@ -162,7 +162,14 @@
                         }
                         @if (reservation.DepositLabel is not null)
                         {
-                            <span class="booking-badge @(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "refunded")">@reservation.DepositLabel</span>
+                            @* Opens the deposit's payment details (Stripe), like the customer sees on their Reservations page. *@
+                            <button type="button" class="booking-badge payment-open @(reservation.Deposit == RestaurantReservation.Models.DepositStatus.Paid ? "paid" : "refunded")"
+                                    data-reservation-id="@reservation.Id"
+                                    data-name="@reservation.CustomerName"
+                                    data-time="@reservation.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)"
+                                    title="View payment details">
+                                @reservation.DepositLabel <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                            </button>
                         }
                         else if (reservation.Status == RestaurantReservation.Models.ReservationStatus.CheckedIn && isOpen)
                     {
@@ -182,6 +189,15 @@
                                    asp-route-tab="@Model.Tab">
                                     <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit booking
                                 </a>
+                                @if (reservation.DepositLabel is not null)
+                                {
+                                    <button type="button" class="payment-open"
+                                            data-reservation-id="@reservation.Id"
+                                            data-name="@reservation.CustomerName"
+                                            data-time="@reservation.ReservationAt.ToString("ddd d MMM · h:mm tt", CultureInfo.CurrentCulture)">
+                                        <i class="fa-solid fa-receipt" aria-hidden="true"></i> View payment
+                                    </button>
+                                }
                                 @if (isOpen)
                                 {
                                     <button type="button" class="@(reservation.HasTable ? "assign-open" : "floor-assign-open")"
@@ -478,6 +494,19 @@
             <a class="floor-status-count" asp-page="/Admin/Tables/Table">Manage tables</a>
         </div>
     </section>
+</div>
+
+@* Deposit payment details, loaded from ?handler=Payment when a "View payment" button is pressed. *@
+<div class="floor-assign-dialog payment-dialog" id="paymentDialog" role="dialog" aria-modal="true" aria-labelledby="paymentDialogTitle" aria-hidden="true">
+    <div class="floor-assign-head">
+        <div>
+            <p class="eyebrow">DEPOSIT PAYMENT</p>
+            <h2 id="paymentDialogTitle">Guest</h2>
+            <span class="panel-capacity" id="paymentDialogInfo"></span>
+        </div>
+        <button type="button" class="panel-close" id="closePaymentDialog" aria-label="Close payment details">×</button>
+    </div>
+    <div class="payment-dialog-body" id="paymentDialogBody" aria-live="polite"></div>
 </div>
 
 <script src="~/js/reservation-management.js" asp-append-version="true"></script>

@@ -122,12 +122,13 @@ else if (Model.Step == LoginModel.CodeStep)
 
         <button type="submit" class="pill-btn w-100">Log in</button>
         <button type="submit" asp-page-handler="Resend" asp-route-returnUrl="@routeReturnUrl" formnovalidate
+                id="resendButton" data-wait="@Model.ResendWaitSeconds"
                 class="pill-btn ghost w-100">Send a new code</button>
 
         @if (Environment.IsDevelopment())
         {
             <p class="hint text-center mb-0">
-                Testing: the email is in Mailpit at <a href="http://localhost:8025" target="_blank" rel="noopener">localhost:8025</a>.
+                Testing: the email is in Mailpit at <a href="http://@(HttpContext.Request.Host.Host):8025" target="_blank" rel="noopener">@(HttpContext.Request.Host.Host):8025</a>.
             </p>
         }
     </form>
@@ -153,6 +154,29 @@ else if (Model.Step == LoginModel.CodeStep)
                     location.reload();
                 }
             });
+
+            // Code step: "Send a new code" stays disabled and counts down until a new code can be asked for.
+            (function () {
+                const button = document.getElementById('resendButton');
+                if (!button) {
+                    return;
+                }
+                const label = button.textContent;
+                const until = Date.now() + Number(button.dataset.wait || 0) * 1000;
+
+                function tick() {
+                    const left = Math.ceil((until - Date.now()) / 1000);
+                    if (left <= 0) {
+                        button.disabled = false;
+                        button.textContent = label;
+                        return;
+                    }
+                    button.disabled = true;
+                    button.textContent = `${label} (${left}s)`;
+                    setTimeout(tick, 250);
+                }
+                tick();
+            })();
         </script>
     }
 }

@@ -20,6 +20,7 @@ public class IndexModel : PageModel
 
     // Up to five best-rated dishes, best first: shown as "Top rated" when the search box is opened (same as the table menu).
     public List<string> TopRatedMenuItemIds { get; private set; } = [];
+    public Dictionary<string, double> TopRatedMenuItemAverageRatings { get; private set; } = [];
 
     public async Task OnGetAsync()
     {
@@ -33,7 +34,7 @@ public class IndexModel : PageModel
             .ThenBy(m => m.Name)
             .ToListAsync();
 
-        TopRatedMenuItemIds = await _db.Feedbacks
+        var topRatedItems = await _db.Feedbacks
             .AsNoTracking()
             .Where(f => _db.MenuItems.Any(m => m.Id == f.MenuItemId && m.Availability))
             .GroupBy(f => f.MenuItemId)
@@ -42,7 +43,11 @@ public class IndexModel : PageModel
             .ThenByDescending(r => r.RatingCount)
             .ThenBy(r => r.MenuItemId)
             .Take(5)
-            .Select(r => r.MenuItemId)
             .ToListAsync();
+
+        TopRatedMenuItemIds = topRatedItems.Select(rating => rating.MenuItemId).ToList();
+        TopRatedMenuItemAverageRatings = topRatedItems.ToDictionary(
+            rating => rating.MenuItemId,
+            rating => rating.AverageRating);
     }
 }

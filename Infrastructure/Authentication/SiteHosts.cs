@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Sockets;
+
 namespace RestaurantReservation.Infrastructure.Authentication;
 
 // Builds links between the main site (localhost) and the admin portal (admin.localhost).
@@ -25,7 +28,14 @@ public static class SiteHosts
     public static string AdminSiteUrl(HttpRequest request, string path) =>
         IsAdminHost(request)
             ? BuildUrl(request, request.Host.Host, path)
-            : BuildUrl(request, AdminPrefix + request.Host.Host, path);
+            : BuildUrl(request, AdminPrefix + AddressableHost(request.Host.Host), path);
+
+    // An IP address can't have a subdomain, so on a LAN the admin portal uses nip.io,
+    // a public DNS service where admin.192.168.1.20.nip.io resolves to 192.168.1.20.
+    private static string AddressableHost(string host) =>
+        IPAddress.TryParse(host, out var address) && address.AddressFamily == AddressFamily.InterNetwork
+            ? $"{host}.nip.io"
+            : host;
 
     private static string BuildUrl(HttpRequest request, string host, string path)
     {

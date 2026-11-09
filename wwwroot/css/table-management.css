@@ -572,13 +572,14 @@ body:has(.service-app) {
     flex-direction: column;
     transform: translateX(102%);
     background: #fff;
-    box-shadow: -12px 0 40px rgb(24 30 24 / 14%);
-    transition: transform .24s ease;
+    transition: transform .24s ease, box-shadow .24s ease;
 }
 
 .reservation-panel.open {
     /* none, not translateX(0): a transform would trap the date picker's pop-up inside the panel. */
     transform: none;
+    /* Only while open: a closed panel waits just off-screen, and its shadow would show along the edge. */
+    box-shadow: -12px 0 40px rgb(24 30 24 / 14%);
 }
 
 .panel-heading {
@@ -2850,4 +2851,180 @@ body:has(.service-app) {
 
 .floor-table.round .table-booking {
     gap: 1px;
+}
+
+/* Phones: these come after the admin-style block above, which they adjust. */
+@media (max-width: 760px) {
+    /* The header stacks; stretch keeps the title on the left (flex-end pushed it right). */
+    .service-app .floor-toolbar {
+        align-items: stretch;
+    }
+
+    /* The tabs stay on one line and scroll sideways when they don't fit. */
+    .reservation-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .reservation-tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+}
+
+
+/* View payment: the deposit badge is a button that opens the payment details pop-up. */
+button.booking-badge {
+    border: 0;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+button.booking-badge:hover {
+    text-decoration: underline;
+}
+
+button.booking-badge i {
+    margin-left: 3px;
+    font-size: 10px;
+}
+
+.payment-dialog {
+    width: min(460px, calc(100vw - 32px));
+    background: #fff;
+}
+
+.payment-dialog-body {
+    padding: 16px 20px 20px;
+}
+
+.payment-dialog-note {
+    margin: 0;
+    padding: 24px 0;
+    color: var(--bs-secondary-color, #6c757d);
+    text-align: center;
+}
+
+/* The shared payment card (Pages/Shared/_PaymentDetails) in the admin look; the customer pages style it in
+   landing_page.css. */
+.payment-dialog .pay-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 1rem;
+    background: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.payment-dialog .pay-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.payment-dialog .pay-label {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.payment-dialog .status-pill {
+    padding: .2em .7em;
+    border-radius: 50rem;
+    background: #e9ecef;
+    color: #495057;
+    font-size: .75rem;
+    font-weight: 600;
+}
+
+.payment-dialog .status-pill.paid {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.payment-dialog .status-pill.refunded {
+    background: #e8eefc;
+    color: #2446a8;
+}
+
+.payment-dialog .pay-amount {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.payment-dialog .pay-amount span {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 1rem;
+}
+
+.payment-dialog .pay-refund-note {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: .75rem;
+    background: #e8eefc;
+    color: #2446a8;
+    font-size: .8125rem;
+}
+
+.payment-dialog .pay-refund-note i {
+    margin-top: 3px;
+}
+
+.payment-dialog .pay-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    font-size: .875rem;
+}
+
+.payment-dialog .pay-rows div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 0;
+}
+
+.payment-dialog .pay-rows dt {
+    flex-shrink: 0;
+    color: var(--bs-secondary-color, #6c757d);
+    font-weight: 500;
+}
+
+.payment-dialog .pay-rows dt i {
+    width: 16px;
+    text-align: center;
+}
+
+.payment-dialog .pay-rows dd {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-weight: 600;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* "View receipt" (Stripe's receipt) as a dark button, like the other admin buttons. */
+.payment-dialog .pill-btn {
+    display: block;
+    padding: .5rem .75rem;
+    border-radius: var(--bs-border-radius, .375rem);
+    background: #212529;
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+}
+
+.payment-dialog .pill-btn:hover {
+    background: #424649;
 }

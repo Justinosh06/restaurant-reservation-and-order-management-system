@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using RestaurantReservation.Data;
+using RestaurantReservation.Infrastructure.Payments;
 using RestaurantReservation.Infrastructure.Reservations;
 using RestaurantReservation.Models;
 using RestaurantReservation.Services;
@@ -18,6 +19,7 @@ public class ReservationManagementModel(
     ApplicationDbContext db,
     IPaymentService payments,
     ReservationEmailQueue reservationEmails,
+    StripePaymentDetails stripeDetails,
     ILogger<ReservationManagementModel> logger) : PageModel
 {
     // The list tabs: upcoming bookings already seated at a table, upcoming ones still
@@ -118,6 +120,22 @@ public class ReservationManagementModel(
             Input.ReservationAt = DateTime.Now.AddHours(1);
             IsFormOpen = true;
         }
+    }
+
+    // GET ?handler=Payment&id=... - the deposit's payment card for the "View payment" pop-up. Fetched only
+    // when staff open it, so the list doesn't ask Stripe about every booking on each page load.
+    public async Task<IActionResult> OnGetPaymentAsync(string? id)
+    {
+        var reservation = id is null ? null : await db.Reservations
+            .Include(item => item.Customer)
+            .FirstOrDefaultAsync(item => item.Id == id);
+        if (reservation is null || !DepositPayment.HasPayment(reservation))
+        {
+            return NotFound();
+        }
+
+        var stripe = await DepositPayment.ReadStripeAsync(reservation, stripeDetails);
+        return Partial("_PaymentDetails", DepositPayment.Panel(reservation, stripe, forStaff: true));
     }
 
     public async Task<IActionResult> OnPostCreateAsync()

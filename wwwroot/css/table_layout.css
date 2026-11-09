@@ -99,3 +99,23 @@
         font-family: "Bricolage Grotesque", sans-serif;
     }
 }
+
+/* The policy links (Pages/Shared/_PolicyLinks.cshtml) sit between the name and the copyright; on a
+   phone there's no room for all three in one row, so the links go to their own line below. */
+.footer {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+@media (max-width: 600px) {
+    /* Room at the bottom so the chatbot bubble (fixed, bottom right) doesn't cover the text. */
+    .footer {
+        padding-bottom: 96px;
+    }
+
+    .footer .policy-links {
+        order: 3;
+        width: 100%;
+    }
+}
+

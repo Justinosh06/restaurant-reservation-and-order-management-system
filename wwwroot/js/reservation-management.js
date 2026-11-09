@@ -320,6 +320,68 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // View payment: the deposit's payment card, fetched from the server only when it is opened.
+    const paymentDialog = document.getElementById("paymentDialog");
+    if (paymentDialog) {
+        const body = document.getElementById("paymentDialogBody");
+        let request = 0;
+
+        const closePayment = function () {
+            if (!paymentDialog.classList.contains("open")) {
+                return;
+            }
+            request++;
+            paymentDialog.classList.remove("open");
+            paymentDialog.setAttribute("aria-hidden", "true");
+            if (!panel.classList.contains("open")) {
+                backdrop.classList.remove("open");
+            }
+        };
+
+        const openPayment = function (button) {
+            const current = ++request;
+            button.closest("details")?.removeAttribute("open");
+            document.getElementById("paymentDialogTitle").textContent = button.dataset.name;
+            document.getElementById("paymentDialogInfo").textContent = button.dataset.time;
+            body.innerHTML = '<p class="payment-dialog-note">Loading payment details…</p>';
+            paymentDialog.classList.add("open");
+            paymentDialog.setAttribute("aria-hidden", "false");
+            backdrop.classList.add("open");
+            document.getElementById("closePaymentDialog").focus();
+
+            fetch("?handler=Payment&id=" + encodeURIComponent(button.dataset.reservationId), { headers: { Accept: "text/html" } })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error(response.status);
+                    }
+                    return response.text();
+                })
+                .then(function (html) {
+                    if (current === request) {
+                        body.innerHTML = html;
+                    }
+                })
+                .catch(function () {
+                    if (current === request) {
+                        body.innerHTML = '<p class="payment-dialog-note">The payment details could not be loaded. Refresh the page and try again.</p>';
+                    }
+                });
+        };
+
+        document.querySelectorAll(".payment-open").forEach(function (button) {
+            button.addEventListener("click", function () {
+                openPayment(button);
+            });
+        });
+        document.getElementById("closePaymentDialog").addEventListener("click", closePayment);
+        backdrop.addEventListener("click", closePayment);
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closePayment();
+            }
+        });
+    }
+
     if (app.dataset.reopenForm === "true") {
         const form = app.dataset.formMode === "edit"
             ? document.getElementById("editReservationForm")
